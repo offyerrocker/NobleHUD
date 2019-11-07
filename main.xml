@@ -1,0 +1,29 @@
+<mod name="Noble HUD" global_key="Noble HUD" color="Color(0.6,0.9,1)">
+	<AddFiles directory="assets">
+		<texture path="guis/textures/shield_outline"/>
+		<texture path="guis/textures/shield_fill"/>
+		<texture path="guis/textures/shield_glow"/>
+		<texture path="guis/textures/health_left_outline"/>
+		<texture path="guis/textures/health_left_fill"/>
+		<texture path="guis/textures/health_right_outline"/>
+		<texture path="guis/textures/health_right_fill"/>
+		<texture path="guis/textures/health_center_outline"/>
+		<texture path="guis/textures/health_center_fill"/>
+		<texture path="guis/textures/ability_circle_fill"/>
+		<texture path="guis/textures/ability_circle_outline"/>
+		<texture path="guis/textures/bullet_tick"/>
+		<texture path="guis/textures/radar_bg"/>
+		<texture path="guis/textures/radar_blip_near"/>
+		<texture path="guis/textures/radar_blip_far"/>
+		<texture path="guis/textures/crosshair_circle_64"/>
+		<texture path="guis/textures/crosshair_circle_128"/>
+		<texture path="guis/textures/ar_crosshair_1"/>
+		<texture path="guis/textures/ar_crosshair_2"/>
+		<texture path="guis/textures/dmr_crosshair_1"/>
+		<texture path="guis/textures/dmr_crosshair_2"/>
+		<texture path="guis/textures/sword_crosshair"/>
+		<texture path="guis/textures/grenadelauncher_crosshair_1"/>
+		<texture path="guis/textures/grenadelauncher_crosshair_2"/>
+		<texture path="guis/textures/health_cross"/>
+	</AddFiles>
+</mod>
