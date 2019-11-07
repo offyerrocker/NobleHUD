@@ -3,6 +3,26 @@ if not NobleHUD then
 end
 
 
+Hooks:PostHook(HUDTeammate,"init","noblehud_addteammate",function(self,i, teammates_panel, is_player, width)
+	NobleHUD:_add_teammate(i,panel,is_player,width)
+end)
+
+Hooks:PostHook(HUDTeammate,"add_panel","noblehud_addteammatepanel",function(self)
+	local teammate_panel = self._panel
+
+	if not self._wait_panel:visible() then
+		teammate_panel:set_visible(true)
+	end
+end)
+
+
+Hooks:PostHook(HUDTeammate,"set_callsign","noblehud_setcallsign",function(self,id)
+	NobleHUD:_set_teammate_callsign(self._id,id)
+end)
+
+Hooks:PostHook(HUDTeammate,"remove_panel","noblehud_removeteammatepanel",function(self,weapons_panel)
+end)
+
 
 Hooks:PostHook(HUDTeammate,"set_health","noblehud_set_health",function(self,data)
 	if not self._main_player then 

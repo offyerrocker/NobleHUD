@@ -33,6 +33,10 @@
 			"script_path" : "lua/hudobjectives.lua"
 		},
 		{
+			"hook_id": "lib/managers/hud/hudpresenter",
+			"script_path": "lua/hudpresenter.lua"
+		},
+		{
 			"hook_id": "lib/managers/statisticsmanager",
 			"script_path": "lua/statisticsmanager.lua"
 		},

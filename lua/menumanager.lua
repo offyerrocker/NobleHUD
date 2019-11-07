@@ -1,11 +1,22 @@
 --[[ 
 FIXED:
-radar vdistance bug
-radar max distance outskirts applies now
-crash on firing certain guns (pistols, because of bad bloom/weapon crosshair part data)
 
 
 ***** TODO: *****
+
+teammate panel
+	-circleplus/character name
+	-player name
+	- equipment
+	- health/shields?
+	- ammo?
+	
+	- downs?
+
+--lower blip should be a little bit bigger
+--make far blip more like reach's
+
+
 higher/lower radar blips should use darker colors (eg color * 0.5) rather than reducing alpha
 
 - verify grenade (for all other types; stoic done)
@@ -31,12 +42,8 @@ clean code
 - underbarrel should change reticle
 
 - weapontype-specific bloom decay
+- remake rocket reticle
 
-
-- review "is_center" crosshair flag
-	- is it necessary?
-	- probably not
-	
 - improve crosshair color detection for nil/cached target
 
 --grenade crosshair:
@@ -77,9 +84,8 @@ CODE:
 
 
 --radar
-	* fix radar far detection
 	* test radar variable range
-	* radar pulse when update
+	* radar pulse when update?
 
 --weapon
 	* firemode indicator
@@ -115,7 +121,7 @@ ASSETS:
 	- [DONE] AR
 	- Minigun
 	- Pistol
-	- Sniper
+	- [DONE] Sniper
 	- Plasma Rifle/Repeater
 		* Circle
 		* Four arrows (single texture)
@@ -508,7 +514,7 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 		parts = {
 			{
 				is_center = true,
-				texture = "guis/textures/ability_circle_outline",
+				texture = "guis/textures/rocket_crosshair",
 				w = 8,
 				h = 8
 			}
@@ -1109,37 +1115,6 @@ function NobleHUD.angle_from(a,b,c,d) --mvector3.angle() is a big fat meanie zuc
 	end
 end
 
-function search_class(class,s)
-	s = tostring(s)
-	Console:Log("Searching class " .. tostring(class) .. " for " .. s)
-	if type(class) ~= "table" then 
-		for i,j in pairs(class) do 
-			local msg = "CLASS"
-			local col = Color.white
-			if string.match(i,s) then
-				local t = type(j)
-				if t == "function" then 
-					col = Color.red
-					msg = ":" .. i .. "()"
-				else
-					if t == "number" then 
-						col = Color.white
-					elseif t == "string" then 
-						col = Color.yellow
-					else
-						col = Color.blue
-					end
-					msg = "." .. i .. " = " .. tostring(j)
-				end
-				Console:Log(msg,{color = col})
-			end
-			
-		end
-	else
-		Console:Log("Type is not table/class!",{color = Color.orange})
-	end
-end
-
 function NobleHUD.vec2_distance(a,b,c,d)
 	local function do_dis(x1,y1,x2,y2)
 		return math.sqrt(math.pow(x2 - x1,2) + math.pow(y2 - y1,2))
@@ -1502,6 +1477,33 @@ function NobleHUD:OnLoaded()
 			Log(tostring(id) .. " Nobody here!")
 		end
 	end--]]
+	
+	
+	--layout hud
+	local radar = self._radar_panel
+	local num_teammates = 4
+	for i=1,num_teammates do 
+		local ratio = (i - 1) / (num_teammates - 1)
+		self._teammates_panel:set_x(radar:right() - 16)
+		self._teammates_panel:set_y(radar:y())
+		local panel = self._teammates_panel:child("teammate_" .. i)
+--		panel:set_x(192 * (0.5 + math.cos((i/4) * math.pi * 2))) --todo get radar size
+		panel:set_x(32 * math.sin(180 * ratio))
+		panel:set_y(radar:h() * ((i-1) / (num_teammates)))
+--		panel:set_x(192 * math.sin(math.deg(((i-1) / (num_teammates - 1))) / (math.pi))) --todo get radar size
+		Console:Log("Moving panel " .. i .. " to " .. tostring(panel:x()))
+	end
+	--[[
+		0-n
+		output 0-1
+		pi
+		
+		
+		
+		
+		
+	
+	--]]
 end
 
 function NobleHUD:UpdateHUD(t,dt)
@@ -1612,28 +1614,31 @@ function NobleHUD:UpdateHUD(t,dt)
 						blip_y = (math.cos(angle_to_person) * (distance_to_person / RADAR_DISTANCE_MID) * (RADAR_SIZE / 2))
 						if math.abs(v_distance) > V_DISTANCE_MID then 
 							data.bitmap:set_alpha(0.33)
+							data.bitmap:set_rotation(0)
 							if v_distance > 0 then 							
-								--if higher than player by x, use radar_blip_near_higher
-								
-								--data.bitmap:set_image("guis/textures/radar_blip_high")
-								data.bitmap:set_image("guis/textures/radar_blip_near") --mid
-							else
 								--if lower than player by x, use radar_blip_near_lower
 								
-								--data.bitmap:set_image("guis/textures/radar_blip_low")
-								data.bitmap:set_image("guis/textures/radar_blip_near") --mid
+								data.bitmap:set_image("guis/textures/radar_blip_low")
+							else
+								--if higher than player by x, use radar_blip_near_higher
+								
+								data.bitmap:set_image("guis/textures/radar_blip_high")
 							end
 						else
+							if data.unit == Console.tagged_unit then 	
+								Console:Log(v_distance .. "<" .. V_DISTANCE_MID)
+							end
+							data.bitmap:set_rotation(-angle_to_person)
 							data.bitmap:set_alpha(0.7)
 							data.bitmap:set_image("guis/textures/radar_blip_near") --mid
 						end
 					elseif distance_to_person > RADAR_DISTANCE_MAX then 
 						--is out of range
 						
-						
 						blip_x,blip_y = -1000,-1000
 						self:remove_radar_blip(data.unit,blip_key)
 					else 
+						data.bitmap:set_rotation(-angle_to_person)
 						
 						--on outskirts of range
 						blip_x = math.sin(angle_to_person) * RADAR_SIZE / 2
@@ -1642,7 +1647,6 @@ function NobleHUD:UpdateHUD(t,dt)
 						data.bitmap:set_image("guis/textures/radar_blip_far")
 					end
 					data.bitmap:set_center(blip_x + (RADAR_SIZE/2),blip_y + (RADAR_SIZE/2))
-					data.bitmap:set_rotation(-angle_to_person)
 					
 						
 				else 
@@ -3544,6 +3548,107 @@ function NobleHUD:_set_deployable_equipment(index,skip_anim)
 end
 
 
+--		TEAMMATES
+
+function NobleHUD:_create_teammates(hud)
+	local num_teammates = 4
+	local teammate_w = 200
+	local teammate_h = 32
+	
+	local teammates_panel = hud:panel({
+		name = "teammates_panel",
+		w = 256,
+		h = 256, -- num_teammates * teammate_h,
+		x = 100,
+		y = hud:h() - 200
+	})
+	self._teammates_panel = teammates_panel
+
+	local teammates_debug = teammates_panel:rect({
+		name = "teammates_debug",
+		visible = true,
+		color = Color.blue,
+		alpha = 0.4
+	})
+	
+	local function create_teammate(i)
+		local is_this = {"I","II","ii","L"}
+		local panel = teammates_panel:panel({
+			name = "teammate_" .. tostring(i),
+			y = (i - 1) * teammate_h,
+			w = teammate_w,
+			h = teammate_h,
+			layer = 2
+		})
+		local a,b = tweak_data.hud_icons:get_icon_data("equipment_thermite")
+		local character_bitmap = panel:bitmap({
+			name = "character_bitmap",
+			layer = 0,
+			rotation = 360,
+			texture = a, --empty circleplus at first, roundbox + name after
+			texture_rect = b,
+			color = Color.white,
+			w = 32,
+			h = 8
+		})
+		local character = panel:text({
+			name = "character_name",
+			layer = 1,
+			text = "Noble",
+			align = "left",
+			color = Color.white,
+			font_size = tweak_data.hud_players.name_size,
+			font = tweak_data.hud_players.name_font
+		})
+		local player_name = panel:text({
+			name = "player_name",
+			layer = 1,
+			text = is_this[i] or "Six",
+			align = "right",
+			color = Color.white,
+			font_size = tweak_data.hud_players.name_size,
+			font = tweak_data.hud_players.name_font
+		})
+		local teammate_panel_debug = panel:rect({
+			visible = true,
+			color = tweak_data.chat_colors[i],
+			alpha = 0.4
+		})
+		return panel
+	end
+	
+	for i=1,num_teammates do 
+		create_teammate(i)
+	end
+	
+	return teammates_panel
+end
+
+function NobleHUD:_set_teammate_callsign(i,id)	
+	local panel = self._teammates_panel:child("teammate_" .. tostring(i))
+	if (panel and alive(panel)) then
+		panel:child("player_name"):set_color(tweak_data.chat_colors[id or 5] or Color.red)
+	else
+		Console:Log("ERROR: _add_teammate panel(" .. tostring(i) .. "): Panel does not exist")
+		return
+	end
+end
+
+function NobleHUD:_add_teammate(i,panel,is_player,width)
+	if true then return end
+	local panel = self._teammates_panel:child("teammate_" .. tostring(i))
+	if (panel and alive(panel)) then 
+	else
+		Console:Log("ERROR: _add_teammate panel(" .. tostring(i) .. "): Panel does not exist")
+		return
+	end
+end
+
+function NobleHUD:_add_convert(params)
+
+end
+
+
 --		SCORE COUNTER
 
 function NobleHUD:_create_score(hud)
@@ -4843,7 +4948,7 @@ function NobleHUD:_create_helper(hud) --auntie dot avatar and subtitles
 end
 
 
---not implemented
+--not implemented; see hudpresenter
 function NobleHUD:animate_helper_subtitle_in(o,str)
 	local text = o:text()
 	local char_per_sec = 5
@@ -4880,10 +4985,6 @@ function NobleHUD:_helper_comment(event_name)
 end
 function NobleHUD:helper_is_typing()
 	--return not self._helper_current_event
-end
-
-function NobleHUD:_create_teammates(hud) --todo
-
 end
 
 function NobleHUD:_create_killfeed(hud)

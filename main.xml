@@ -15,6 +15,8 @@
 		<texture path="guis/textures/radar_bg"/>
 		<texture path="guis/textures/radar_blip_near"/>
 		<texture path="guis/textures/radar_blip_far"/>
+		<texture path="guis/textures/radar_blip_high"/>
+		<texture path="guis/textures/radar_blip_low"/>
 		<texture path="guis/textures/crosshair_circle_64"/>
 		<texture path="guis/textures/crosshair_circle_128"/>
 		<texture path="guis/textures/ar_crosshair_1"/>
@@ -22,6 +24,7 @@
 		<texture path="guis/textures/dmr_crosshair_1"/>
 		<texture path="guis/textures/dmr_crosshair_2"/>
 		<texture path="guis/textures/sword_crosshair"/>
+		<texture path="guis/textures/rocket_crosshair"/>
 		<texture path="guis/textures/grenadelauncher_crosshair_1"/>
 		<texture path="guis/textures/grenadelauncher_crosshair_2"/>
 		<texture path="guis/textures/health_cross"/>
