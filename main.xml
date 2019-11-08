@@ -27,6 +27,8 @@
 		<texture path="guis/textures/rocket_crosshair"/>
 		<texture path="guis/textures/grenadelauncher_crosshair_1"/>
 		<texture path="guis/textures/grenadelauncher_crosshair_2"/>
+		<texture path="guis/textures/teammate_nameplate_vacant"/>
+		<texture path="guis/textures/teammate_nameplate"/>
 		<texture path="guis/textures/health_cross"/>
 	</AddFiles>
 </mod>

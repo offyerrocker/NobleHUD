@@ -1,4 +1,14 @@
 
+Hooks:PostHook(HUDManager,"add_teammate_panel","noblehud_hudmanager_addteammatepanel",function(self,character_name, player_name, ai, peer_id)
+--[[
+	for i, data in ipairs(self._hud.teammate_panels_data) do
+		if HUDManager.PLAYER_PANEL ~= i then 
+			NobleHUD:_set_teammate_name(i,player_name)
+		end
+	end
+	--]]
+end)
+
 Hooks:PostHook(HUDManager,"_setup_player_info_hud_pd2","noblehud_create_ws",function(self,hud)
 	if _G.NobleHUD then 
 		NobleHUD:CreateHUD(self)

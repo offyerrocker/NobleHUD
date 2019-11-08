@@ -6,12 +6,13 @@ FIXED:
 
 teammate panel
 	-circleplus/character name
+		- center to subpanel
 	-player name
 	- equipment
 	- health/shields?
 	- ammo?
 	
-	- downs?
+	- downs?	
 
 --lower blip should be a little bit bigger
 --make far blip more like reach's
@@ -324,7 +325,9 @@ NobleHUD.weapon_data = {
 }
 
 NobleHUD._crosshair_override_data = {
-	m308 = "dmr"
+	m308 = {"dmr"},
+	rpg7 = {"rocket"},
+	ray = {"rocket"}
 }
 
 NobleHUD._crosshair_textures = { --organized by reach crosshairs
@@ -1479,31 +1482,9 @@ function NobleHUD:OnLoaded()
 	end--]]
 	
 	
-	--layout hud
-	local radar = self._radar_panel
-	local num_teammates = 4
-	for i=1,num_teammates do 
-		local ratio = (i - 1) / (num_teammates - 1)
-		self._teammates_panel:set_x(radar:right() - 16)
-		self._teammates_panel:set_y(radar:y())
-		local panel = self._teammates_panel:child("teammate_" .. i)
---		panel:set_x(192 * (0.5 + math.cos((i/4) * math.pi * 2))) --todo get radar size
-		panel:set_x(32 * math.sin(180 * ratio))
-		panel:set_y(radar:h() * ((i-1) / (num_teammates)))
---		panel:set_x(192 * math.sin(math.deg(((i-1) / (num_teammates - 1))) / (math.pi))) --todo get radar size
-		Console:Log("Moving panel " .. i .. " to " .. tostring(panel:x()))
-	end
-	--[[
-		0-n
-		output 0-1
-		pi
-		
-		
-		
-		
-		
-	
-	--]]
+--layout hud stuff
+	self:_sort_teammates()
+
 end
 
 function NobleHUD:UpdateHUD(t,dt)
@@ -2526,14 +2507,16 @@ function NobleHUD:_get_crosshair_type_from_weapon_base(base,fire_mode)
 		return
 	end
 	local tweakdata = base:weapon_tweak_data()
-	local rockets = {ray = true, rpg7 = true}
+	local categories = self._crosshair_override_data[weapon_id] or base:categories()
+
 	if base:gadget_overrides_weapon_functions() then 
 		
 		--get weapon type from gadget
 	else
 
 		--todo get user settings for weapon categories to crosshair types
-		for _,cat in pairs(base:categories()) do 
+		
+		for _,cat in pairs(categories) do 
 			if cat == "assault_rifle" then 
 				if (fire_mode == "single") then
 			
@@ -2552,7 +2535,7 @@ function NobleHUD:_get_crosshair_type_from_weapon_base(base,fire_mode)
 				return "plasma_pistol"
 			elseif cat == "snp" then 
 				return "sniper"
-			elseif rockets[weapon_id] then
+			elseif cat == "rocket" then
 				return "rocket"
 			elseif cat == "minigun" then
 				return "dmr"
@@ -2939,7 +2922,7 @@ function NobleHUD:old_create_custom_crosshairs(slot,base)
 	
 	local weapon_id = base:get_name_id()
 	local weapon_type = "assault_rifle"
-	
+		
 	if base:can_toggle_firemode() and not base._locked_firemode then
 		weapon_type = self:_get_crosshair_type_from_weapon_base(base,slot,base:fire_mode())
 	else
@@ -2951,7 +2934,6 @@ function NobleHUD:old_create_custom_crosshairs(slot,base)
 	end
 	
 	
-	local override_data = self._crosshair_override_data or {} --self._crosshair_override_data --todo list of weapons which should have manually set different weapons
 	local function create_bitmap()
 		for i,data in pairs (crosshair_data.parts) do
 --				local creation_data = deep_map_copy(data)
@@ -2987,10 +2969,12 @@ function NobleHUD:old_create_custom_crosshairs(slot,base)
 			name = modename,
 			visible = false
 		})
-		
+--[[		
 		if modename == "single" then  --todo make this suck less
 			weapon_type = "dmr"
 		end
+--]]			
+			
 			
 --		self:log("Creating weapon type... " .. tostring(weapon_type))
 				
@@ -2998,13 +2982,8 @@ function NobleHUD:old_create_custom_crosshairs(slot,base)
 		
 		if crosshair_data then
 			if not crosshair_data.blacklisted[weapon_id] and crosshair_data.parts then
-				create_bitmap()
-			elseif override_data[weapon_id] then 
-				
-				--weapon_id specific override
-			else
-				--generic
 			end
+			create_bitmap()
 		end
 			
 		
@@ -3552,94 +3531,159 @@ end
 
 function NobleHUD:_create_teammates(hud)
 	local num_teammates = 4
-	local teammate_w = 200
-	local teammate_h = 32
-	
+
 	local teammates_panel = hud:panel({
 		name = "teammates_panel",
 		w = 256,
 		h = 256, -- num_teammates * teammate_h,
 		x = 100,
-		y = hud:h() - 200
+		y = 0-- hud:h() - 256
 	})
 	self._teammates_panel = teammates_panel
 
 	local teammates_debug = teammates_panel:rect({
 		name = "teammates_debug",
-		visible = true,
+		visible = false,
 		color = Color.blue,
 		alpha = 0.4
 	})
 	
-	local function create_teammate(i)
-		local is_this = {"I","II","ii","L"}
-		local panel = teammates_panel:panel({
-			name = "teammate_" .. tostring(i),
-			y = (i - 1) * teammate_h,
-			w = teammate_w,
-			h = teammate_h,
-			layer = 2
-		})
-		local a,b = tweak_data.hud_icons:get_icon_data("equipment_thermite")
-		local character_bitmap = panel:bitmap({
-			name = "character_bitmap",
-			layer = 0,
-			rotation = 360,
-			texture = a, --empty circleplus at first, roundbox + name after
-			texture_rect = b,
-			color = Color.white,
-			w = 32,
-			h = 8
-		})
-		local character = panel:text({
-			name = "character_name",
-			layer = 1,
-			text = "Noble",
-			align = "left",
-			color = Color.white,
-			font_size = tweak_data.hud_players.name_size,
-			font = tweak_data.hud_players.name_font
-		})
-		local player_name = panel:text({
-			name = "player_name",
-			layer = 1,
-			text = is_this[i] or "Six",
-			align = "right",
-			color = Color.white,
-			font_size = tweak_data.hud_players.name_size,
-			font = tweak_data.hud_players.name_font
-		})
-		local teammate_panel_debug = panel:rect({
-			visible = true,
-			color = tweak_data.chat_colors[i],
-			alpha = 0.4
-		})
-		return panel
-	end
+
 	
 	for i=1,num_teammates do 
-		create_teammate(i)
+		self:_create_teammate_panel(teammates_panel,i)
 	end
 	
 	return teammates_panel
 end
 
+function NobleHUD:_create_teammate_panel(teammates_panel,i)
+	local teammate_w = 200
+	local teammate_h = 32
+	local panel = teammates_panel:panel({
+		name = "teammate_" .. tostring(i),
+		y = (i - 1) * teammate_h,
+		w = teammate_w,
+		h = teammate_h,
+		layer = 2
+	})
+	local callsign_box = panel:panel({
+		name = "callsign_box",
+		layer = 2,
+		w = 75
+	})
+	local character_bitmap = callsign_box:bitmap({
+		name = "character_bitmap",
+		layer = 0,
+		rotation = 360,
+		texture = "guis/textures/teammate_nameplate_vacant",
+		color = self.color_data.hud_bluefill,
+		w = 24,
+		h = 24,
+		y = (teammate_h - (24)) * 0.5
+	})
+	local player_name = callsign_box:text({
+		name = "player_name",
+		layer = 1,
+		text = "",
+		align = "center",
+		vertical = "center",
+		color = Color.white,
+		font_size = tweak_data.hud_players.name_size,
+		font = tweak_data.hud_players.name_font
+	})
+	local a,b = tweak_data.hud_icons:get_icon_data("equipment_thermite")
+	local deployable_icon = panel:bitmap({
+		name = "deployable_icon",
+		layer = 0,
+		rotation = 360,
+		texture = a,
+		texture_rect = b,
+		color = self.color_data.hud_blueoutline,
+		x = callsign_box:right() + 4,
+		w = 32,
+		h = 32
+	})
+	local deployable_count = panel:text({
+		name = "deployable_count",
+		layer = 1,
+		text = "3",
+		x = deployable_icon:right(),
+		vertical = "center",
+		color = Color.white,
+		font_size = tweak_data.hud_players.name_size,
+		font = tweak_data.hud_players.name_font
+	})
+	
+	
+	
+	local teammate_panel_debug = panel:rect({
+		visible = true,
+		color = tweak_data.chat_colors[i],
+		alpha = 0.4
+	})
+	return panel
+end
+
+function NobleHUD:_add_teammate()
+
+end
+
+
+function NobleHUD:_sort_teammates(num)
+--todo get tracked max teammate count, hide inactive teammates
+	local radar = self._radar_panel
+	local teammates_panel = self._teammates_panel
+	num = num or 4
+	teammates_panel:set_x(radar:right() - 16)
+	teammates_panel:set_y(radar:y())
+	teammates_panel:set_h(radar:h())
+	for i=1,num do 
+		local ratio = (i - 1) / (num - 1)
+		local panel = teammates_panel:child("teammate_" .. i)
+		if not alive(panel) then 
+			panel = self:_create_teammate_panel(teammates_panel,i)
+		end
+--		panel:set_x(192 * (0.5 + math.cos((i/4) * math.pi * 2))) --todo get radar size
+--		panel:set_x(192 * math.sin(math.deg(((i-1) / (num_teammates - 1))) / (math.pi))) --todo get radar size
+		panel:set_x(32 * math.sin(180 * ratio)) --todo get radar size
+		panel:set_y(radar:h() * ((i-1) / (num)))
+	end
+end
+
 function NobleHUD:_set_teammate_callsign(i,id)	
 	local panel = self._teammates_panel:child("teammate_" .. tostring(i))
 	if (panel and alive(panel)) then
-		panel:child("player_name"):set_color(tweak_data.chat_colors[id or 5] or Color.red)
+		local color = tweak_data.chat_colors[id or 5] or Color.red
+		panel:child("callsign_box"):child("player_name"):set_color(color)
+		local bitmap = panel:child("callsign_box"):child("character_bitmap")
+		bitmap:set_image("guis/textures/teammate_nameplate")
+		bitmap:set_size(100 * 0.75,32 * 0.75)
+		bitmap:set_y((panel:h() - bitmap:h()) * 0.5)
+		bitmap:set_color(color) --optional
 	else
 		Console:Log("ERROR: _add_teammate panel(" .. tostring(i) .. "): Panel does not exist")
 		return
 	end
 end
 
-function NobleHUD:_add_teammate(i,panel,is_player,width)
-	if true then return end
+function NobleHUD:_set_teammate_name(i,player_name)
 	local panel = self._teammates_panel:child("teammate_" .. tostring(i))
-	if (panel and alive(panel)) then 
+	if (panel and alive(panel)) then
+		panel:child("callsign_box"):child("player_name"):set_text(player_name)
 	else
 		Console:Log("ERROR: _add_teammate panel(" .. tostring(i) .. "): Panel does not exist")
+		return
+	end
+end
+
+function NobleHUD:_init_teammate(i,panel,is_player,width)
+	if not self._teammates_panel then return end
+	local panel = self._teammates_panel:child("teammate_" .. tostring(i))
+	if (panel and alive(panel)) then 
+		Console:Log("Tried to _init_teammate")
+	else
+		Console:Log("ERROR: _init_teammate panel(" .. tostring(i) .. "): Panel does not exist")
 		return
 	end
 end
