@@ -4,6 +4,16 @@ FIXED:
 
 ***** TODO: *****
 
+objectives panel
+
+grenade circle goes down as throwable ability is used
+
+animate function for text that randomly hides individual characters (similar to auntie dot's fadeout function)
+
+figure out radar ghost?
+figure out motion-based tracker?
+
+
 teammate panel
 	-circleplus/character name
 		- center to subpanel
@@ -18,10 +28,10 @@ general management:
 
 --on custody, do not recreate crosshairs
 --hide vanilla hud?
+--joyscore interaction
 
 
-
---lower blip should be a little bit bigger
+--lower blip should be darker/lower opacity, instead of halo 3 style
 --make far blip more like reach's
 
 
@@ -2308,51 +2318,6 @@ function NobleHUD:_set_firemode(slot,firemode,in_burst_mode)
 	end
 end
 
-function NobleHUD:also_old_set_firemode(slot,firemode,prev_firemode,in_burst_mode)
-	self:_get_crosshair_by_info(slot,prev_firemode):set_visible(false)
-	self:_get_crosshair_by_info(slot,firemode):set_visible(true)
-	local panel = slot == 1 and self._primary_weapon_panel or self._secondary_weapon_panel
-	if in_burst_mode then 
-		panel:child("firemode_indicator"):set_visible(false)
-	elseif firemode == "auto" then 
-		panel:child("firemode_indicator"):set_visible(true)
-	else --single
-		panel:child("firemode_indicator"):set_visible(false)
-	end
-	self:log("Hiding " .. tostring(slot) .. ":" .. tostring(prev_firemode) .. ", showing " .. tostring(firemode))
-end
-
-function NobleHUD:old_set_firemode(slot,firemode,prev_firemode,in_burst_mode)
-	local panel
-	if slot == 1 then 
-		panel = self._secondary_weapon_panel
-		if prev_firemode ~= firemode then --mainly for burstfire
-			self:_get_crosshair_by_info(2,prev_firemode):set_visible(false)
-		end
-		self:_get_crosshair_by_info(2,firemode):set_visible(true)
-		
-		
-		self:log("Hiding 2 " .. tostring(prev_firemode) .. ", showing " .. tostring(firemode))
-	else
-		panel = self._primary_weapon_panel
-		if prev_firemode ~= firemode then 
-			self:_get_crosshair_by_info(1,prev_firemode):set_visible(false)
-		end
-		self:_get_crosshair_by_info(1,firemode):set_visible(true)
-		
-		
-		self:log("Hiding 1 " .. tostring(prev_firemode) .. ", showing " .. tostring(firemode))
-	end
-	if in_burst_mode then 
-		panel:child("firemode_indicator"):set_visible(false)
-	elseif firemode == "auto" then 
-		panel:child("firemode_indicator"):set_visible(true)
-		--self._primary_weapon_panel
-	else --single
-		panel:child("firemode_indicator"):set_visible(false)
-	end
-end
-
 
 	-- SAFETY
 	
@@ -2778,233 +2743,6 @@ end
 
 function NobleHUD:is_weapon_crosshair_override_present(id)
 	return self._crosshair_override_data[id]
-end
-
-function NobleHUD:old_old_create_custom_crosshairs(slot,base)
-	if not slot then 
-		self:log("ERROR: _create_custom_crosshairs(" .. concat({slot,base},",") .. "): bad slot")
-	end
-	if not base then 
-		local player = managers.player:local_player() 
-		local inventory = player:inventory()
-		local weapons = inventory:available_selections()
-		local weapon = weapons[slot]
-		local base = weapon and weapon.unit and weapon.unit:base()
-		if not base then 
-			self:log("ERROR: _create_custom_crosshairs(" .. concat({slot,base},",") .. "): bad base")
-			return
-		end	
-	end
-	local slot_name = "crosshair_slot" .. tostring(slot)
-	local crosshair_panel = self._crosshair_panel	
-	local slotpanel = crosshair_panel:child(slot_name)
-	--local weapon_type = self.settings.weapon_types[weapon_type]
-	local override_data = {} --weapon_id specific override
-	--create crosshairs for all valid firemodes for current weapon (singlefire, autofire, underbarrel)
-
-	local modepanels = {}
-	
-	
-	--create individual crosshair subpart
-	local function create_bitmap(crosshair_data,modepanel,modename)
-		for i,data in pairs (crosshair_data.parts) do
---				local creation_data = deep_map_copy(data)
-			local x = data.x or 0
-			local y = data.y or 0
-			local angle = data.angle or data.rotation
-			if data.distance and angle then 
-				x = x + math.sin(angle) * data.distance
-				y = y + -math.cos(angle) * data.distance
-			end
-			local bitmap = modepanel:bitmap({
-				name = tostring(i),
-				texture = data.texture,
-				texture_rect = data.rect,
-				x = x,
-				y = y,
-				rotation = data.rotation,
-				w = data.w,
-				h = data.h,
-				alpha = data.alpha,
-				blend_mode = data.blend_mode,
-				color = data.color,
-				render_template = data.render_template
-			})
-			bitmap:set_center(bitmap:x() + (crosshair_panel:w()/2),bitmap:y() + (crosshair_panel:h()/2))
-			if not self.weapon_data[slot] then
-				self.weapon_data[slot] = {}
-				log("NERROR: No slot " .. tostring(slot))
-			elseif not self.weapon_data[slot][modename] then 
-				log("NERROR: No modename " .. tostring(modename))
-				self.weapon_data[slot] = {
-					[modename] = {}
-				}
---				self.weapon_data[slot][modename] = {}
-			end
-			self.weapon_data[slot][modename].num_parts = i
-		end
-	end
-	
-	--create crosshair panel for this slot and firemode, eg. (1,2)/(single/auto/underbarrel)
-	local function recreate_modepanel(modename,crosshair_name)
-		if alive(slotpanel:child(modename)) then 
-			slotpanel:remove(slotpanel:child(modename))
-		end
-		local modepanel = slotpanel:panel({
-			visible = false,
-			name = modename
-		})
-
-				
-		local crosshair_data = self._crosshair_textures[crosshair_name] or self._crosshair_textures["assault_rifle"]
-		
-		if crosshair_data then
-			if override_data[crosshair_name] then 
-				--weapon_id specific override
-			elseif crosshair_data.parts then
-				create_bitmap(crosshair_data,modepanel,modename)
-			else
-				--this should never happen
-				--generic
-			end
-		end
-			
-		
-		return modepanel
-	end
-	
-	
-	local weapon_type = "assault_rifle" --or override data
-	local gadgetbase = base:gadget_overrides_weapon_functions()
-	if gadgetbase then  --if has underbarrel
-		weapon_type = self:_get_crosshair_type_from_weapon_base(base,slot,"underbarrel")
-		self:log("Creating underbarrel weapon type... " .. tostring(weapon_type))
-		modepanels[weapon_type] = recreate_modepanel("underbarrel",weapon_type)
-	end
-	
-	if base:can_toggle_firemode() and not base._locked_firemode then
-		--make both firemode crosshairs
-		weapon_type = self:_get_crosshair_type_from_weapon_base(base,slot,"auto")
-		modepanels.auto = recreate_modepanel("auto",weapon_type)
-		self:log("Creating auto weapon type... " .. tostring(weapon_type))
-		weapon_type = self:_get_crosshair_type_from_weapon_base(base,slot,"single")
-		modepanels.single = recreate_modepanel("single",weapon_type)
-		self:log("Creating single weapon type... " .. tostring(weapon_type))
-	else
-		--only make current firemode crosshairs
-		weapon_type = self:_get_crosshair_type_from_weapon_base(base,slot,base:fire_mode())
-		--modepanels[weapon_type] = recreate_modepanel(weapon_type)
-		self:log("Creating locked weapon type... " .. tostring(weapon_type))
-		return recreate_modepanel(base:fire_mode(),weapon_type)
-	end
-	
-	return modepanels[base:fire_mode()]
-end
-
-function NobleHUD:old_create_custom_crosshairs(slot,base)
---todo get/use settings 
-	if not slot then 
-		self:log("ERROR: _create_custom_crosshairs(" .. concat({slot,base},",") .. "): bad slot")
-	end
-	if not base then 
-		local player = managers.player:local_player() 
-		local inventory = player:inventory()
-		local weapons = inventory:available_selections()
-		local weapon = weapons[slot]
-		local base = weapon and weapon.unit and weapon.unit:base()
-		if not base then 
-			self:log("ERROR: _create_custom_crosshairs(" .. concat({slot,base},",") .. "): bad base")
-			return
-		end	
-	end
-
-	local crosshair_panel = self._crosshair_panel
-	
-	--destroy existing crosshair in this slot, if extant, and create new one
-	local slot_name = "crosshair_slot" .. tostring(slot)
-	
-	local slotpanel = crosshair_panel:child(slot_name)
-	
-	local modepanels = {single = {},auto = {},underbarrel = {}}
-	
-	local weapon_id = base:get_name_id()
-	local weapon_type = "assault_rifle"
-		
-	if base:can_toggle_firemode() and not base._locked_firemode then
-		weapon_type = self:_get_crosshair_type_from_weapon_base(base,slot,base:fire_mode())
-	else
-		weapon_type = self:_get_crosshair_type_from_weapon_base(base,slot,"single")
-		weapon_type = self:_get_crosshair_type_from_weapon_base(base,slot,"auto")
-	end
-	if false then  --if has underbarrel
-		weapon_type = self:_get_crosshair_type_from_weapon_base(base,slot,"underbarrel")
-	end
-	
-	
-	local function create_bitmap()
-		for i,data in pairs (crosshair_data.parts) do
---				local creation_data = deep_map_copy(data)
-			local x = data.x
-			local y = data.y
-			if data.distance and data.rotation then 
-				x = math.sin(data.rotation) * data.distance
-				y = -math.cos(data.rotation) * data.distance
-			end
-			local bitmap = modepanel:bitmap({
-				name = tostring(i),
-				texture = data.texture,
-				texture_rect = data.rect,
-				x = x,
-				y = y,
-				rotation = data.rotation,
-				w = data.w,
-				h = data.h,
-				alpha = data.alpha,
-				blend_mode = data.blend_mode,
-				color = data.color,
-				render_template = data.render_template
-			})
-			bitmap:set_center(bitmap:x() + (crosshair_panel:w()/2),bitmap:y() + (crosshair_panel:h()/2))
-			self.weapon_data[slot][modename].num_parts = i
-		end
-	end
-	local function recreate_modepanel(modename)
-		if alive(slotpanel:child("modename")) then 
-			slotpanel:remove(slotpanel:child("modename"))
-		end
-		local modepanel = slotpanel:panel({
-			name = modename,
-			visible = false
-		})
---[[		
-		if modename == "single" then  --todo make this suck less
-			weapon_type = "dmr"
-		end
---]]			
-			
-			
---		self:log("Creating weapon type... " .. tostring(weapon_type))
-				
-		local crosshair_data = self._crosshair_textures[weapon_type] or self._crosshair_textures["assault_rifle"]
-		
-		if crosshair_data then
-			if not crosshair_data.blacklisted[weapon_id] and crosshair_data.parts then
-			end
-			create_bitmap()
-		end
-			
-		
-		return modepanel
-	end
-	
-	for mode_name,v in pairs(modepanels) do 
-		v = recreate_modepanel(mode_name)
-	end
-
-	local mode_name = (base:gadget_overrides_weapon_functions() and "underbarrel") or base:fire_mode() --current mode_name
-	modepanels[mode_name]:set_visible(true)
-	return modepanels[mode_name]
-	--else set to default crosshair
 end
 
 function NobleHUD:_set_crosshair_in_slot_visible(slot,visible)
@@ -3964,9 +3702,49 @@ function NobleHUD:_create_objectives(hud)
 	local mission_label = objectives_panel:text({
 		name = "mission_label",
 		text = "MISSION NAME",
-		font 
+		vertical = "top",
+		align = "left",
+		visible = false,
+		x = 0,
+		layer = 2,
+		color = Color.white,
+		font_size = tweak_data.hud.active_objective_title_font_size,
+		font = tweak_data.hud.medium_font_noshadow
 	})
+--	local objective_box = objectives_panel:text({
+--		name = "objective_box"
+--	})
+	local objectives_label = objectives_panel:text({
+		name = "objectives_label",
+		text = "CURRENT OBJECTIVE: \nSURVIVE",
+--		vertical = "top",
+		align = "center",
+		layer = 2,
+		color = Color.white,
+		font_size = tweak_data.hud.active_objective_title_font_size,
+		font = tweak_data.hud.medium_font_noshadow
+		visible = false,
+	})
+	--todo color range or secondary panel
 	self._objectives_panel = objectives_panel
+end
+
+function NobleHUD:_animate_objective_flash(o)
+	local flashes_per_second = 4 --how many seconds it takes to flash once
+	local flash_percentage = 0.5 --percentage of a flash that the panel is visible
+	local flash_duration = 1 --duration in seconds to flash for
+	local linger_duration = 4 --duration in seconds to remain after flashing
+	local t = flash_duration + linger_duration
+	
+	while t > 0 do 
+		local dt = coroutine.yield()
+		t = t - dt
+		o:set_visible((t % (1 / flashes_per_second)) < flash_percentage)
+		if t < linger_time then 
+			
+		end
+	end
+	o:set_visible(false)
 end
 
 
