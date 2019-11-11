@@ -14,6 +14,13 @@ teammate panel
 	
 	- downs?	
 
+general management:
+
+--on custody, do not recreate crosshairs
+--hide vanilla hud?
+
+
+
 --lower blip should be a little bit bigger
 --make far blip more like reach's
 
@@ -440,15 +447,15 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 		blacklisted = {},
 		bloom_func = function(index,bitmap,data)
 			local bloom = data.bloom
-			bitmap:set_size(8 + (16 * bloom),8 + (16 * bloom))
+			bitmap:set_size(16 + (32 * bloom),16 + (32 * bloom))
 			bitmap:set_center(NobleHUD._crosshair_panel:w()/2,NobleHUD._crosshair_panel:h()/2)
 		end,
 		parts = {
 			{
 				is_center = true,
 				texture = "guis/textures/ability_circle_outline",
-				w = 8,
-				h = 8
+				w = 16,
+				h = 16
 			}
 		}
 	},
@@ -1139,7 +1146,7 @@ function NobleHUD.format_seconds(raw)
 end
 
 function NobleHUD.even(n)
-	return math.floor(n/2) == (n/2)
+	return (n % 2) == 0
 end
 
 function NobleHUD.make_nice_number(num,include_decimal)
@@ -1401,7 +1408,7 @@ end
 
 function NobleHUD:SetRadarDistance(distance)
 	if alive(self._radar_panel) then 
-		self:_set_radar_range(distance)
+		self:_set_radar_range(tostring(distance) .. "m")
 	end
 	self.settings.distance = distance
 end
@@ -1537,7 +1544,7 @@ function NobleHUD:UpdateHUD(t,dt)
 			local RADAR_DISTANCE_MID = self:GetRadarDistance() * 100
 			local RADAR_DISTANCE_MAX = RADAR_DISTANCE_MID * 1.2
 			local RADAR_DISTANCE_MAX_SQ = RADAR_DISTANCE_MAX * RADAR_DISTANCE_MAX
-			local V_DISTANCE_MID = 400 --at vertical distances over this threshold, the icon will change to reflect this difference
+			local V_DISTANCE_MID = 350 --at vertical distances over this threshold, the icon will change to reflect this difference
 			
 			
 			--refresh radar targets (add)
@@ -3618,7 +3625,7 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 	
 	
 	local teammate_panel_debug = panel:rect({
-		visible = true,
+		visible = false,
 		color = tweak_data.chat_colors[i],
 		alpha = 0.4
 	})
@@ -3713,7 +3720,6 @@ function NobleHUD:_create_score(hud)
 		name = "score_debug",
 		visible = false,
 		color = Color.yellow,
-		visible = true,
 		alpha = 0.1
 	})
 
@@ -3746,7 +3752,7 @@ function NobleHUD:_create_score(hud)
 	
 	local score_label = score_panel:text({
 		name = "score_label",
-		text = "69",
+		text = "0",
 		align = "right",
 		color = Color.white,
 		x = -(banner_h + margin_w),
@@ -4889,6 +4895,7 @@ function NobleHUD:_create_buffs(hud) --buffs, cloned from khud
 	})
 	local debug_buffs = buffs_panel:rect({
 		color = Color.green,
+		visible = false,
 		alpha = 0.1
 	})
 end
