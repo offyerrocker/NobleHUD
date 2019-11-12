@@ -3722,8 +3722,8 @@ function NobleHUD:_create_objectives(hud)
 		layer = 2,
 		color = Color.white,
 		font_size = tweak_data.hud.active_objective_title_font_size,
-		font = tweak_data.hud.medium_font_noshadow
-		visible = false,
+		font = tweak_data.hud.medium_font_noshadow,
+		visible = false
 	})
 	--todo color range or secondary panel
 	self._objectives_panel = objectives_panel
