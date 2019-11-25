@@ -3,9 +3,11 @@
 ***** TODO: *****
 
 	&&& BEFORE RELEASE: &&&
+		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER
+	
+	
 		%% BUGS:
 			
-			- fix managers.viewport causing cameraview to choose radar direction
 			- hide radar when in camera?
 			- Rocket reticle will not proc???
 			- CROSSHAIR DETECTION SHOULD BE FROM PLAYER, NOT CAMERA
@@ -18,6 +20,7 @@
 				-circleplus/character name
 					- center to subpanel
 				-player name
+					* player names are often too long. :(
 				- equipment
 				- health/shields?
 					- Halo 1 passenger/gunner ui?
@@ -42,8 +45,12 @@
 
 			
 	&& LOW PRIORITY FEATURES: &&
-		* Auntie dot for subtitles
-			* Auntie dot voice lines with associated queues
+		* Auntie dot
+			* Subtitles: Auntie dot voice lines with associated queues
+			* background non-lit grid should probably be invisible, or flicker to invisible after flickering off
+			* should be layered over as the loading screen, and stretched to fit screen
+			* during loading screen, should be under text but above blackscreen;
+			* in-game, should be entirely below hud
 		* Joker panel
 		* Animate function for text that randomly hides individual characters (similar to auntie dot's fadeout function)
 			* Given list of integers representing non-space character positions, foreach hide animate(text:set_color_range(pos,pos,color:with_alpha(a))) after random(n) delay
@@ -51,6 +58,7 @@
 		* Better player waypoints
 		* Weapontype-specific bloom decay
 		* Blinky "No ammo" alert
+		* Voice command radial
 		* Mod Options:
 			* Crosshair selection
 				* By weapon type
@@ -192,7 +200,8 @@ NobleHUD.color_data = {
 	hud_vitalsglow_red = Color(255/255,115/255,115/255), --empty pink flash
 	hud_lightblue = Color("a1f0ff"), --powder blue; unused
 	hud_bluefill = Color("66cfff"), --sky blue; unused
-	hud_blueoutline = Color(168/255,203/255,255/255), --shield/hp outline color; unused
+	hud_blueoutline = Color("3173bb"),
+--	hud_blueoutline = Color(168/255,203/255,255/255), --shield/hp outline color; unused
 	hud_text = Color.white,
 	hud_compass = Color("2EA1FF")
 }
@@ -752,7 +761,8 @@ for cat,s in pairs({
 	end
 end
 
-NobleHUD._helper_patterns_even = { --obsolete
+NobleHUD._current_helper_pattern = "dot"
+NobleHUD._helper_patterns_even = { --should try to use non-even patterns
 	dot = {
 		[1] = {
 			3,4
@@ -1538,6 +1548,8 @@ function NobleHUD:UpdateHUD(t,dt)
 			--doesn't typically happen, usually for only a brief moment when all four players go into custody
 			return 
 		end
+		local player_aim = player:movement():m_head_rot():yaw()
+		
 		local cam_aim = viewport_cam:rotation():yaw()
 		local cam_rot_a = viewport_cam:rotation():y()
 
@@ -1599,7 +1611,7 @@ function NobleHUD:UpdateHUD(t,dt)
 				if data.unit and alive(data.unit) and (data.unit:character_damage()) and not data.unit:character_damage():dead() then 
 --					if not data.unit:character_damage():dead() then
 					local person_pos = data.unit:position()
-					local angle_to_person = 90 + NobleHUD.angle_from(person_pos,player_pos) - cam_aim
+					local angle_to_person = 90 + NobleHUD.angle_from(person_pos,player_pos) - player_aim
 					local distance_to_person = NobleHUD.vec2_distance(player_pos,person_pos)
 					local v_distance = player_pos.z - person_pos.z
 --[[					
@@ -1796,10 +1808,34 @@ function NobleHUD:UpdateHUD(t,dt)
 		
 
 		if t > self._helper_last_sequence_t then
-			self._helper_last_sequence_t = t + 0.125
+--			self._helper_last_sequence_t = t + 3
 			--set new sequence
+--			self._current_helper_pattern = self.choose({"dot","lotus","x"})
+--			managers.hud:_set_helper_pattern()
 		end
-		
+		--[[
+		if t > Console._dot_last_t then
+			Console._dot_last_t = t + 3
+			local function random_index (tbl) --i hate everything about this
+				local length = 0
+				for k,v in pairs(tbl) do 
+					length = length + 1
+				end
+				local chosen = math.ceil(math.random(length))
+				local n = 0
+				for j,w in pairs(tbl) do 
+					n = n + 1
+					if n == chosen then 
+						return j
+					end
+				end
+			end
+			local p = random_index(Console._patterns)
+			if p then 
+				self:_set_helper_pattern(p)
+			end
+		end		
+		--]]
 	end
 end
 
@@ -1924,7 +1960,8 @@ function NobleHUD:_create_weapons(hud)
 	--		y = 100,
 			w = 100,
 			h = 50,
-			color = self.color_data.hud_lightblue,
+			blend_mode = "add",
+			color = self.color_data.hud_blueoutline,
 			texture = managers.blackmarket:get_weapon_icon_path("amcar"),
 			texture_rect = nil
 		})
@@ -2099,10 +2136,10 @@ function NobleHUD:_create_ammo_ticks(weapon)
 				texture_rect = texture_rect,
 				w = texture_data.icon_w,
 				h = texture_data.icon_h,
-				layer = 2,
-				color = self.color_data.hud_lightblue, --start out loaded
+				layer = 2,				
+				color = self.color_data.hud_blueoutline, --start out loaded
 				alpha = 0.3,
-	--			blend_mode = "add",
+				blend_mode = "add",
 				x = 0,
 				y = 0
 			})
@@ -2940,10 +2977,10 @@ function NobleHUD:_create_grenades(hud)
 			name = "grenade_icon",
 			texture = "guis/textures/crosshair_circle",
 			layer = 2,
-			color = self.color_data.hud_vitalsoutline_blue,
+			color = self.color_data.hud_bluefill,
 			w = icon_size,
 			h = icon_size,
---			blend_mode = "add",
+			blend_mode = "add",
 			alpha = 0.75,
 			x = 0,
 			y = 0
@@ -3733,13 +3770,14 @@ function NobleHUD:_create_objectives(hud)
 	--objectives (survive) etc
 	local objectives_panel = hud:panel({
 		name = "objectives_panel",
-		w = 300,
-		h = 50,
-		x = (hud:w()/2) - (300 * 0.5)
+--		w = 300,
+		h = tweak_data.hud.active_objective_title_font_size * 2.5,
+--		x = (hud:w()/2) - (300 * 0.5),
+		y = 100
 	})
 	local debug_objectives = objectives_panel:rect({
 		color = Color.purple,
-		visible = false,
+		visible = true,
 		alpha = 0.1
 	})
 	local mission_label = objectives_panel:text({
@@ -3757,38 +3795,56 @@ function NobleHUD:_create_objectives(hud)
 --	local objective_box = objectives_panel:text({
 --		name = "objective_box"
 --	})
-	local objectives_label = objectives_panel:text({
-		name = "objectives_label",
-		text = "CURRENT OBJECTIVE: \nSURVIVE",
---		vertical = "top",
+--return NobleHUD._objectives_panel:child("objectives_label"):visible()
+	local objectives_title = objectives_panel:text({
+		name = "objectives_title",
+		text = "CURRENT OBJECTIVE:",
 		align = "center",
 		layer = 2,
-		color = Color.white,
+		color = Color(0.66,0.66,0.66),
 		font_size = tweak_data.hud.active_objective_title_font_size,
 		font = tweak_data.hud.medium_font_noshadow,
-		visible = false
+	})
+	local objectives_title_shadow = objectives_panel:text({
+		name = "objectives_title_shadow",
+		text = "CURRENT OBJECTIVE:",
+		align = "center",
+		layer = 1,
+		x = objectives_title:x() + 1.5,
+		y = objectives_title:y() + 1.5,
+		color = Color(0,0,0),
+		font_size = tweak_data.hud.active_objective_title_font_size,
+		font = tweak_data.hud.medium_font_noshadow,
+	})
+	local objectives_label = objectives_panel:text({
+		name = "objectives_label",
+		text = "SURVIVE",
+		align = "center",
+		vertical = "bottom",
+--		y = objectives_title:line_height(),
+		layer = 2,
+		color = Color.white,
+		font_size = tweak_data.hud.active_objective_title_font_size * 1.15,
+		font = tweak_data.hud.medium_font_noshadow,
+		visible = true
+	})
+	local objectives_label_shadow = objectives_panel:text({
+		name = "objectives_label_shadow",
+		text = "SURVIVE",
+		align = "center",
+		vertical = "bottom",
+		x = 1.5,
+		y = 1.5,
+		layer = 1,
+		color = Color(0,0,0),
+		font_size = tweak_data.hud.active_objective_title_font_size * 1.15,
+		font = tweak_data.hud.medium_font_noshadow,
+		visible = true
 	})
 	--todo color range or secondary panel
 	self._objectives_panel = objectives_panel
 end
 
-function NobleHUD:_animate_objective_flash(o)
-	local flashes_per_second = 4 --how many seconds it takes to flash once
-	local flash_percentage = 0.5 --percentage of a flash that the panel is visible
-	local flash_duration = 1 --duration in seconds to flash for
-	local linger_duration = 4 --duration in seconds to remain after flashing
-	local t = flash_duration + linger_duration
-	
-	while t > 0 do 
-		local dt = coroutine.yield()
-		t = t - dt
-		o:set_visible((t % (1 / flashes_per_second)) < flash_percentage)
-		if t < linger_time then 
-			
-		end
-	end
-	o:set_visible(false)
-end
 
 
 --		TABSCREEN
@@ -4617,6 +4673,15 @@ function NobleHUD:_create_helper(hud) --auntie dot avatar and subtitles
 	NobleHUD._HELPER_ROWS = ROWS
 	NobleHUD._HELPER_COLUMNS = COLUMNS
 	
+	local subtitle = helper_panel:text({
+		name = "subtitle",
+		text = "This exceeds expectations.",
+		font = "fonts/font_large_mf",
+		font_size = 16,
+		layer = 5,
+		color = Color.white
+	})
+
 	local function create_tube(num)
 		local angle = 45
 	
@@ -4658,14 +4723,6 @@ function NobleHUD:_create_helper(hud) --auntie dot avatar and subtitles
 			blend_mode = "add",
 			color = Color(0,0.3,0.9)
 		})
-		local subtitle = helper_panel:text({
-			name = "subtitle",
-			text = "This exceeds expectations.",
-			font = "fonts/font_large_mf",
-			font_size = 16,
-			layer = 5,
-			color = Color.white
-		})
 		local debug_tube = helper_panel:text({
 			name = "debug_text_" .. num,
 			text = tostring(num),
@@ -4678,7 +4735,6 @@ function NobleHUD:_create_helper(hud) --auntie dot avatar and subtitles
 			alpha = 0.7,
 			color = Color.white
 		})
-		
 		return new_tube
 	end
 	

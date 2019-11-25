@@ -48,7 +48,8 @@ end)
 	--]]
 
 function HUDManager:_set_helper_pattern(pattern_name)
-	local pattern = NobleHUD._helper_patterns[pattern_name]
+	local pattern = NobleHUD._helper_patterns_even[pattern_name or NobleHUD._current_helper_pattern or "dot"]
+--	local pattern = NobleHUD._helper_patterns[pattern_name]
 	if pattern then 
 		local changed_tubes = {}
 		local center_r = math.floor((NobleHUD._HELPER_ROWS - 8) / 2) + 1
