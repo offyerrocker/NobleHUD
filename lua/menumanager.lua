@@ -1,73 +1,147 @@
 --[[ 
-FIXED:
-
 
 ***** TODO: *****
 
-objectives panel
+	&&& BEFORE RELEASE: &&&
+		%% BUGS:
+			
+			- fix managers.viewport causing cameraview to choose radar direction
+			- hide radar when in camera?
+			- Rocket reticle will not proc???
+			- CROSSHAIR DETECTION SHOULD BE FROM PLAYER, NOT CAMERA
 
-grenade circle goes down as throwable ability is used
+		%% FEATURES: %%
+			* Objectives panel
+			* Carry panel
+			* Chat panel
+			* Teammates panel
+				-circleplus/character name
+					- center to subpanel
+				-player name
+				- equipment
+				- health/shields?
+					- Halo 1 passenger/gunner ui?
+					- PDTH style outline/fill system?
+					- Blink on shields depleted?
+				- ammo?
+				- downs?
+				
+			* Fix custody/hud creation system
+			* Score panel
+				* Use basic; if JoyScore present, use this instead
+					* Update JoyScore to hooks system to allow better compatibility
+			* Tab menu
+			* Killfeed
+				* Show weapon icon (PLAYERNAME [WEAPON_ICON] ENEMYNAME)
+				* icon twirl-in, size pulse anims
+			* Mod options
+				* Crosshair/reticle stuff
+				* Grenade/deployable swap
+				* Placement and Scaling
+				* Keybinds for Safety etc
 
-animate function for text that randomly hides individual characters (similar to auntie dot's fadeout function)
+			
+	&& LOW PRIORITY FEATURES: &&
+		* Auntie dot for subtitles
+			* Auntie dot voice lines with associated queues
+		* Joker panel
+		* Animate function for text that randomly hides individual characters (similar to auntie dot's fadeout function)
+			* Given list of integers representing non-space character positions, foreach hide animate(text:set_color_range(pos,pos,color:with_alpha(a))) after random(n) delay
+			* Mainly for use in Objectives panel
+		* Better player waypoints
+		* Weapontype-specific bloom decay
+		* Blinky "No ammo" alert
+		* Mod Options:
+			* Crosshair selection
+				* By weapon type
+				* Static selection
 
-figure out radar ghost?
-figure out motion-based tracker?
-
-
-teammate panel
-	-circleplus/character name
-		- center to subpanel
-	-player name
-	- equipment
-	- health/shields?
-	- ammo?
+--current crosshair selection
+			
+	* on firemode change, switch crosshair visible
+	* add crosshair data for everything lol
+	* melee crosshair
+	* based on weapon type
+	* manually selectable 
+	* customizable based on type
+	* customizable alpha (master)
 	
-	- downs?	
+	&& BEAUTIFY EXISTING: &&
+		* Grenade/Ability
+			* Ability circle reduces with active ability time
+			* Ability activation animation
+			* Ability circle color should be colored blue by default
+			* Counter is unreadable- needs shadow or better placement
+				* shadow is better, to show during flashbangs
+		* Visual ammo counter is out of control for large-mag weapons
+			* Above x should just be a bar tbh
+			* Saw should use a radial meter
+			* Realign bullet tick alignments
+		* Reticle/Weapon stuff
+			* Streamline like the whole process, it's unreadable
+			* Adjust positioning of subpanels (new font?)
+			* Firemode indicator
+			* Underbarrel should change reticle
+			* Grenade Launcher crosshair
+				* Right arrow should do something
+				* Left arrow rotates with distance?
+				* Left arrow is not colored (frame, circle, and altimeter are already colored)
+		* Downs counter
+			* Find a better representation of downs
+			* Actually count downs
+		* Radar
+			* Radar ghost effect
+			* Motion-based tracking
+			* Radar pulse when update?
+			* Different motion tracker icon or color for Team AI versus players
+			* Lower blip should be darker/lower opacity, instead of halo 3 style
+				* higher/lower radar blips should use darker colors (eg color * 0.5) rather than reducing alpha
+			* Make far blip more like reach's (size thing)
 
-general management:
 
---on custody, do not recreate crosshairs
---hide vanilla hud?
---joyscore interaction
+		
+	&& CREATE ASSETS: &&
 
+		-- Firemode indicator
+		-- Crosshair textures
+			- REMAKE ROCKET RETICLE
+			- Minigun
+			- Pistol
+			- Plasma Rifle/Repeater
+				* Circle
+				* Four arrows (single texture)
+			- Plasma Pistol
+			- Chevron
+			- Needler
+			- Rocket
+			- Spiker
+			- Flamethrower
+			- Plasma Launcher
+			- Beam Launcher
 
---lower blip should be darker/lower opacity, instead of halo 3 style
---make far blip more like reach's
+		-- Ammo type tick variant textures
+			- DMR
+			- AR
+			- Pistol
+			- Rocket
+			- SMG
+			- Car
+			- Saw
+			- Shotgun (rename)
 
-
-higher/lower radar blips should use darker colors (eg color * 0.5) rather than reducing alpha
-
-- verify grenade (for all other types; stoic done)
+		-- HUD waypoints
+			- dotchevron (EG o> KAT) 
+			
+--grenade outline
+		-- Replacement tube for auntie dot
+--score banner
+--score banner small
+--score icon (play icon)
 
 - bloom funcs should all have a reference to their own crosshair tweakdata
 - bloom funcs should also have reference to their own weapon tweakdata
 - crosshair data blacklist should be replaced by a manual override list for weapon ids
 
-- fix managers.viewport causing cameraview to choose radar direction
-- hide radar when in camera?
-- honestly just use flat distance, may as well
-
-- update grenade outline asset to be colored; have it not interfere with grenade counter
-- grenade counter should be blend add; should have background to make it visible during flashbangs? 
-- compass has the repeating bug 
-- physical ammo counter is out of control for large-mag weapons
-
-
-clean todolist
-clean code
-
-- beautify firemode indicator
-- underbarrel should change reticle
-
-- weapontype-specific bloom decay
-- remake rocket reticle
-
-- improve crosshair color detection for nil/cached target
-
---grenade crosshair:
-- do something cool with the right arrow?
-- left arrow rotates with distance?
-- left arrow is not colored; frame, circle, and altimeter are colored
 
 CODE:
 
@@ -85,91 +159,14 @@ CODE:
 	* grenade vs deployable layout
 	* secondary grenade panel
 
---current crosshair selection
-	* cached crosshair target (on change, apply color differences)
-	* on firemode change, switch crosshair visible
-	* add crosshair data for everything lol
-	* melee crosshair
-	* based on weapon type
-	* manually selectable 
-	* customizable based on type
-	* customizable alpha (master)
 --reticle bloom
 	* standardize reticle subparts
---camera crosshair detection
-
---restyle compass
-
-
---radar
-	* test radar variable range
-	* radar pulse when update?
-
 --weapon
-	* firemode indicator
-	* radial saw ammo depletion
-	* adjust weapon subpanel placements
-		* realign bullet tick alignments
 	* weapon name popup (fadeout anim)
 	* weapon killcount
-	
---auntie dot subtitles/cues
+* cached crosshair target (on change, apply color differences)
+-- check dead/brain every frame
 
-larger features:
---objective panel
---carry panel
---teammate panels
---panel scaling
---tab menu
---killfeed
-	* icon twirl-in, size pulse anims
-	
-ASSETS:
---radar arrows for vertical distance
-	- up
-	- down
-	- arrow for teammate ai
-	- arrow for players
---firemode indicator
--- Crosshair textures
-	- [DONE] Shotgun 
-	- [DONE] Sword
-	- [DONE] Grenade Launcher
-	- [DONE] DMR
-	- [DONE] AR
-	- Minigun
-	- Pistol
-	- [DONE] Sniper
-	- Plasma Rifle/Repeater
-		* Circle
-		* Four arrows (single texture)
-	- Plasma Pistol
-	- Chevron
-	- Needler
-	- Rocket
-	- Spiker
-	- Flamethrower
-	- Plasma Launcher
-	- Beam Launcher
---ammo type tick variant textures
-	- DMR
-	- AR
-	- Pistol
-	- Rocket
-	- SMG
-	- Car
-	- Saw
-	- Shotgun (rename)
---align firemode indicator
-
---hud waypoints
-	- dotchevron
---grenade outline
---replacement tube for auntie dot
---ability + grenade icon colored blue by default to support VertexColorTexturedRadial
---score banner
---score banner small
---score icon (play icon)
 --]]
 
 _G.NobleHUD = {}
@@ -204,6 +201,7 @@ NobleHUD._HUD_HEALTH_TICKS = 8
 NobleHUD._RADAR_REFRESH_INTERVAL = 0.5
 NobleHUD._radar_refresh_t = 0
 NobleHUD._cache = {
+	game_state = "",
 	crosshair_enemy = false -- enemy currently in sights; for dynamic crosshair color efficiency
 }
 
@@ -1299,6 +1297,7 @@ end
 
 --overkill made "PRIMARY" weapons in slot [2] and "SECONDARY" weapons in slot [1],
 --probably recycled/holdover/legacy code from PD:TH
+--no longer used
 function NobleHUD.correct_weapon_selection(num,default)
 	return ((num == 1) and 2) or (default or 1)
 end
@@ -1426,7 +1425,6 @@ end
 
 --		HUD UPDATE STUFF
 
-
 function NobleHUD:CreateHUD(orig)
 	if not orig:alive(PlayerBase.PLAYER_INFO_HUD_PD2) then 
 		return
@@ -1505,7 +1503,15 @@ function NobleHUD:OnLoaded()
 end
 
 function NobleHUD:UpdateHUD(t,dt)
-
+--[[
+	if game_state_machine then 
+		local game_state = game_state_machine:current_state_name()		
+		if self._cache.game_state ~= game_state then 
+			Hooks:Call("OnGameStateChange",t,self._cache.game_state,game_state)
+			self._cache.game_state = game_state
+		end
+	end
+	--]]
 	local player = managers.player:local_player()
 	if player then 
 		--[[
@@ -1535,10 +1541,13 @@ function NobleHUD:UpdateHUD(t,dt)
 		local cam_aim = viewport_cam:rotation():yaw()
 		local cam_rot_a = viewport_cam:rotation():y()
 
-		local compass_yaw = ((cam_aim + 90) / 180) - 1
-		
+		local compass_yaw = ((cam_aim) / 180) - 1 --should this perhaps use modulo
+		--todo get range of cam_aim
 		
 --		Console:SetTrackerValue("trackera",cam_aim)
+--		Console:SetTrackerValue("trackerb",self._compass_panel:child("compass_strip"):x())
+--		Console:SetTrackerValue("trackerc",compass_yaw)
+		
 --		Console:SetTrackerValue("trackerd",compass_yaw)
 		
 		--(0.5 + (math.rad(cam_aim * 0.5) / math.pi)) - 1
@@ -1565,9 +1574,9 @@ function NobleHUD:UpdateHUD(t,dt)
 				for _,unit in pairs(all_persons) do 
 					if unit and alive(unit) then --dead people are already filtered out of World:find_units_quick()
 						local dis = mvector3.distance_sq(player_pos, unit:position())
-						if unit == Console.tagged_unit then 
-							Console:SetTrackerValue("trackerd","dis " .. dis .. " vs max " .. RADAR_DISTANCE_MAX_SQ)
-						end
+--						if unit == Console.tagged_unit then 
+--							Console:SetTrackerValue("trackerd","dis " .. dis .. " vs max " .. RADAR_DISTANCE_MAX_SQ)
+--						end
 						if dis >= RADAR_DISTANCE_MAX_SQ then
 							--out of range; remove 
 							self:remove_radar_blip(unit)
@@ -1623,9 +1632,9 @@ function NobleHUD:UpdateHUD(t,dt)
 								data.bitmap:set_image("guis/textures/radar_blip_high")
 							end
 						else
-							if data.unit == Console.tagged_unit then 	
-								Console:Log(v_distance .. "<" .. V_DISTANCE_MID)
-							end
+--							if data.unit == Console.tagged_unit then 	
+--								self:log(v_distance .. "<" .. V_DISTANCE_MID)
+--							end
 							data.bitmap:set_rotation(-angle_to_person)
 							data.bitmap:set_alpha(0.7)
 							data.bitmap:set_image("guis/textures/radar_blip_near") --mid
@@ -1690,7 +1699,13 @@ function NobleHUD:UpdateHUD(t,dt)
 					local crosshair_stability = self:GetCrosshairStability() * 10
 					--theoretically, the raycast position (assuming perfect accuracy) at [crosshair_stability] meters;
 					--practically, the higher the number, the less sway shake
-					local c_p = self._ws:world_to_screen(viewport_cam,state:get_fire_weapon_position() + (state:get_fire_weapon_direction() * crosshair_stability))
+					local weapon_direction = state:get_fire_weapon_direction()
+					local weapon_position = state:get_fire_weapon_position()
+--					if base_uses_sight_position then 
+--do stuff here						
+--					end
+					
+					local c_p = self._ws:world_to_screen(viewport_cam,weapon_position + (weapon_direction * crosshair_stability))
 					local c_w = (c_p.x or 0) -- + (self._crosshair_panel:w() / 2)
 					local c_h = (c_p.y or 0) -- + (self._crosshair_panel:h() / 2)
 		--			Console:SetTrackerValue("trackerc",tostring(c_w))
@@ -1827,6 +1842,32 @@ function NobleHUD:_on_enemy_killed(data)
 	--]]
 end
 
+function NobleHUD:OnPlayerStateChanged(state)
+	--[[ state can be:
+		jerry1 = "ingame_freefall",
+		carry = "ingame_standard",
+		civilian = "ingame_civilian",
+		jerry2 = "ingame_parachuting",
+		driving = "ingame_driving",
+		bleed_out = "ingame_bleed_out",
+		incapacitated = "ingame_incapacitated",
+		mask_off = "ingame_mask_off",
+		arrested = "ingame_arrested",
+		clean = "ingame_clean",
+		fatal = "ingame_fatal",
+		standard = "ingame_standard",
+		bipod = "ingame_standard",
+		tased = "ingame_electrified"
+	--]]
+	
+	--todo: on enter custody, destroy NobleHUD hud, and create or show custody hud
+end
+
+function NobleHUD:OnGameStateChanged(before_state,state)
+	if before_state == "ingame_waiting_for_players" then 
+		--show player hud
+	end
+end
 
 --		WEAPONS
 
@@ -3347,6 +3388,7 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 		color = self.color_data.hud_blueoutline,
 		x = callsign_box:right() + 4,
 		w = 32,
+		visible = false,
 		h = 32
 	})
 	local deployable_count = panel:text({
@@ -3357,6 +3399,7 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 		vertical = "center",
 		color = Color.white,
 		font_size = tweak_data.hud_players.name_size,
+		visible = false,
 		font = tweak_data.hud_players.name_font
 	})
 	
@@ -3407,7 +3450,7 @@ function NobleHUD:_set_teammate_callsign(i,id)
 		bitmap:set_y((panel:h() - bitmap:h()) * 0.5)
 		bitmap:set_color(color) --optional
 	else
-		Console:Log("ERROR: _add_teammate panel(" .. tostring(i) .. "): Panel does not exist")
+		self:log("ERROR: _add_teammate panel(" .. tostring(i) .. "): Panel does not exist")
 		return
 	end
 end
@@ -3417,7 +3460,7 @@ function NobleHUD:_set_teammate_name(i,player_name)
 	if (panel and alive(panel)) then
 		panel:child("callsign_box"):child("player_name"):set_text(player_name)
 	else
-		Console:Log("ERROR: _add_teammate panel(" .. tostring(i) .. "): Panel does not exist")
+		self:log("ERROR: _add_teammate panel(" .. tostring(i) .. "): Panel does not exist")
 		return
 	end
 end
@@ -3426,9 +3469,9 @@ function NobleHUD:_init_teammate(i,panel,is_player,width)
 	if not self._teammates_panel then return end
 	local panel = self._teammates_panel:child("teammate_" .. tostring(i))
 	if (panel and alive(panel)) then 
-		Console:Log("Tried to _init_teammate")
+		self:log("Tried to _init_teammate")
 	else
-		Console:Log("ERROR: _init_teammate panel(" .. tostring(i) .. "): Panel does not exist")
+		self:log("ERROR: _init_teammate panel(" .. tostring(i) .. "): Panel does not exist")
 		return
 	end
 end
@@ -4177,7 +4220,7 @@ function NobleHUD:_create_radar(hud)
 end
 
 function NobleHUD:create_radar_blip(u)
-	if (not alive(u)) or u:character_damage():dead() then 
+	if (not (alive(u) and u:movement() and u:movement():team())) or u:character_damage():dead() then 
 		self:log("Error: No unit for create_radar_blip()!",{color = Color.red})
 		return
 	end
@@ -4443,15 +4486,15 @@ function NobleHUD:_create_compass(hud)
 	local compass_color = self.color_data.hud_compass
 	local function get_cardinal(angle) 
 		local cardinal = {
-			["0"] = "N",
+			["0"] = "W",
 			["45"] = "NW",
-			["90"] = "W",
-			["135"] = "SW",
-			["180"] = "S",
+			["90"] = "N",
+			["135"] = "NE",
+			["180"] = "E",
 			["225"] = "SE",
-			["270"] = "E",
-			["315"] = "NE",
-			["360"] = "N"		
+			["270"] = "S",
+			["315"] = "SW",
+			["360"] = "W"
 		}
 		return cardinal[angle] or tostring(angle)
 	end
@@ -4529,137 +4572,6 @@ function NobleHUD:_create_compass(hud)
 	
 	return compass_panel
 end
-function NobleHUD:old_create_compass(hud)
-	local compass_color = self.color_data.hud_compass
-	local function get_cardinal(angle)
-		local cardinal = {
-			["0"] = "N",
-			["45"] = "NW",
-			["90"] = "W",
-			["135"] = "SW",
-			["180"] = "S",
-			["225"] = "SE",
-			["270"] = "E",
-			["315"] = "NE",
-			["360"] = "N"
-		}
-		return cardinal[angle] or tostring(angle)
-	end
-	
-	local mul = 2
-	local degrees = 360
-	local compass_w = hud:w() * mul
-	local compass_h = 16
-	local compass_y = compass_h --hud:h() - (compass_h * 2)
-	
-	local tick_margin = compass_w / (degrees * mul)
-
-	local compass_panel = hud:panel({
-		name = "compass_panel",
-		visible = true,
-		layer = 0,
-		x = 0,
-		y = compass_y,
-		w = compass_w
-	})
-	
-	local compass_strip = compass_panel:panel({
-		name = "compass_strip",
-		layer = 0,
-		x = (hud:w() - compass_w) / 2,
-		h = compass_h * 2
-	})
-	
-	local ticks = math.floor(compass_w / tick_margin)
-	local alpha = 0.5
-	for i = 0, ticks, 1 do 
-		if (i % (degrees / 4)) == 0 then --90
-			alpha = 1
-			compass_strip:text({
-				name = "direction_" .. tostring(i),
-				color = compass_color,
-				layer = 2,
-				font = tweak_data.hud_players.ammo_font,
-				font_size = compass_h,
-				x = (i * tick_margin) - 1,
-				vertical = "bottom",
-				alpha = alpha,
-				text = get_cardinal(tostring(i % degrees))
-			})
-		elseif (i % (degrees / 8)) == 0 then --45
-			alpha = 0.75
-			compass_strip:text({
-				name = "direction_" .. tostring(i),
-				color = compass_color,
-				layer = 2,
-				font = tweak_data.hud_players.ammo_font,
-				font_size = compass_h * 0.75,
-				x = (i * tick_margin) - 1,
-				vertical = "bottom",
-				alpha = alpha,
-				text = get_cardinal(tostring(i % degrees))
-			})
-		elseif (i % (degrees / 24)) == 0 then --15
-			alpha = 0.5
-			compass_strip:text({
-				name = "direction_" .. tostring(i),
-				color = compass_color,
-				layer = 2,
-				font = tweak_data.hud_players.ammo_font,
-				font_size = compass_h * 0.5,
-				x = (i * tick_margin) + 4,
-				alpha = alpha,
-				text = get_cardinal(tostring(i % degrees))
-			})
-		else
-			alpha = 0.25
-		end
-		compass_strip:text({
-			name = "tick_" .. tostring(i),
-			color = compass_color,
-			layer = 1,
-			font = tweak_data.hud_players.ammo_font,
-			font_size = compass_h,
-			x = i * tick_margin,
-			alpha = alpha,
-			text = "|"
-		})
-	end
-	local backdrop = compass_panel:rect({
-		name = "backdrop",
-		layer = 0,
-		blend_mode = "sub",
-		color = Color.black:with_alpha(0.5),
-	})
-	
-	local shine = compass_panel:gradient({
-		name = "compass_gradient",
-		layer = 1,
-		blend_mode = "add",
-		w = hud:w(),
-		h = compass_h,
-		valign = "grow",
-		gradient_points = {
-			0,
-			Color(0,1,1,1), --argb
-			0.3,
-			compass_color:with_alpha(0),
-			0.5,
-			compass_color:with_alpha(0.2),
-			0.8,
-			compass_color:with_alpha(0),
-			1,
-			Color(0,1,1,1)
-		}
-	})
-	local debug_compass = compass_panel:rect({
-		name = "debug_compass",
-		visible = false,
-		color = Color.red:with_alpha(0.5)
-	})
-	self._compass_panel = compass_panel
-end
-
 
 --		BUFFS
 
