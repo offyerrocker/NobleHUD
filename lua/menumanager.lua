@@ -1,6 +1,9 @@
 --[[ 
 
 ***** TODO: *****
+Notes:
+	* does objectivehud really need the size scaling? would kerning alone work? might look weird linearly scaling though
+
 
 	&&& BEFORE RELEASE: &&&
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER
@@ -198,6 +201,8 @@ NobleHUD.color_data = {
 	hud_vitalsfill_yellow = Color(255/255,195/255,74/255),
 	hud_vitalsfill_red = Color(212/255,0/255,0/255),
 	hud_vitalsglow_red = Color(255/255,115/255,115/255), --empty pink flash
+	hud_text_blue = Color(100/255,178/255,255/255),
+	hud_text_flash = Color(254/255,239/255,239/255),
 	hud_lightblue = Color("a1f0ff"), --powder blue; unused
 	hud_bluefill = Color("66cfff"), --sky blue; unused
 	hud_blueoutline = Color("3173bb"),
@@ -211,6 +216,10 @@ NobleHUD._RADAR_REFRESH_INTERVAL = 0.5
 NobleHUD._radar_refresh_t = 0
 NobleHUD._cache = {
 	game_state = "",
+	kills = {
+		last_kill_t = 0,
+		count = 0
+	},
 	crosshair_enemy = false -- enemy currently in sights; for dynamic crosshair color efficiency
 }
 
@@ -1068,9 +1077,315 @@ NobleHUD.score_multipliers = {
 	}
 }
 
+NobleHUD._medal_atlas = "guis/textures/medal_atlas"
 NobleHUD.score_popups = {}
 NobleHUD.score_session = 0
 NobleHUD.score_popups_count = 0
+NobleHUD.num_killfeed_messages = 0
+local MAX_KILLFEED_ENTRIES = 10
+NobleHUD.killfeed = { --queue format, similar to khud's active buffs panel or joyscore's score counter. both of which will also be in this mod
+--[[ should always be presorted
+	[1] = {
+		start_t = [start_t],
+		bitmap = [Bitmap],
+	},
+	[2] = {
+		start_t = [start_t],
+		text = [Text],
+	}
+--]]
+}
+NobleHUD.killfeed_icons = {} --same format but only for icons
+
+
+NobleHUD.spree_time = 2
+NobleHUD._medal_data = {
+	first = {
+		name = "First Strike",
+		sfx = "",
+		icon_xy = {1,0}
+	},
+	headshot = {
+		name = "Headshot",
+		sfx = "",
+		icon_xy = {1,1}
+	},
+	pummel = {
+		name = "Pummel",
+		sfx = "",
+		icon_xy = {1,2}
+	},
+	assassination = {
+		name = "Assassin",
+		sfx = "",
+		icon_xy = {1,3}
+	},
+	beatdown = {
+		name = "Beat Down",
+		sfx = "",
+		icon_xy = {1,4}
+	},
+	close_call = {
+		name = "Close Call",
+		sfx = "",
+		icon_xy = {1,5}
+	},
+	revenge = {
+		name = "Revenge",
+		sfx = "",
+		icon_xy = {1,6}
+	},
+	avenger = {
+		name = "Avenger",
+		sfx = "",
+		icon_xy = {1,7}
+	},
+	grave = {
+		name = "Kill from the Grave!",
+		sfx = "",
+		icon_xy = {1,8}
+	},
+	multikill = {
+		[2] = {
+			name = "Double Kill",
+			sfx = "",
+			icon_xy = {0,0}
+		},
+		[3] = {
+			name = "Triple Kill",
+			sfx = "",
+			icon_xy = {0,1}
+		},
+		[4] = {
+			name = "Overkill", --obligatory joke here
+			sfx = "",
+			icon_xy = {0,2}
+		},
+		[5] = {
+			name = "Killtacular",
+			sfx = "",
+			icon_xy = {0,3}
+		},
+		[6] = {
+			name = "Killtrocity",
+			sfx = "",
+			icon_xy = {0,4}
+		},
+		[7] = {
+			name = "Killimanjaro",
+			sfx = "",
+			icon_xy = {0,5}
+		},
+		[8] = {
+			name = "Killtastrophe",
+			sfx = "",
+			icon_xy = {0,6}
+		},
+		[9] = {
+			name = "Killpocalypse",
+			sfx = "",
+			icon_xy = {0,7}
+		},
+		[10] = {	
+			name = "Killionaire",
+			sfx = "",
+			icon_xy = {0,8}
+		}
+	},
+	spree = {
+		standard = {		
+			[5] = {
+				name = "Killing Spree",
+				sfx = "",
+				icon_xy = {2,0}
+			},
+			[10] = {
+				name = "Killing Frenzy",
+				sfx = "",
+				icon_xy = {2,1}
+			},
+			[15] = {
+				name = "Running Riot",
+				sfx = "",
+				icon_xy = {2,2}
+			},
+			[20] = {
+				name = "Rampage",
+				sfx = "",
+				icon_xy = {2,3}
+			},
+			[25] = {
+				name = "Untouchable",
+				sfx = "",
+				icon_xy = {2,4}
+			},
+			[30] = {
+				name = "Invincible",
+				sfx = "",
+				icon_xy = {2,5}
+			},
+			[35] = {
+				name = "Inconceivable",
+				sfx = "",
+				icon_xy = {2,6}
+			},
+			[1000] = {				
+				name = "Unfrigginbelievable",
+				sfx = "",
+				icon_xy = {2,7}
+			}
+		},
+		assist = {
+			[1] = {
+				name = "Assist",
+				sfx = "",
+				icon_xy = {3,0}
+			},
+			[5] = {		
+				name = "Assist Spree",
+				sfx = "",
+				icon_xy = {3,1}
+			},
+			[10] = {
+				name = "Sidekick",
+				sfx = "",
+				icon_xy = {3,2}
+			},
+			[15] = {
+				name = "Second Gunman",
+				sfx = "",
+				icon_xy = {3,3}
+			}
+		},
+		sword = {
+			[5] = {
+				name = "Sword Spree",
+				name = "",
+				sfx = "",
+				icon_xy = {3,4}
+			},
+			[10] = {
+				name = "Slice 'n Dice",
+				sfx = "",
+				icon_xy = {3,5}
+			},
+			[15] = {
+				name = "Cutting Crew",
+				sfx = "",
+				icon_xy = {3,6}
+			}
+		},
+		grenade = {
+			[5] = {
+				name = "Stick Spree",
+				sfx = "",
+				icon_xy = {3,7}
+			},
+			[10] = {
+				name = "Sticky Fingers",
+				sfx = "",
+				icon_xy = {3,8}
+			},
+			[15] = {
+				name = "Corrected",
+				sfx = "",
+				icon_xy = {3,9}
+			}
+		},
+		sniper = {
+			[1] = {
+				name = "Sniper Kill", --headshot only
+				sfx = "",
+				icon_xy = {4,0}
+			},
+			[5] = {
+				name = "Sniper Spree",
+				sfx = "",
+				icon_xy = {4,1}
+			},
+			[10] = {
+				name = "Sniper Spree",
+				sfx = "",
+				icon_xy = {4,2}
+			},
+			[15] = {
+				name = "Be the Bullet",
+				sfx = "",
+				icon_xy = {4,3}
+			}
+		},
+		shotgun = {
+			[5] = {
+				name = "Shotgun Spree",
+				sfx = "",
+				icon_xy = {4,4}
+			},
+			[10] = {
+				name = "Open Season",
+				sfx = "",
+				icon_xy = {4,5}
+			},
+			[15] = {
+				name = "Buck Wild",
+				sfx = "",
+				icon_xy = {4,6}
+			}
+		},
+		splatter = {
+			[5] = {
+				name = "Splatter Spree",
+				sfx = "",
+				icon_xy = {4,7}
+			},
+			[10] = {
+				name = "Vehicular Manslaughter",
+				sfx = "",
+				icon_xy = {4,8}
+			},
+			[15] = {
+				name = "Sunday Driver",
+				sfx = "",
+				icon_xy = {4,9}
+			}
+		},
+		wheelman = {
+			[1] = {
+				name = "Wheelman",
+				sfx = "",
+				icon_xy = {1,9}
+			},
+			[5] = { --couldn't find the icons for these
+				name = "Wheelman Spree",
+				sfx = "",
+				icon_xy = {1,9}
+			},
+			[10] = {
+				name = "Road Hog",
+				sfx = "",
+				icon_xy = {1,9}
+			},
+			[15] = {
+				name = "Road Rage",
+				sfx = "",
+				icon_xy = {1,9}
+			}
+		}
+	}
+}
+
+NobleHUD.num_medals = 0
+
+NobleHUD._animate_targets = {
+--[[ example:
+	'[Panel: 0xd34db33f "objectives_panel"]' = {
+		object = [Panel: 0xd34db33f "objectives_panel"],
+		func = [function: 0xd34db330],
+		done_cb = [function: 0xd34adb331],
+		args = {...}
+	}
+
+--]]
+}
 
 --    UTILS
 local also_blt_log = false
@@ -1305,6 +1620,31 @@ function NobleHUD.interp_colors(one,two,percent) --interpolates colors based on 
 	return Color(r1 + (r3 * percent),g1 + (g3 * percent), b1 + (b3 * percent))	
 end
 
+function NobleHUD:animate(object,func,done_cb,...) --i'll make my own animate function, with blackjack, and hookers
+	if NobleHUD._animate_targets[tostring(object)] then 
+		--Log it?
+	end
+	NobleHUD._animate_targets[tostring(object)] = {
+		object = object,
+		start_t = Application:time(),
+		func = func,
+		done_cb = done_cb,
+		args = {...}
+	}
+end
+--format: result = data.func(data.object,t,dt,data.start_t,unpack(data.args))
+--done callback: done_cb(data.object,result,unpack(data.args))
+
+function NobleHUD:animate_stop(object)
+	NobleHUD._animate_targets[tostring(object)] = nil
+end
+
+function NobleHUD:GetMedalIcon(x,y)
+	return self._medal_atlas,{
+		x * 90,y * 90,90,90 --sure hope i got this right
+	}
+end
+
 --overkill made "PRIMARY" weapons in slot [2] and "SECONDARY" weapons in slot [1],
 --probably recycled/holdover/legacy code from PD:TH
 --no longer used
@@ -1522,8 +1862,69 @@ function NobleHUD:UpdateHUD(t,dt)
 		end
 	end
 	--]]
+
 	local player = managers.player:local_player()
 	if player then 
+		
+		--animate function stuff
+		for object_id,data in pairs(self._animate_targets) do 
+			local result
+			if type(data and data.func) == "string" then 
+				result = NobleHUD[data.func](NobleHUD,data.object,t,dt,data.start_t,unpack(data.args))
+			elseif type(data.func) == "function" then
+				result = data.func(data.object,t,dt,data.start_t,unpack(data.args))
+			else
+				self._animate_targets[object_id] = nil --remove from animate targets table
+				result = nil --don't do done_cb, that's illegal
+			end
+			if result then
+				self._animate_targets[object_id] = nil
+				if data.done_cb and type(data.done_cb) == "function" then 
+					data.done_cb(data.object,result,unpack(data.args))
+				end
+			end
+		end	
+		
+		
+		--killfeed stuff
+		local KILLFEED_LIFETIME = 5
+		local killfeed_count = 0
+		for i,item in pairs(self.killfeed) do
+			killfeed_count = killfeed_count + 1
+			if (t - item.start_t > KILLFEED_LIFETIME) then
+				if item.text and alive(item.text) then 
+					self:animate(item.text,"animate_fadeout_kill",function (o) o:parent():remove(o) end,0.25)
+--					item.text:parent():remove(item.text)
+				end
+				table.remove(self.killfeed,i)
+--				self.killfeed[i] = nil
+			else
+				if item.text and alive(item.text) then 
+					local ty1 = item.text:y()
+					local ty2 = killfeed_count * item.text:line_height()
+					item.text:set_y(ty1 + ((ty2 - ty1) / 4))
+				end
+			end
+		end
+		
+		killfeed_count = 0
+		for i,item in pairs(self.killfeed_icons) do 
+			killfeed_count = killfeed_count + 1
+			if (t - item.start_t > KILLFEED_LIFETIME) then 
+				if item.bitmap and alive(item.bitmap) then 
+					self:animate(item.bitmap,"animate_fadeout_kill",function (o) o:parent():remove(o) end,0.3)
+				end
+				table.remove(self.killfeed_icons,i)
+--				self.killfeed_icons[i] = nil
+			else
+				if item.bitmap and alive(item.bitmap) then 
+					local by1 = item.bitmap:y()
+					local by2 = killfeed_count * item.bitmap:h()
+					item.bitmap:set_y(by1 + ((by2 - by1) / 4))
+				end
+			end
+		end
+		
 		--[[
 		NobleHUD.asdfdd = NobleHUD.asdfdd or t
 
@@ -1839,7 +2240,7 @@ function NobleHUD:UpdateHUD(t,dt)
 	end
 end
 
-function NobleHUD:_on_enemy_killed(data)
+function NobleHUD:OnEnemyKilled(data)
 	if not data then 
 		self:log("No data found!")
 		return
@@ -1871,6 +2272,10 @@ function NobleHUD:_on_enemy_killed(data)
 	end
 --	self:log(data.type or "nope") --team
 	self:_tally_score(data)
+	self._cache.kills.last_kill_t = Application:time()
+	self._cache.kills.count = self._cache.kills.count + 1
+	
+	
 	--[[
 		managers.hud:set_khud_weapon_killcount(1,self:session_killed_by_weapon(weapon_id))
 		managers.hud:set_khud_weapon_killcount(2,self:session_killed_by_weapon(weapon_id))
@@ -3773,8 +4178,12 @@ function NobleHUD:_create_objectives(hud)
 --		w = 300,
 		h = tweak_data.hud.active_objective_title_font_size * 2.5,
 --		x = (hud:w()/2) - (300 * 0.5),
-		y = 100
+		y = 128
 	})
+	local function get_blink_center_x (w)
+		return (objectives_panel:w() - w) * 0.5
+	end
+	
 	local debug_objectives = objectives_panel:rect({
 		color = Color.purple,
 		visible = true,
@@ -3792,10 +4201,7 @@ function NobleHUD:_create_objectives(hud)
 		font_size = tweak_data.hud.active_objective_title_font_size,
 		font = tweak_data.hud.medium_font_noshadow
 	})
---	local objective_box = objectives_panel:text({
---		name = "objective_box"
---	})
---return NobleHUD._objectives_panel:child("objectives_label"):visible()
+--return NobleHUD._objectives_panel:child("objectives_label")
 	local objectives_title = objectives_panel:text({
 		name = "objectives_title",
 		text = "CURRENT OBJECTIVE:",
@@ -3816,6 +4222,21 @@ function NobleHUD:_create_objectives(hud)
 		font_size = tweak_data.hud.active_objective_title_font_size,
 		font = tweak_data.hud.medium_font_noshadow,
 	})
+	local _,_,title_w,title_h = objectives_title:text_rect()
+	title_w = title_w * 1.5
+	local blink_title = objectives_panel:bitmap({
+		name = "blink_title",
+		texture = "guis/textures/radar_blip_near",
+		w = title_w,
+		h = title_h,
+		x = get_blink_center_x(title_w),
+		y = 0,
+		layer = 0,
+		blend_mode = "add",
+		color = Color.white,
+		alpha = 0.75
+	})
+--	blink_title:set_center(objectives_title:center())
 	local objectives_label = objectives_panel:text({
 		name = "objectives_label",
 		text = "SURVIVE",
@@ -3836,12 +4257,27 @@ function NobleHUD:_create_objectives(hud)
 		x = 1.5,
 		y = 1.5,
 		layer = 1,
-		color = Color(0,0,0),
+		color = Color.black,
 		font_size = tweak_data.hud.active_objective_title_font_size * 1.15,
 		font = tweak_data.hud.medium_font_noshadow,
 		visible = true
 	})
-	--todo color range or secondary panel
+	
+	local _,_,label_w,label_h = objectives_label:text_rect()
+	label_w = label_w * 1.5
+	local blink_label = objectives_panel:bitmap({
+		name = "blink_label",
+		texture = "guis/textures/radar_blip_near",
+		w = label_w,
+		h = label_h,
+		x = get_blink_center_x(label_w),
+		y = objectives_panel:h() - objectives_label:line_height(),
+		layer = 0,
+		blend_mode = "add",
+		color = Color.white,
+		alpha = 0.75
+	})
+--	blink_label:set_center(objectives_label:center())
 	self._objectives_panel = objectives_panel
 end
 
@@ -4784,17 +5220,138 @@ function NobleHUD:helper_is_typing()
 	--return not self._helper_current_event
 end
 
+function NobleHUD:AddKillfeedMessage(text,params)
+	params = params or {}
+	local killfeed = self._killfeed_panel
+	self.num_killfeed_messages = self.num_killfeed_messages + 1
+
+	local function add_text_to_killfeed (text_panel)
+		table.insert(self.killfeed,{start_t = Application:time(),text = text_panel})
+	end
+	
+	local label = killfeed:text({
+		name = "label_" .. self.num_killfeed_messages,
+		layer = 1,
+--		x = icon_size + margin_w,
+		text = text,
+		color = Color.white,
+		align = "left",
+		font = params.font or tweak_data.hud_players.ammo_font,
+		font_size = 0, --set to nonzero once it starts
+		alpha = 0.9
+	})
+	self:animate(label,"animate_killfeed_text_in",add_text_to_killfeed,params.duration or 0.3,params.font_size or font_size,params.color_1 or self.color_data.hud_text_blue,params.color_2 or self.color_data.hud_text_flash)
+	return label
+end
+
+function NobleHUD:AddMedal(medal) --direct reference to table passed here
+	local killfeed = self._killfeed_panel
+	self.num_medals = self.num_medals + 1
+	local texture,texture_rect = self:GetMedalIcon(unpack(medal.icon_xy))
+	local icon_size = 24
+
+	local icon = killfeed:bitmap({
+		name = "icon_" .. self.num_medals,
+		texture = texture,
+		texture_rect = texture_rect,
+		w = icon_size,
+		h = icon_size,
+		halign = "grow",
+		valign = "grow",
+		rotation = 180, --upside down, spins half a rotation in its intro animation
+		x = 0,
+		y = 0,
+		layer = 1,
+		alpha = 1
+	})
+	
+	local function add_bitmap_to_killfeed (bitmap)
+		table.insert(self.killfeed_icons,{start_t = Application:time(),bitmap = bitmap})
+	end
+	self:animate(icon,"animate_killfeed_icon_twirl",function(o) NobleHUD:animate(o,"animate_killfeed_icon_pulse",add_bitmap_to_killfeed,0.3,icon_size,1.5) end,0.25,180,0,0)
+	
+--	self:animate(icon,"animate_killfeed_icon_twirl",function(o) o:set_rotation(0) end,0.25,180)
+	self:AddKillfeedMessage(medal.name)
+	return icon
+end
+--NobleHUD:AddMedal(NobleHUD._medal_data.first)
+function NobleHUD:animate_killfeed_text_in(o,t,dt,start_t,duration,font_size,color_1,color_2,...)
+	duration = duration or 3
+	font_size = font_size or 12
+	local ratio = (t - start_t) * (1/duration)
+	local sine = math.max(0,math.sin(math.deg(math.pi * ratio)))
+	o:set_font_size((1 + sine) * font_size)
+	o:set_color(self.interp_colors(color_1,color_2,sine))
+	if start_t + duration < t then
+--		Log("Completed animation 1 ".. tostring(start_t+duration) .. " < " .. tostring(t))
+		return true
+	else
+--		Log(math.floor(ratio * 100) .. ": " .. sine,{color = Color(0,1,1)})
+--		Log(math.max(0,math.sin(math.pi * (t - start_t) * (1/duration))) * font_size)
+--		Log((t - start_t )/duration,{color = Color.blue})
+--		Log(math.sin(math.pi * (t - start_t) * (1/duration)),{color = Color.green})
+--		Log(tostring(start_t+duration) .. " < " .. tostring(t))
+	end
+end
+
+function NobleHUD:animate_fadeout_kill(o,t,dt,start_t,duration)
+	duration = duration or 1
+	local ratio = (t - start_t) / duration
+	o:set_alpha(1 - ratio)
+	if ratio >= 1 then 
+		return true
+	end
+end
+
+function NobleHUD:animate_killfeed_icon_twirl(o,t,dt,start_t,duration,add_angle,x,y,...)
+	duration = duration or 3
+	add_angle = add_angle or 360
+	local ratio = dt / duration
+	o:set_center(x,y)
+	if start_t + duration < t then
+--		Log("Completed animation 2 ".. tostring(start_t+duration) .. " < " .. tostring(t))
+		return true
+	else	
+		o:set_rotation(o:rotation() + (ratio * add_angle))
+	end
+end
+
+function NobleHUD:animate_killfeed_icon_pulse(o,t,dt,start_t,duration,icon_size,pulse_multiplier,...)
+	duration = duration or 0.25
+	icon_size = icon_size or 24
+	pulse_multiplier = (pulse_multiplier or 2) - 1
+	
+	local ratio = (t - start_t) * (1/duration)
+	local sine = math.max(0,math.sin(math.deg(math.pi * ratio)))
+	local size = icon_size * (1 + (pulse_multiplier * sine))
+	
+	if start_t + duration < t then 
+--		Log("Completed animation 3")
+		o:set_size(icon_size,icon_size)
+		return true
+	else
+		o:set_size(size,size)
+	end
+end
+
+
 function NobleHUD:_create_killfeed(hud)
 	local killfeed_panel = hud:panel({
 		name = "killfeed_panel",
-		w = 100,
-		h = 100,
+--		w = 100,
+--		h = 100,
 		x = 100,
 		y = 100
 	})
 	
+	local debug_medal = killfeed_panel:rect({
+		name = "debug",
+		visible = true,
+		color = Color.red,
+		alpha = 0.1
+	})
 	
-	
+	self._killfeed_panel = killfeed_panel
 end
 
 

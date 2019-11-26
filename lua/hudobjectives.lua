@@ -11,20 +11,61 @@ Hooks:PreHook(HUDObjectives,"remind_objective","noblehud_remindobjectives",funct
 end)
 --]]
 Hooks:PreHook(HUDObjectives,"activate_objective","noblehud_activateobjective",function(self,data)
+	local objectives_panel = NobleHUD._objectives_panel
+	local objectives_label = objectives_panel:child("objectives_label")
+	local objectives_label_shadow = objectives_panel:child("objectives_label_shadow")
+	local objectives_title = objectives_panel:child("objectives_title")
 
-	local objective_label = NobleHUD._objectives_panel:child("objectives_label")
-	local objectives_label_shadow = NobleHUD._objectives_panel:child("objectives_label_shadow")
-	objective_label:stop()
+	objectives_label:stop()
+	objectives_label:hide()
+	objectives_label:set_text(utf8.to_upper(data.text))
 	objectives_label_shadow:stop()
-	
-	objective_label:set_text(utf8.to_upper(data.text))
+	objectives_label_shadow:hide()
 	objectives_label_shadow:set_text(utf8.to_upper(data.text))
+	local _,_,label_w,_ = objectives_label:text_rect()
 	
-	objective_label:animate(callback(self,self,"_animate_objective_flash"))
-	objectives_label_shadow:animate(callback(self,self,"_animate_objective_flash"))
+	local _,_,title_w,_ = objectives_title:text_rect()
+
+
+
+
+	
+	local function animate_blink(o,w,done_cb)
+		local duration = 0.25
+		o:set_width(w)
+		local elapsed = 0
+		local go = true
+		while go do 
+			local dt = coroutine.yield()
+			elapsed = elapsed + dt
+			local scale = elapsed / duration
+			if scale > 1 then 
+				scale = 1
+				go = false
+			end
+			o:set_width(w * (1 - scale))
+			o:set_alpha(w * (1 - scale))
+		end
+		done_cb()
+	end
+
+	local blink_label = NobleHUD._objectives_panel:child("blink_label")
+	local blink_title = NobleHUD._objectives_panel:child("blink_title")
+	blink_title:stop()
+	blink_label:stop()
+	blink_label:animate(function()animate_blink(blink_title,title_w,function()objectives_label:animate(callback(self,self,"_animate_objective_flash"))end)end)
+	blink_label:animate(function()animate_blink(blink_label,label_w,function()objectives_label_shadow:animate(callback(self,self,"_animate_objective_flash"))end)end)
+
+	
+--	
+--	
 	--todo tv blinkyflash intro these first, and then animate these in
 	
 end)
+
+function HUDObjectives:_animate_dot_flash(o)
+	--not used
+end
 
 --[[
 function HUDTemp:_animate_hide_text(text)
