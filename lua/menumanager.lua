@@ -1,22 +1,34 @@
 --[[ 
+--NobleHUD:AddMedal("first")
 
 ***** TODO: *****
 Notes:
 	* does objectivehud really need the size scaling? would kerning alone work? might look weird linearly scaling though
+		
+	killfeed panel needs placement
+	medals needs its own area within killfeed
+	
+	killfeed text should be "pushing" earlier messages up. i guess i should sort it whenever i remove an object
+		
+	show + hide objective elements properly (flash, current_objective, etc). 
+	tab should refresh view_timer or call remind objective
 
+	medals should not always necessarily show a killfeed message
 
 	&&& BEFORE RELEASE: &&&
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER
 	
 	
 		%% BUGS:
-			
+			- Graze kills register as melee kills for whatever reason
+				* this is not a bug so much as a result of poor/strange ovk coding, and requires a workaround
 			- hide radar when in camera?
 			- Rocket reticle will not proc???
 			- CROSSHAIR DETECTION SHOULD BE FROM PLAYER, NOT CAMERA
 
 		%% FEATURES: %%
 			* Objectives panel
+				* progress counter
 			* Carry panel
 			* Chat panel
 			* Teammates panel
@@ -38,11 +50,12 @@ Notes:
 					* Update JoyScore to hooks system to allow better compatibility
 			* Tab menu
 			* Killfeed
-				* Show weapon icon (PLAYERNAME [WEAPON_ICON] ENEMYNAME)
-				* icon twirl-in, size pulse anims
+				* Medal procs
+				* Record medals with score
+				* Show weapon icon (PLAYERNAME [WEAPON_ICON] ENEMYNAME) ?
+			* Stamina panel
 			* Mod options
 				* Crosshair/reticle stuff
-				* Grenade/deployable swap
 				* Placement and Scaling
 				* Keybinds for Safety etc
 
@@ -66,6 +79,7 @@ Notes:
 			* Crosshair selection
 				* By weapon type
 				* Static selection
+			* Grenade/deployable area swap
 
 --current crosshair selection
 			
@@ -153,6 +167,7 @@ Notes:
 - bloom funcs should also have reference to their own weapon tweakdata
 - crosshair data blacklist should be replaced by a manual override list for weapon ids
 
+-- add other medals?
 
 CODE:
 
@@ -218,9 +233,12 @@ NobleHUD._cache = {
 	game_state = "",
 	kills = {
 		last_kill_t = 0,
-		count = 0
+		spree_count = 0,
+		multi_count = 0,
+		sniper = 0,
+		shotgun = 0
 	},
-	crosshair_enemy = false -- enemy currently in sights; for dynamic crosshair color efficiency
+	crosshair_enemy = false -- enemy currently in sights; for dynamic crosshair color efficiency (unused)
 }
 
 NobleHUD._bullet_textures = {
@@ -1097,8 +1115,6 @@ NobleHUD.killfeed = { --queue format, similar to khud's active buffs panel or jo
 }
 NobleHUD.killfeed_icons = {} --same format but only for icons
 
-
-NobleHUD.spree_time = 2
 NobleHUD._medal_data = {
 	first = {
 		name = "First Strike",
@@ -1192,183 +1208,181 @@ NobleHUD._medal_data = {
 			icon_xy = {0,8}
 		}
 	},
-	spree = {
-		standard = {		
-			[5] = {
-				name = "Killing Spree",
-				sfx = "",
-				icon_xy = {2,0}
-			},
-			[10] = {
-				name = "Killing Frenzy",
-				sfx = "",
-				icon_xy = {2,1}
-			},
-			[15] = {
-				name = "Running Riot",
-				sfx = "",
-				icon_xy = {2,2}
-			},
-			[20] = {
-				name = "Rampage",
-				sfx = "",
-				icon_xy = {2,3}
-			},
-			[25] = {
-				name = "Untouchable",
-				sfx = "",
-				icon_xy = {2,4}
-			},
-			[30] = {
-				name = "Invincible",
-				sfx = "",
-				icon_xy = {2,5}
-			},
-			[35] = {
-				name = "Inconceivable",
-				sfx = "",
-				icon_xy = {2,6}
-			},
-			[1000] = {				
-				name = "Unfrigginbelievable",
-				sfx = "",
-				icon_xy = {2,7}
-			}
+	spree_standard = {		
+		[5] = {
+			name = "Killing Spree",
+			sfx = "",
+			icon_xy = {2,0}
 		},
-		assist = {
-			[1] = {
-				name = "Assist",
-				sfx = "",
-				icon_xy = {3,0}
-			},
-			[5] = {		
-				name = "Assist Spree",
-				sfx = "",
-				icon_xy = {3,1}
-			},
-			[10] = {
-				name = "Sidekick",
-				sfx = "",
-				icon_xy = {3,2}
-			},
-			[15] = {
-				name = "Second Gunman",
-				sfx = "",
-				icon_xy = {3,3}
-			}
+		[10] = {
+			name = "Killing Frenzy",
+			sfx = "",
+			icon_xy = {2,1}
 		},
-		sword = {
-			[5] = {
-				name = "Sword Spree",
-				name = "",
-				sfx = "",
-				icon_xy = {3,4}
-			},
-			[10] = {
-				name = "Slice 'n Dice",
-				sfx = "",
-				icon_xy = {3,5}
-			},
-			[15] = {
-				name = "Cutting Crew",
-				sfx = "",
-				icon_xy = {3,6}
-			}
+		[15] = {
+			name = "Running Riot",
+			sfx = "",
+			icon_xy = {2,2}
 		},
-		grenade = {
-			[5] = {
-				name = "Stick Spree",
-				sfx = "",
-				icon_xy = {3,7}
-			},
-			[10] = {
-				name = "Sticky Fingers",
-				sfx = "",
-				icon_xy = {3,8}
-			},
-			[15] = {
-				name = "Corrected",
-				sfx = "",
-				icon_xy = {3,9}
-			}
+		[20] = {
+			name = "Rampage",
+			sfx = "",
+			icon_xy = {2,3}
 		},
-		sniper = {
-			[1] = {
-				name = "Sniper Kill", --headshot only
-				sfx = "",
-				icon_xy = {4,0}
-			},
-			[5] = {
-				name = "Sniper Spree",
-				sfx = "",
-				icon_xy = {4,1}
-			},
-			[10] = {
-				name = "Sniper Spree",
-				sfx = "",
-				icon_xy = {4,2}
-			},
-			[15] = {
-				name = "Be the Bullet",
-				sfx = "",
-				icon_xy = {4,3}
-			}
+		[25] = {
+			name = "Untouchable",
+			sfx = "",
+			icon_xy = {2,4}
 		},
-		shotgun = {
-			[5] = {
-				name = "Shotgun Spree",
-				sfx = "",
-				icon_xy = {4,4}
-			},
-			[10] = {
-				name = "Open Season",
-				sfx = "",
-				icon_xy = {4,5}
-			},
-			[15] = {
-				name = "Buck Wild",
-				sfx = "",
-				icon_xy = {4,6}
-			}
+		[30] = {
+			name = "Invincible",
+			sfx = "",
+			icon_xy = {2,5}
 		},
-		splatter = {
-			[5] = {
-				name = "Splatter Spree",
-				sfx = "",
-				icon_xy = {4,7}
-			},
-			[10] = {
-				name = "Vehicular Manslaughter",
-				sfx = "",
-				icon_xy = {4,8}
-			},
-			[15] = {
-				name = "Sunday Driver",
-				sfx = "",
-				icon_xy = {4,9}
-			}
+		[35] = {
+			name = "Inconceivable",
+			sfx = "",
+			icon_xy = {2,6}
 		},
-		wheelman = {
-			[1] = {
-				name = "Wheelman",
-				sfx = "",
-				icon_xy = {1,9}
-			},
-			[5] = { --couldn't find the icons for these
-				name = "Wheelman Spree",
-				sfx = "",
-				icon_xy = {1,9}
-			},
-			[10] = {
-				name = "Road Hog",
-				sfx = "",
-				icon_xy = {1,9}
-			},
-			[15] = {
-				name = "Road Rage",
-				sfx = "",
-				icon_xy = {1,9}
-			}
+		[1000] = {				
+			name = "Unfrigginbelievable",
+			sfx = "",
+			icon_xy = {2,7}
+		}
+	},
+	spree_assist = {
+		[1] = {
+			name = "Assist",
+			sfx = "",
+			icon_xy = {3,0}
+		},
+		[5] = {		
+			name = "Assist Spree",
+			sfx = "",
+			icon_xy = {3,1}
+		},
+		[10] = {
+			name = "Sidekick",
+			sfx = "",
+			icon_xy = {3,2}
+		},
+		[15] = {
+			name = "Second Gunman",
+			sfx = "",
+			icon_xy = {3,3}
+		}
+	},
+	spree_sword = {
+		[5] = {
+			name = "Sword Spree",
+			name = "",
+			sfx = "",
+			icon_xy = {3,4}
+		},
+		[10] = {
+			name = "Slice 'n Dice",
+			sfx = "",
+			icon_xy = {3,5}
+		},
+		[15] = {
+			name = "Cutting Crew",
+			sfx = "",
+			icon_xy = {3,6}
+		}
+	},
+	spree_grenade = {
+		[5] = {
+			name = "Stick Spree",
+			sfx = "",
+			icon_xy = {3,7}
+		},
+		[10] = {
+			name = "Sticky Fingers",
+			sfx = "",
+			icon_xy = {3,8}
+		},
+		[15] = {
+			name = "Corrected",
+			sfx = "",
+			icon_xy = {3,9}
+		}
+	},
+	spree_sniper = {
+		[1] = {
+			name = "Sniper Kill", --headshot only
+			sfx = "",
+			icon_xy = {4,0}
+		},
+		[5] = {
+			name = "Sniper Spree",
+			sfx = "",
+			icon_xy = {4,1}
+		},
+		[10] = {
+			name = "Sniper Spree",
+			sfx = "",
+			icon_xy = {4,2}
+		},
+		[15] = {
+			name = "Be the Bullet",
+			sfx = "",
+			icon_xy = {4,3}
+		}
+	},
+	spree_shotgun = {
+		[5] = {
+			name = "Shotgun Spree",
+			sfx = "",
+			icon_xy = {4,4}
+		},
+		[10] = {
+			name = "Open Season",
+			sfx = "",
+			icon_xy = {4,5}
+		},
+		[15] = {
+			name = "Buck Wild",
+			sfx = "",
+			icon_xy = {4,6}
+		}
+	},
+	spree_splatter = {
+		[5] = {
+			name = "Splatter Spree",
+			sfx = "",
+			icon_xy = {4,7}
+		},
+		[10] = {
+			name = "Vehicular Manslaughter",
+			sfx = "",
+			icon_xy = {4,8}
+		},
+		[15] = {
+			name = "Sunday Driver",
+			sfx = "",
+			icon_xy = {4,9}
+		}
+	},
+	spree_wheelman = {
+		[1] = {
+			name = "Wheelman",
+			sfx = "",
+			icon_xy = {1,9}
+		},
+		[5] = { --couldn't find the icons for these
+			name = "Wheelman Spree",
+			sfx = "",
+			icon_xy = {1,9}
+		},
+		[10] = {
+			name = "Road Hog",
+			sfx = "",
+			icon_xy = {1,9}
+		},
+		[15] = {
+			name = "Road Rage",
+			sfx = "",
+			icon_xy = {1,9}
 		}
 	}
 }
@@ -1723,6 +1737,10 @@ function NobleHUD:get_crosshair_color_by_team(team_name)
 	return team_colors[team_name] or Color.white
 end
 
+function NobleHUD:GetMultikillTime()
+	return 2
+end
+
 		--SET SETTINGS
 function NobleHUD:SetCrosshairEnabled(enabled)
 	self.crosshair_enabled = enabled
@@ -1773,7 +1791,7 @@ function NobleHUD:SetRadarDistance(distance)
 end
 
 
---		HUD UPDATE STUFF
+--		HUD UPDATE STUFF / EVENT FUNCTIONS
 
 function NobleHUD:CreateHUD(orig)
 	if not orig:alive(PlayerBase.PLAYER_INFO_HUD_PD2) then 
@@ -2245,7 +2263,7 @@ function NobleHUD:OnEnemyKilled(data)
 		self:log("No data found!")
 		return
 	end
-	
+	local t = Application:time()
 	local unit_name = data.name or ""
 	local weapon_unit = data and data.weapon_unit
 	local weapon_id = weapon_unit and weapon_unit.base and weapon_unit:base() and weapon_unit:base():get_name_id()
@@ -2253,34 +2271,92 @@ function NobleHUD:OnEnemyKilled(data)
 --	local equipped_primary = managers.blackmarket:equipped_primary()	
 --	local equipped_secondary = managers.blackmarket:equipped_secondary()
 --	local equipped_melee_weapon = managers.blackmarket:equipped_melee_weapon()
-
+--managers.player:local_player():inventory():available_selections()[1].unit:base():categories()
 	local player = managers.player:local_player() 
 	local inventory = player:inventory()
 	local weapons = inventory:available_selections()
-	local primary_id = weapons[1].unit:base():get_name_id()
-	local secondary_id = weapons[2].unit:base():get_name_id()
+	local primary = weapons[1].unit:base()
+	local secondary = weapons[2].unit:base()
+	local primary_id = primary:get_name_id()
+	local secondary_id = secondary:get_name_id()
+--	local melee = inventory._melee_weapon_unit
+	Log("Killed with " .. tostring(weapon_id))
 	if data.type and data.type == "neutral" then 
 		--no +1 kills for you, you murderer >:(
-	elseif weapon_id == primary_id then 
-		self:_set_killcount(1,managers.statistics:session_killed_by_weapon(weapon_id))
-	elseif weapon_id == secondary_id then 
-		self:_set_killcount(2,managers.statistics:session_killed_by_weapon(weapon_id))
-	elseif weapon_id == managers.blackmarket:equipped_melee_weapon().weapon_id then
-		self:_set_killcount(3,managers.statistics:session_killed_by_weapon(weapon_id))
-	else		
-		self:log("Killed " .. tostring(unit_name) .. " with " .. tostring(weapon_id or weapon_unit) .. " (which is not the same as " .. primary_id .. " or " .. secondary_id .. " )")
+	else
+		local from_weapon
+		if weapon_id == primary_id then 
+			from_weapon = 1
+			Log("Killed with primary")
+			self:_set_killcount(1,managers.statistics:session_killed_by_weapon(weapon_id))
+		elseif weapon_id == secondary_id then 
+			from_weapon = 2
+			Log("Killed with secondary")
+			self:_set_killcount(2,managers.statistics:session_killed_by_weapon(weapon_id))
+		elseif weapon_id == managers.blackmarket:equipped_melee_weapon().weapon_id then
+--			from_weapon = 3
+			if self:KillsCache("last_kill_t") > t then 
+				self:KillsCache("melee",1)
+			end
+			if data.backstab then --trigger not implemented
+				self:AddMedal("beatdown")
+			elseif data.stealth_kill then --trigger not implemented
+				self:AddMedal("assassination")			
+			end
+			self:AddMedal("pummel")
+		
+			self:_set_killcount(3,managers.statistics:session_killed_by_weapon(weapon_id))
+		else		
+			self:log("Killed " .. tostring(unit_name) .. " with " .. tostring(weapon_id or weapon_unit) .. " (which is not the same as " .. primary_id .. " or " .. secondary_id .. " )")
+		end
+		
+		if from_weapon then 
+			local multi_count,sniper_count,shotgun_count
+			local spree_count = self:KillsCache("spree_count",1)
+			if from_weapon ~= 3 then 
+				if data.head_shot then 
+					self:AddMedal("headshot")
+				end
+				for _,category in pairs(weapon_unit:base():categories()) do 
+					if category == "shotgun" then 
+						shotgun_count = self:KillsCache("shotgun",1)
+						self:AddMedal("spree_shotgun",shotgun_count)					
+					end
+					if category == "snp" then 
+						sniper_count = self:KillsCache("sniper",1)
+						if data.head_shot then 
+							self:AddMedal("spree_sniper",1)
+						end
+						self:AddMedal("spree_sniper",sniper_count)
+					end
+				end
+				if self:KillsCache("last_kill_t") > t + self:GetMultikillTime() then 
+					multi_count = self:KillsCache("multi_count",1)
+					self:AddMedal("multikill",multi_count)
+				end
+			end
+			self:AddMedal("spree_standard",spree_count)
+			self:KillsCache("last_kill_t",t,true)		
+		end
+
 	end
 --	self:log(data.type or "nope") --team
 	self:_tally_score(data)
-	self._cache.kills.last_kill_t = Application:time()
-	self._cache.kills.count = self._cache.kills.count + 1
-	
-	
-	--[[
-		managers.hud:set_khud_weapon_killcount(1,self:session_killed_by_weapon(weapon_id))
-		managers.hud:set_khud_weapon_killcount(2,self:session_killed_by_weapon(weapon_id))
+end
+
+function NobleHUD:KillsCache(category,amount,set)
+	if NobleHUD._cache.kills[category] then
+		if amount then 
+			if set then 
+				NobleHUD._cache.kills[category] = tonumber(amount) or 0
+			else
+				NobleHUD._cache.kills[category] = NobleHUD._cache.kills[category] + (tonumber(amount) or 0)
+			end
+		end
+		return NobleHUD._cache.kills[category]
 	end
-	--]]
+	self:log("Error: No killcount category found for " .. tostring(category),{color = Color.red})
+	return 0
 end
 
 function NobleHUD:OnPlayerStateChanged(state)
@@ -5244,10 +5320,29 @@ function NobleHUD:AddKillfeedMessage(text,params)
 	return label
 end
 
-function NobleHUD:AddMedal(medal) --direct reference to table passed here
+function NobleHUD:AddMedal(name,rank) --from name
+	local medal_data = self._medal_data[name]
+	self:log("Doing NobleHUD:AddMedal(" .. tostring(name) .. "," .. tostring(rank) .. ")",{color = Color.yellow})
+	if rank and medal_data and medal_data[rank] then 
+		return NobleHUD:AddMedalFromData(medal_data[rank])
+	elseif medal_data and not rank then 
+		return NobleHUD:AddMedalFromData(medal_data)
+	else
+--		self:log("ERROR: NobleHUD:AddMedal(" .. tostring(name) .. "," .. tostring(rank) .. ") (bad medal)",{color = Color.red})
+	end
+end
+
+function NobleHUD:AddMedalFromData(data) --direct reference to table passed here
 	local killfeed = self._killfeed_panel
+	if not (data and data.icon_xy) then 
+		self:log("ERROR: bad data to AddMedalFromData(" .. tostring(data) .. ")")
+		return
+	end
+	if data.sfx and data.sfx ~= "" then 
+		--play sound sfx here
+	end
 	self.num_medals = self.num_medals + 1
-	local texture,texture_rect = self:GetMedalIcon(unpack(medal.icon_xy))
+	local texture,texture_rect = self:GetMedalIcon(unpack(data.icon_xy))
 	local icon_size = 24
 
 	local icon = killfeed:bitmap({
@@ -5271,10 +5366,10 @@ function NobleHUD:AddMedal(medal) --direct reference to table passed here
 	self:animate(icon,"animate_killfeed_icon_twirl",function(o) NobleHUD:animate(o,"animate_killfeed_icon_pulse",add_bitmap_to_killfeed,0.3,icon_size,1.5) end,0.25,180,0,0)
 	
 --	self:animate(icon,"animate_killfeed_icon_twirl",function(o) o:set_rotation(0) end,0.25,180)
-	self:AddKillfeedMessage(medal.name)
+	self:AddKillfeedMessage(data.name)
 	return icon
 end
---NobleHUD:AddMedal(NobleHUD._medal_data.first)
+
 function NobleHUD:animate_killfeed_text_in(o,t,dt,start_t,duration,font_size,color_1,color_2,...)
 	duration = duration or 3
 	font_size = font_size or 12
@@ -5338,10 +5433,9 @@ end
 function NobleHUD:_create_killfeed(hud)
 	local killfeed_panel = hud:panel({
 		name = "killfeed_panel",
+		h = hud:w() / 2
 --		w = 100,
 --		h = 100,
-		x = 100,
-		y = 100
 	})
 	
 	local debug_medal = killfeed_panel:rect({
