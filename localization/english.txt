@@ -1,0 +1,3 @@
+{
+	"noblehud_radar_distance_label" : "$DISTANCEm"
+}

@@ -1,19 +1,17 @@
 --[[ 
 --NobleHUD:AddMedal("first")
+should graze kills give sniper medals? currrently, they don't
+FIX OBJECTIVE HUD REMIND UPDATE
 
 ***** TODO: *****
 Notes:
 	* does objectivehud really need the size scaling? would kerning alone work? might look weird linearly scaling though
 		
-	killfeed panel needs placement
-	medals needs its own area within killfeed
-	
-	killfeed text should be "pushing" earlier messages up. i guess i should sort it whenever i remove an object
-		
 	show + hide objective elements properly (flash, current_objective, etc). 
 	tab should refresh view_timer or call remind objective
 
 	medals should not always necessarily show a killfeed message
+		mod option? (currently save setting)
 
 	&&& BEFORE RELEASE: &&&
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER
@@ -29,6 +27,8 @@ Notes:
 		%% FEATURES: %%
 			* Objectives panel
 				* progress counter
+			* Hostages panel
+			* Interaction in top right (under weapons)
 			* Carry panel
 			* Chat panel
 			* Teammates panel
@@ -43,7 +43,6 @@ Notes:
 					- Blink on shields depleted?
 				- ammo?
 				- downs?
-				
 			* Fix custody/hud creation system
 			* Score panel
 				* Use basic; if JoyScore present, use this instead
@@ -80,6 +79,7 @@ Notes:
 				* By weapon type
 				* Static selection
 			* Grenade/deployable area swap
+		* Suspicion?
 
 --current crosshair selection
 			
@@ -205,7 +205,8 @@ NobleHUD.settings = {
 	crosshair_stability = 100,
 	crosshair_static_color = {1,0,0},
 	radar_enabled = true,
-	radar_distance = 25
+	radar_distance = 25,
+	show_all_medals = true
 }
 
 NobleHUD.color_data = {
@@ -226,20 +227,30 @@ NobleHUD.color_data = {
 	hud_compass = Color("2EA1FF")
 }
 
+NobleHUD._mod_path = ModPath
+NobleHUD._settings_path = ModPath .. "noblehud_settings.txt"
+NobleHUD._localization_path = ModPath .. "localization/"
+
 NobleHUD._HUD_HEALTH_TICKS = 8
 NobleHUD._RADAR_REFRESH_INTERVAL = 0.5
 NobleHUD._radar_refresh_t = 0
 NobleHUD._cache = {
 	game_state = "",
+	newest_medal = false,
+	newest_killfeed = false,
 	kills = {
 		last_kill_t = 0,
 		spree_count = 0,
 		multi_count = 0,
+		melee = 0,
 		sniper = 0,
-		shotgun = 0
+		shotgun = 0,
+		grenade = 0
 	},
 	crosshair_enemy = false -- enemy currently in sights; for dynamic crosshair color efficiency (unused)
 }
+
+NobleHUD._delayed_callbacks = {}
 
 NobleHUD._bullet_textures = {
 	shotgun = {
@@ -1095,7 +1106,6 @@ NobleHUD.score_multipliers = {
 	}
 }
 
-NobleHUD._medal_atlas = "guis/textures/medal_atlas"
 NobleHUD.score_popups = {}
 NobleHUD.score_session = 0
 NobleHUD.score_popups_count = 0
@@ -1114,6 +1124,19 @@ NobleHUD.killfeed = { --queue format, similar to khud's active buffs panel or jo
 --]]
 }
 NobleHUD.killfeed_icons = {} --same format but only for icons
+
+
+NobleHUD._killfeed_start_x = 100
+NobleHUD._killfeed_start_y = 420
+NobleHUD._killfeed_end_x = 100
+NobleHUD._killfeed_end_y = 430
+
+NobleHUD._medal_start_x = 64
+NobleHUD._medal_start_y = 400
+NobleHUD._medal_end_x = 64
+NobleHUD._medal_end_y = 400
+
+NobleHUD._medal_atlas = "guis/textures/medal_atlas"
 
 NobleHUD._medal_data = {
 	first = {
@@ -1634,9 +1657,30 @@ function NobleHUD.interp_colors(one,two,percent) --interpolates colors based on 
 	return Color(r1 + (r3 * percent),g1 + (g3 * percent), b1 + (b3 * percent))	
 end
 
+
+function NobleHUD:GetMedalIcon(x,y)
+	return self._medal_atlas,{
+		x * 90,y * 90,90,90 --sure hope i got this right
+	}
+end
+
+function NobleHUD:AddDelayedCallback(func,args,timer,id)
+	if timer then 
+		timer = timer + Application:time()
+	end
+	id = id or (#NobleHUD._delayed_callbacks + 1)
+	NobleHUD._delayed_callbacks[id] = {func = func,args = args or {},timer = timer}
+end
+
+function NobleHUD:RemoveDelayedCallback(id)
+	NobleHUD._delayed_callbacks[tostring(id)] = nil
+end
+
 function NobleHUD:animate(object,func,done_cb,...) --i'll make my own animate function, with blackjack, and hookers
 	if NobleHUD._animate_targets[tostring(object)] then 
-		--Log it?
+--		Log("Replaced existing animate target " .. tostring(object))
+	else
+--		Log("Added new animate target " .. tostring(object))
 	end
 	NobleHUD._animate_targets[tostring(object)] = {
 		object = object,
@@ -1649,14 +1693,64 @@ end
 --format: result = data.func(data.object,t,dt,data.start_t,unpack(data.args))
 --done callback: done_cb(data.object,result,unpack(data.args))
 
+function NobleHUD:animate_remove_done_cb(object,new)
+	local o = NobleHUD._animate_targets[tostring(object)]
+	if o then 
+		o.done_cb = new
+		return true
+	end
+	return false
+end
+
+function NobleHUD:animate_force_done(object,keep)
+	local o = NobleHUD._animate_targets[tostring(object)]
+	if o then 
+		if o.done_cb and type(o.done_cb) == "function" then 
+			o.done_cb(o,nil,unpack(o.args))
+		end
+		if not keep then 
+			self:animate_stop(o)
+		end
+		return true
+	else
+		return false
+	end
+end
+
 function NobleHUD:animate_stop(object)
 	NobleHUD._animate_targets[tostring(object)] = nil
 end
 
-function NobleHUD:GetMedalIcon(x,y)
-	return self._medal_atlas,{
-		x * 90,y * 90,90,90 --sure hope i got this right
-	}
+
+function NobleHUD:animate_fadeout_linear(o,t,dt,start_t,duration,exit_x,exit_y)
+	duration = duration or 1
+	local ratio = (t - start_t) / duration
+	o:set_alpha(1 - ratio)
+	if exit_y then 
+		o:set_y(o:y() + (exit_y * dt / duration))
+	end
+	if exit_x then 
+		o:set_x(o:x() + (exit_x * dt / duration))
+	end
+	if ratio >= 1 then 
+		return true
+	end
+end
+
+function NobleHUD:animate_fadeout(o,t,dt,start_t,duration,exit_x,exit_y)
+	duration = duration or 1
+	local ratio = math.pow((t - start_t) / duration,2)
+	
+	o:set_alpha(1 - ratio)
+	if exit_y then 
+		o:set_y(o:y() + (exit_y * dt / duration))
+	end
+	if exit_x then 
+		o:set_x(o:x() + (exit_x * dt / duration))
+	end
+	if ratio >= 1 then 
+		return true
+	end
 end
 
 --overkill made "PRIMARY" weapons in slot [2] and "SECONDARY" weapons in slot [1],
@@ -1741,6 +1835,10 @@ function NobleHUD:GetMultikillTime()
 	return 2
 end
 
+function NobleHUD:ShowAllMedalMessages()
+	return self.settings.show_all_medals
+end
+
 		--SET SETTINGS
 function NobleHUD:SetCrosshairEnabled(enabled)
 	self.crosshair_enabled = enabled
@@ -1785,7 +1883,7 @@ end
 
 function NobleHUD:SetRadarDistance(distance)
 	if alive(self._radar_panel) then 
-		self:_set_radar_range(tostring(distance) .. "m")
+		self:_set_radar_range(string.gsub(managers.localization:text("noblehud_radar_distance_label"),"$DISTANCE",distance) .. "m")
 	end
 	self.settings.distance = distance
 end
@@ -1883,7 +1981,8 @@ function NobleHUD:UpdateHUD(t,dt)
 
 	local player = managers.player:local_player()
 	if player then 
-		
+--		Console:SetTrackerValue("trackera",self:KillsCache("last_kill_t"))
+--		Console:SetTrackerValue("trackerb",t)
 		--animate function stuff
 		for object_id,data in pairs(self._animate_targets) do 
 			local result
@@ -1911,7 +2010,7 @@ function NobleHUD:UpdateHUD(t,dt)
 			killfeed_count = killfeed_count + 1
 			if (t - item.start_t > KILLFEED_LIFETIME) then
 				if item.text and alive(item.text) then 
-					self:animate(item.text,"animate_fadeout_kill",function (o) o:parent():remove(o) end,0.25)
+					self:animate(item.text,"animate_fadeout_linear",function (o) o:parent():remove(o) end,0.25)
 --					item.text:parent():remove(item.text)
 				end
 				table.remove(self.killfeed,i)
@@ -1919,7 +2018,10 @@ function NobleHUD:UpdateHUD(t,dt)
 			else
 				if item.text and alive(item.text) then 
 					local ty1 = item.text:y()
-					local ty2 = killfeed_count * item.text:line_height()
+					local ty2 = self._killfeed_end_y + (killfeed_count * item.text:line_height())
+					local tx1 = item.text:x()
+					local tx2 = self._killfeed_end_x
+					item.text:set_x(tx1 + ((tx2 - tx1) / 4))
 					item.text:set_y(ty1 + ((ty2 - ty1) / 4))
 				end
 			end
@@ -1930,14 +2032,17 @@ function NobleHUD:UpdateHUD(t,dt)
 			killfeed_count = killfeed_count + 1
 			if (t - item.start_t > KILLFEED_LIFETIME) then 
 				if item.bitmap and alive(item.bitmap) then 
-					self:animate(item.bitmap,"animate_fadeout_kill",function (o) o:parent():remove(o) end,0.3)
+					self:animate(item.bitmap,"animate_fadeout_linear",function (o) o:parent():remove(o) end,0.15,-item.bitmap:w(),false)
 				end
 				table.remove(self.killfeed_icons,i)
 --				self.killfeed_icons[i] = nil
 			else
 				if item.bitmap and alive(item.bitmap) then 
+					local bx1 = item.bitmap:x()
+					local bx2 = self._medal_end_x + (killfeed_count * item.bitmap:h())
 					local by1 = item.bitmap:y()
-					local by2 = killfeed_count * item.bitmap:h()
+					local by2 = self._medal_end_y
+					item.bitmap:set_x(bx1 + ((bx2 - bx1) / 4))
 					item.bitmap:set_y(by1 + ((by2 - by1) / 4))
 				end
 			end
@@ -2256,6 +2361,23 @@ function NobleHUD:UpdateHUD(t,dt)
 		end		
 		--]]
 	end
+
+--simplified delayed callbacks implementation
+	for i,data in pairs(NobleHUD._delayed_callbacks) do 
+		if data.timer then 
+			if data.timer <= t then 
+				NobleHUD._delayed_callbacks[i] = nil
+--				table.remove(NobleHUD._delayed_callbacks,i)
+				if type(data.func) == "function" then 
+					data.func(unpack(data.args))
+				end
+			end
+		else
+			NobleHUD._delayed_callbacks[i] = nil
+--			table.remove(NobleHUD._delayed_callbacks,i)
+		end
+	end
+	
 end
 
 function NobleHUD:OnEnemyKilled(data)
@@ -2280,37 +2402,52 @@ function NobleHUD:OnEnemyKilled(data)
 	local primary_id = primary:get_name_id()
 	local secondary_id = secondary:get_name_id()
 --	local melee = inventory._melee_weapon_unit
-	Log("Killed with " .. tostring(weapon_id))
+	Log("Killed with " .. tostring(weapon_id) .. "/" .. tostring(data.variant))
 	if data.type and data.type == "neutral" then 
 		--no +1 kills for you, you murderer >:(
 	else
 		local from_weapon
 		if weapon_id == primary_id then 
 			from_weapon = 1
-			Log("Killed with primary")
 			self:_set_killcount(1,managers.statistics:session_killed_by_weapon(weapon_id))
 		elseif weapon_id == secondary_id then 
 			from_weapon = 2
-			Log("Killed with secondary")
 			self:_set_killcount(2,managers.statistics:session_killed_by_weapon(weapon_id))
-		elseif weapon_id == managers.blackmarket:equipped_melee_weapon().weapon_id then
---			from_weapon = 3
+		elseif data.variant == "melee" then --weapon_id == managers.blackmarket:equipped_melee_weapon().weapon_id then
+			from_weapon = 3
 			if self:KillsCache("last_kill_t") > t then 
 				self:KillsCache("melee",1)
 			end
-			if data.backstab then --trigger not implemented
+			if data.cool then --trigger implemented in copdamage
 				self:AddMedal("beatdown")
-			elseif data.stealth_kill then --trigger not implemented
+			end
+			if data.from_behind then --trigger implemented in copdamage
 				self:AddMedal("assassination")			
 			end
 			self:AddMedal("pummel")
 		
 			self:_set_killcount(3,managers.statistics:session_killed_by_weapon(weapon_id))
-		else		
+		elseif data.variant == "graze" then
+			from_weapon = 3
+			self:AddMedal("spree_sniper",self:KillsCache("sniper",1))
+		elseif data.variant == "projectile" then 
+			from_weapon = 3
+		elseif data.variant == "explosion" then
+			local ptd = tweak_data.blackmarket.projectiles
+			if ptd[weapon_id] and ptd[weapon_id].is_a_grenade then
+				from_weapon = 3
+				self:AddMedal("spree_sticky",self:KillsCache("grenade",1))
+			end
+		else
 			self:log("Killed " .. tostring(unit_name) .. " with " .. tostring(weapon_id or weapon_unit) .. " (which is not the same as " .. primary_id .. " or " .. secondary_id .. " )")
 		end
 		
 		if from_weapon then 
+			if not alive(player) or player:character_damage():incapacitated() or player:character_damage():bleed_out() then 
+				self:AddMedal("grave")
+			end
+			
+			
 			local multi_count,sniper_count,shotgun_count
 			local spree_count = self:KillsCache("spree_count",1)
 			if from_weapon ~= 3 then 
@@ -2330,13 +2467,15 @@ function NobleHUD:OnEnemyKilled(data)
 						self:AddMedal("spree_sniper",sniper_count)
 					end
 				end
-				if self:KillsCache("last_kill_t") > t + self:GetMultikillTime() then 
-					multi_count = self:KillsCache("multi_count",1)
-					self:AddMedal("multikill",multi_count)
-				end
+			end
+			if self:KillsCache("last_kill_t") + self:GetMultikillTime() >= t then 
+				multi_count = self:KillsCache("multi_count",1)
+				self:AddMedal("multikill",multi_count)
+			else
+				multi_count = self:KillsCache("multi_count",1,true)
 			end
 			self:AddMedal("spree_standard",spree_count)
-			self:KillsCache("last_kill_t",t,true)		
+			self:KillsCache("last_kill_t",t,true)
 		end
 
 	end
@@ -4310,7 +4449,7 @@ function NobleHUD:_create_objectives(hud)
 		layer = 0,
 		blend_mode = "add",
 		color = Color.white,
-		alpha = 0.75
+		alpha = 0.5
 	})
 --	blink_title:set_center(objectives_title:center())
 	local objectives_label = objectives_panel:text({
@@ -4351,12 +4490,53 @@ function NobleHUD:_create_objectives(hud)
 		layer = 0,
 		blend_mode = "add",
 		color = Color.white,
-		alpha = 0.75
+		alpha = 0.5
 	})
 --	blink_label:set_center(objectives_label:center())
 	self._objectives_panel = objectives_panel
 end
 
+function NobleHUD:animate_objective_flash(o,t,dt,start_t,duration,font_size,kern)
+
+--	font_size = font_size or 28
+--	o:set_font_size(0)
+--	duration = duration or 0.2 --seconds to complete animation
+	--kern = kern or -2
+--	o:set_kern(kern)
+	local elapsed = t - start_t
+	
+	
+	local scale = elapsed / duration
+	if scale > 1 then 
+		o:set_font_size(font_size)
+		o:set_kern(0)
+		return true
+	end
+	o:set_font_size(font_size * scale)
+	o:set_kern((1 - scale) * kern)
+end
+
+function NobleHUD:animate_objective_blink(o,t,dt,start_t,duration,w,mid_x)
+--	duration = duration or 0.25
+	local elapsed = t - start_t
+	
+	local scale = elapsed / duration
+	if scale > 1 then 
+		o:set_w(0)
+		o:set_alpha(0)
+		return true
+	end
+	o:set_w(w * (1 - scale))
+	o:set_x(mid_x - (o:w() / 2)) 
+	o:set_alpha(w * (1 - scale))
+end
+
+function NobleHUD:SetObjectiveLabel(text)
+	if alive(self._objectives_panel) then 
+		self._objectives_panel:child("objectives_label"):set_text(text)
+		self._objectives_panel:child("objectives_label_shadow"):set_text(text)
+	end
+end
 
 
 --		TABSCREEN
@@ -5141,6 +5321,182 @@ function NobleHUD:_create_compass(hud)
 	return compass_panel
 end
 
+
+-- KILLFEED
+function NobleHUD:_create_killfeed(hud)
+	local killfeed_panel = hud:panel({
+		name = "killfeed_panel",
+		h = hud:w() / 2
+--		w = 100,
+--		h = 100,
+	})
+	
+	local debug_medal = killfeed_panel:rect({
+		name = "debug",
+		visible = true,
+		color = Color.red,
+		alpha = 0.1
+	})
+	
+	self._killfeed_panel = killfeed_panel
+end
+
+
+function NobleHUD:AddKillfeedMessage(text,params)
+	params = params or {}
+	local killfeed = self._killfeed_panel
+	self.num_killfeed_messages = self.num_killfeed_messages + 1
+
+	local function add_text_to_killfeed (text_panel)
+		self._cache.newest_killfeed = nil
+		table.insert(self.killfeed,1,{start_t = Application:time(),text = text_panel})
+	end
+	
+	local label = killfeed:text({
+		name = "label_" .. self.num_killfeed_messages,
+		layer = 1,
+		x = self._killfeed_start_x,
+		y = self._killfeed_start_y,
+		text = text,
+		color = Color.white,
+		align = "left",
+		font = params.font or tweak_data.hud_players.ammo_font,
+		font_size = 0, --set to nonzero once it starts
+		alpha = 0.9
+	})
+	if self._cache.newest_killfeed and alive(self._cache.newest_killfeed) then 
+		NobleHUD:animate_remove_done_cb(self._cache.newest_killfeed,
+			function(o)
+				self:animate(o,"animate_killfeed_text_in",nil,0.3,16,self.color_data.hud_text_blue,self.color_data.hud_text_flash)
+			end
+		)
+		table.insert(self.killfeed,1,{start_t = Application:time(),text = self._cache.newest_killfeed})
+	end
+	self._cache.newest_killfeed = label
+	
+	self:animate(label,"animate_killfeed_text_in",add_text_to_killfeed,params.duration or 0.3,params.font_size,params.color_1 or self.color_data.hud_text_blue,params.color_2 or self.color_data.hud_text_flash)
+	return label
+end
+
+function NobleHUD:AddMedal(name,rank) --from name
+	local medal_data = self._medal_data[name]
+--	self:log("Doing NobleHUD:AddMedal(" .. tostring(name) .. "," .. tostring(rank) .. ")",{color = Color.yellow})
+	if rank and medal_data and medal_data[rank] then 
+		return NobleHUD:AddMedalFromData(medal_data[rank])
+	elseif medal_data and not rank then 
+		return NobleHUD:AddMedalFromData(medal_data)
+	else
+--		self:log("ERROR: NobleHUD:AddMedal(" .. tostring(name) .. "," .. tostring(rank) .. ") (bad medal)",{color = Color.red})
+	end
+end
+
+function NobleHUD:AddMedalFromData(data) --direct reference to table passed here
+	local killfeed = self._killfeed_panel
+	if not (data and data.icon_xy) then 
+		self:log("ERROR: bad data to AddMedalFromData(" .. tostring(data) .. ")")
+		return
+	end
+	self.num_medals = self.num_medals + 1
+	local texture,texture_rect = self:GetMedalIcon(unpack(data.icon_xy))
+	local icon_size = 32
+	local start_x = self._medal_start_x
+	local start_y = self._medal_start_y
+
+	local icon = killfeed:bitmap({
+		name = "icon_" .. self.num_medals,
+		texture = texture,
+		texture_rect = texture_rect,
+		w = icon_size,
+		h = icon_size,
+		halign = "grow",
+		valign = "grow",
+		rotation = 180, --upside down, spins half a rotation in its intro animation
+		x = self._medal_start_x,
+		y = self._medal_start_y,
+		layer = 1,
+		alpha = 1
+	})
+	
+	local function add_bitmap_to_killfeed (bitmap)
+		self._cache.newest_medal = nil
+		table.insert(self.killfeed_icons,1,{start_t = Application:time(),bitmap = bitmap})
+	end		
+--		table.insert(self.killfeed_icons,1,{start_t = Application:time(),bitmap = icon})
+	
+	if self._cache.newest_medal and alive(self._cache.newest_medal) then 
+		NobleHUD:animate_remove_done_cb(self._cache.newest_medal,
+			function(o)
+				o:set_rotation(0)
+				NobleHUD:animate(o,"animate_killfeed_icon_pulse",nil,0.3,icon_size,1.5)
+			end
+		)
+		table.insert(self.killfeed_icons,1,{start_t = Application:time(),bitmap = self._cache.newest_medal})
+--		self._cache.newest_medal:set_rotation(0)
+	end
+	self._cache.newest_medal = icon
+	
+	self:animate(icon,"animate_killfeed_icon_twirl",function(o) o:set_rotation(0); NobleHUD:animate(o,"animate_killfeed_icon_pulse",add_bitmap_to_killfeed,0.3,icon_size,1.5) end,0.25,180,start_x,start_y)
+	
+	if data.sfx then 
+		--play sound sfx here
+	end
+	if data.show_message or self:ShowAllMedalMessages() then 
+		self:AddKillfeedMessage(data.name,{font_size = 16})
+	end
+	return icon
+end
+
+
+function NobleHUD:animate_killfeed_text_in(o,t,dt,start_t,duration,font_size,color_1,color_2,...)
+	duration = duration or 3
+	font_size = font_size or 12
+	local ratio = (t - start_t) * (1/duration)
+	local sine = math.max(0,math.sin(math.deg(math.pi * ratio)))
+	o:set_font_size((1 + sine) * font_size)
+	o:set_color(self.interp_colors(color_1,color_2,sine))
+	if start_t + duration < t then
+--		Log("Completed animation 1 ".. tostring(start_t+duration) .. " < " .. tostring(t))
+		return true
+	else
+--		Log(math.floor(ratio * 100) .. ": " .. sine,{color = Color(0,1,1)})
+--		Log(math.max(0,math.sin(math.pi * (t - start_t) * (1/duration))) * font_size)
+--		Log((t - start_t )/duration,{color = Color.blue})
+--		Log(math.sin(math.pi * (t - start_t) * (1/duration)),{color = Color.green})
+--		Log(tostring(start_t+duration) .. " < " .. tostring(t))
+	end
+end
+
+function NobleHUD:animate_killfeed_icon_twirl(o,t,dt,start_t,duration,add_angle,x,y,...)
+	duration = duration or 3
+	add_angle = add_angle or 360
+	local ratio = dt / duration
+--	o:set_center(x,y)
+	if start_t + duration < t then
+--		Log("Completed animation 2 ".. tostring(start_t+duration) .. " < " .. tostring(t))
+		return true
+	else	
+		o:set_rotation(o:rotation() + (ratio * add_angle))
+	end
+end
+
+function NobleHUD:animate_killfeed_icon_pulse(o,t,dt,start_t,duration,icon_size,pulse_multiplier,x,y,...)
+	duration = duration or 0.25
+	icon_size = icon_size or 24
+	pulse_multiplier = (pulse_multiplier or 2) - 1
+	
+	local ratio = (t - start_t) * (1/duration)
+	local sine = math.max(0,math.sin(math.deg(math.pi * ratio)))
+	local size = icon_size * (1 + (pulse_multiplier * sine))
+	if start_t + duration < t then 
+--		Log("Completed animation 3")
+		o:set_size(icon_size,icon_size)
+		return true
+	else
+		o:set_size(size,size)
+	end
+end
+
+
 --		BUFFS
 
 function NobleHUD:_create_buffs(hud) --buffs, cloned from khud
@@ -5296,166 +5652,12 @@ function NobleHUD:helper_is_typing()
 	--return not self._helper_current_event
 end
 
-function NobleHUD:AddKillfeedMessage(text,params)
-	params = params or {}
-	local killfeed = self._killfeed_panel
-	self.num_killfeed_messages = self.num_killfeed_messages + 1
-
-	local function add_text_to_killfeed (text_panel)
-		table.insert(self.killfeed,{start_t = Application:time(),text = text_panel})
-	end
-	
-	local label = killfeed:text({
-		name = "label_" .. self.num_killfeed_messages,
-		layer = 1,
---		x = icon_size + margin_w,
-		text = text,
-		color = Color.white,
-		align = "left",
-		font = params.font or tweak_data.hud_players.ammo_font,
-		font_size = 0, --set to nonzero once it starts
-		alpha = 0.9
-	})
-	self:animate(label,"animate_killfeed_text_in",add_text_to_killfeed,params.duration or 0.3,params.font_size or font_size,params.color_1 or self.color_data.hud_text_blue,params.color_2 or self.color_data.hud_text_flash)
-	return label
-end
-
-function NobleHUD:AddMedal(name,rank) --from name
-	local medal_data = self._medal_data[name]
-	self:log("Doing NobleHUD:AddMedal(" .. tostring(name) .. "," .. tostring(rank) .. ")",{color = Color.yellow})
-	if rank and medal_data and medal_data[rank] then 
-		return NobleHUD:AddMedalFromData(medal_data[rank])
-	elseif medal_data and not rank then 
-		return NobleHUD:AddMedalFromData(medal_data)
-	else
---		self:log("ERROR: NobleHUD:AddMedal(" .. tostring(name) .. "," .. tostring(rank) .. ") (bad medal)",{color = Color.red})
-	end
-end
-
-function NobleHUD:AddMedalFromData(data) --direct reference to table passed here
-	local killfeed = self._killfeed_panel
-	if not (data and data.icon_xy) then 
-		self:log("ERROR: bad data to AddMedalFromData(" .. tostring(data) .. ")")
-		return
-	end
-	if data.sfx and data.sfx ~= "" then 
-		--play sound sfx here
-	end
-	self.num_medals = self.num_medals + 1
-	local texture,texture_rect = self:GetMedalIcon(unpack(data.icon_xy))
-	local icon_size = 24
-
-	local icon = killfeed:bitmap({
-		name = "icon_" .. self.num_medals,
-		texture = texture,
-		texture_rect = texture_rect,
-		w = icon_size,
-		h = icon_size,
-		halign = "grow",
-		valign = "grow",
-		rotation = 180, --upside down, spins half a rotation in its intro animation
-		x = 0,
-		y = 0,
-		layer = 1,
-		alpha = 1
-	})
-	
-	local function add_bitmap_to_killfeed (bitmap)
-		table.insert(self.killfeed_icons,{start_t = Application:time(),bitmap = bitmap})
-	end
-	self:animate(icon,"animate_killfeed_icon_twirl",function(o) NobleHUD:animate(o,"animate_killfeed_icon_pulse",add_bitmap_to_killfeed,0.3,icon_size,1.5) end,0.25,180,0,0)
-	
---	self:animate(icon,"animate_killfeed_icon_twirl",function(o) o:set_rotation(0) end,0.25,180)
-	self:AddKillfeedMessage(data.name)
-	return icon
-end
-
-function NobleHUD:animate_killfeed_text_in(o,t,dt,start_t,duration,font_size,color_1,color_2,...)
-	duration = duration or 3
-	font_size = font_size or 12
-	local ratio = (t - start_t) * (1/duration)
-	local sine = math.max(0,math.sin(math.deg(math.pi * ratio)))
-	o:set_font_size((1 + sine) * font_size)
-	o:set_color(self.interp_colors(color_1,color_2,sine))
-	if start_t + duration < t then
---		Log("Completed animation 1 ".. tostring(start_t+duration) .. " < " .. tostring(t))
-		return true
-	else
---		Log(math.floor(ratio * 100) .. ": " .. sine,{color = Color(0,1,1)})
---		Log(math.max(0,math.sin(math.pi * (t - start_t) * (1/duration))) * font_size)
---		Log((t - start_t )/duration,{color = Color.blue})
---		Log(math.sin(math.pi * (t - start_t) * (1/duration)),{color = Color.green})
---		Log(tostring(start_t+duration) .. " < " .. tostring(t))
-	end
-end
-
-function NobleHUD:animate_fadeout_kill(o,t,dt,start_t,duration)
-	duration = duration or 1
-	local ratio = (t - start_t) / duration
-	o:set_alpha(1 - ratio)
-	if ratio >= 1 then 
-		return true
-	end
-end
-
-function NobleHUD:animate_killfeed_icon_twirl(o,t,dt,start_t,duration,add_angle,x,y,...)
-	duration = duration or 3
-	add_angle = add_angle or 360
-	local ratio = dt / duration
-	o:set_center(x,y)
-	if start_t + duration < t then
---		Log("Completed animation 2 ".. tostring(start_t+duration) .. " < " .. tostring(t))
-		return true
-	else	
-		o:set_rotation(o:rotation() + (ratio * add_angle))
-	end
-end
-
-function NobleHUD:animate_killfeed_icon_pulse(o,t,dt,start_t,duration,icon_size,pulse_multiplier,...)
-	duration = duration or 0.25
-	icon_size = icon_size or 24
-	pulse_multiplier = (pulse_multiplier or 2) - 1
-	
-	local ratio = (t - start_t) * (1/duration)
-	local sine = math.max(0,math.sin(math.deg(math.pi * ratio)))
-	local size = icon_size * (1 + (pulse_multiplier * sine))
-	
-	if start_t + duration < t then 
---		Log("Completed animation 3")
-		o:set_size(icon_size,icon_size)
-		return true
-	else
-		o:set_size(size,size)
-	end
-end
-
-
-function NobleHUD:_create_killfeed(hud)
-	local killfeed_panel = hud:panel({
-		name = "killfeed_panel",
-		h = hud:w() / 2
---		w = 100,
---		h = 100,
-	})
-	
-	local debug_medal = killfeed_panel:rect({
-		name = "debug",
-		visible = true,
-		color = Color.red,
-		alpha = 0.1
-	})
-	
-	self._killfeed_panel = killfeed_panel
-end
-
-
 function NobleHUD:_layout_vanilla() --todo determine which vanilla hud elements to hide
 	
 end
 
---[[
 Hooks:Add("LocalizationManagerPostInit", "noblehud_addlocalization", function( loc )
-	local path = Console.loc_path
+	local path = NobleHUD._localization_path
 	
 	for _, filename in pairs(file.GetFiles(path)) do
 		local str = filename:match('^(.*).txt$')
@@ -5464,8 +5666,9 @@ Hooks:Add("LocalizationManagerPostInit", "noblehud_addlocalization", function( l
 			return
 		end
 	end
-	loc:load_localization_file(path .. "localization/english.txt")
+	loc:load_localization_file(path .. "english.txt")
 end)	
+--[[
 
 Hooks:Add("MenuManagerInitialize", "commandprompt_initmenu", function(menu_manager)
 	MenuCallbackHandler.commandprompt_tagunit = function(self)
