@@ -1,7 +1,7 @@
 --[[ 
---NobleHUD:AddMedal("first")
-should graze kills give sniper medals? currrently, they don't
+
 FIX OBJECTIVE HUD REMIND UPDATE
+
 
 ***** TODO: *****
 Notes:
@@ -18,11 +18,12 @@ Notes:
 	
 	
 		%% BUGS:
-			- Graze kills register as melee kills for whatever reason
-				* this is not a bug so much as a result of poor/strange ovk coding, and requires a workaround
 			- hide radar when in camera?
 			- Rocket reticle will not proc???
 			- CROSSHAIR DETECTION SHOULD BE FROM PLAYER, NOT CAMERA
+			- Swapping while aiming at an enemy keeps the crosshair color
+			- grenade kills don't proc sticky medal
+
 
 		%% FEATURES: %%
 			* Objectives panel
@@ -49,7 +50,6 @@ Notes:
 					* Update JoyScore to hooks system to allow better compatibility
 			* Tab menu
 			* Killfeed
-				* Medal procs
 				* Record medals with score
 				* Show weapon icon (PLAYERNAME [WEAPON_ICON] ENEMYNAME) ?
 			* Stamina panel
@@ -60,6 +60,8 @@ Notes:
 
 			
 	&& LOW PRIORITY FEATURES: &&
+		* Weapon swap interrupts sprees? at least, it should for weapon-specific ones
+		* Should graze kills give sniper medals? currently, they don't
 		* Auntie dot
 			* Subtitles: Auntie dot voice lines with associated queues
 			* background non-lit grid should probably be invisible, or flicker to invisible after flickering off
@@ -5365,11 +5367,11 @@ function NobleHUD:AddKillfeedMessage(text,params)
 		alpha = 0.9
 	})
 	if self._cache.newest_killfeed and alive(self._cache.newest_killfeed) then 
-		NobleHUD:animate_remove_done_cb(self._cache.newest_killfeed,
-			function(o)
-				self:animate(o,"animate_killfeed_text_in",nil,0.3,16,self.color_data.hud_text_blue,self.color_data.hud_text_flash)
-			end
-		)
+		NobleHUD:animate_remove_done_cb(self._cache.newest_killfeed)
+--			function(o)
+--				self:animate(o,"animate_killfeed_text_in",nil,0.3,16,self.color_data.hud_text_blue,self.color_data.hud_text_flash)
+--			end
+--		)
 		table.insert(self.killfeed,1,{start_t = Application:time(),text = self._cache.newest_killfeed})
 	end
 	self._cache.newest_killfeed = label

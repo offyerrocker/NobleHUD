@@ -128,7 +128,8 @@ function HUDObjectives:activate_objective(data)
 	NobleHUD:animate(blink_title,"animate_objective_blink",fadeout_title,0.25,title_w,mid_x)
 end	
 
---overridden--[[
+--overridden
+--[[
 function HUDObjectives:remind_objective(id)
 
 	if id == self._active_objective_id then
