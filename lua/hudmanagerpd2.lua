@@ -18,6 +18,8 @@ Hooks:PostHook(HUDManager,"_setup_player_info_hud_pd2","noblehud_create_ws",func
 		log("HEY DIPSHIT YOU HAVE A SYNTAX ERROR IN menumanager.lua AND YOU ALSO FORGOT TO SET UP YOUR DEBUG ENVIRONMENT",{color = Color.red})
 	end
 end)
+
+
 --[[
 Hooks:PostHook(HUDManager,"update","noblehud_update",function(self,t,dt) --no longer needed; currently using managers.hud:add_updator()
 --	NobleHUD:UpdateHUD(t,dt)

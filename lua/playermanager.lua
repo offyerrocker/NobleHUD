@@ -58,6 +58,8 @@ Hooks:PostHook(PlayerManager,"_internal_load","noblehud_on_internal_load",functi
 	NobleHUD:OnLoaded()
 end)
 
+
+
 --switch_equipment() and select_next_item() overwritten to allow selecting empty equipment
 function PlayerManager:switch_equipment()
 	self:select_next_item()

@@ -7,7 +7,6 @@ FIX OBJECTIVE HUD REMIND UPDATE
 Notes:
 	* does objectivehud really need the size scaling? would kerning alone work? might look weird linearly scaling though
 		
-	show + hide objective elements properly (flash, current_objective, etc). 
 	tab should refresh view_timer or call remind objective
 
 	medals should not always necessarily show a killfeed message
@@ -26,8 +25,6 @@ Notes:
 
 
 		%% FEATURES: %%
-			* Objectives panel
-				* progress counter
 			* Hostages panel
 			* Interaction in top right (under weapons)
 			* Carry panel
@@ -49,14 +46,15 @@ Notes:
 				* Use basic; if JoyScore present, use this instead
 					* Update JoyScore to hooks system to allow better compatibility
 			* Tab menu
-			* Killfeed
-				* Record medals with score
-				* Show weapon icon (PLAYERNAME [WEAPON_ICON] ENEMYNAME) ?
 			* Stamina panel
+			* Health variants (stoic health, ex-pres stored health, absorb overshields)
 			* Mod options
 				* Crosshair/reticle stuff
 				* Placement and Scaling
 				* Keybinds for Safety etc
+			* Killfeed
+				* Record medals with score
+				* Show weapon icon (PLAYERNAME [WEAPON_ICON] ENEMYNAME) ?
 
 			
 	&& LOW PRIORITY FEATURES: &&
@@ -210,7 +208,7 @@ NobleHUD.settings = {
 	radar_distance = 25,
 	show_all_medals = true
 }
-
+NobleHUD._bgboxes = {}
 NobleHUD.color_data = {
 	hud_vitalsoutline_blue = Color(121/255,197/255,255/255), --vitals outline color
 	hud_vitalsoutline_yellow = Color(255/255,211/255,129/255),
@@ -233,11 +231,22 @@ NobleHUD._mod_path = ModPath
 NobleHUD._settings_path = ModPath .. "noblehud_settings.txt"
 NobleHUD._localization_path = ModPath .. "localization/"
 
+NobleHUD._hudpresenter_params = {
+	duration = 0.25,
+	lifetime = 7,
+	font_size = 24,
+	color_1 = Color(0.75,0.75,0.2),
+	color_2 = Color(1,1,0.6)
+}
+
 NobleHUD._HUD_HEALTH_TICKS = 8
 NobleHUD._RADAR_REFRESH_INTERVAL = 0.5
 NobleHUD._radar_refresh_t = 0
 NobleHUD._cache = {
 	game_state = "",
+	current_objective = "",
+	objective_progress = nil,
+	objective_total = nil,
 	newest_medal = false,
 	newest_killfeed = false,
 	kills = {
@@ -503,25 +512,67 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 	pistol = { --similar to dmr
 		blacklisted = {},
 		bloom_func = function(index,bitmap,data)
-			local bloom = data.bloom
-			bitmap:set_size(16 + (32 * bloom),16 + (32 * bloom))
-			bitmap:set_center(NobleHUD._crosshair_panel:w()/2,NobleHUD._crosshair_panel:h()/2)
+			local bloom = data.bloom * 1.5
+			local crosshair_data = data.crosshair_data and data.crosshair_data.parts[index] or {}
+			local distance = (crosshair_data.distance or 10) * (1 + bloom)
+			local angle = crosshair_data.angle or crosshair_data.rotation or 60
+			local c_x = NobleHUD._crosshair_panel:w()/2
+			local c_y = NobleHUD._crosshair_panel:h()/2
+			if index == 1 then 
+				--main
+			else
+				bitmap:set_center(c_x + (math.sin(angle) * distance),c_y - (math.cos(angle) * distance))
+			end
 		end,
 		parts = {
 			{
 				is_center = true,
-				texture = "guis/textures/ability_circle_outline",
-				w = 16,
-				h = 16
+				texture = "guis/textures/pis_crosshair_1",
+				w = 28,
+				h = 28
+			},
+			{
+				is_center = true,
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 0,
+				distance = 8,
+				w = 2,
+				h = 6
+			},
+			{
+				is_center = true,
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 90,
+				distance = 8,
+				w = 2,
+				h = 6
+			},
+			{
+				is_center = true,
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 180,
+				distance = 8,
+				w = 2,
+				h = 6
+			},
+			{
+				is_center = true,
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 270,
+				distance = 8,
+				w = 2,
+				h = 6
 			}
 		}
 	},
 	shotgun = { --big circle
 		blacklisted = {},
 		bloom_func = function(index,bitmap,data)
+		--[[ by popular demand, shotgun bloom is disabled
 			local bloom = data.bloom
 			bitmap:set_size(32 + (32 * bloom),32 + (32 * bloom))
 			bitmap:set_center(NobleHUD._crosshair_panel:w()/2,NobleHUD._crosshair_panel:h()/2)
+		--]]
 		end,
 		parts = {
 			{
@@ -1113,6 +1164,7 @@ NobleHUD.score_session = 0
 NobleHUD.score_popups_count = 0
 NobleHUD.num_killfeed_messages = 0
 local MAX_KILLFEED_ENTRIES = 10
+
 NobleHUD.killfeed = { --queue format, similar to khud's active buffs panel or joyscore's score counter. both of which will also be in this mod
 --[[ should always be presorted
 	[1] = {
@@ -1126,7 +1178,6 @@ NobleHUD.killfeed = { --queue format, similar to khud's active buffs panel or jo
 --]]
 }
 NobleHUD.killfeed_icons = {} --same format but only for icons
-
 
 NobleHUD._killfeed_start_x = 100
 NobleHUD._killfeed_start_y = 420
@@ -1143,7 +1194,7 @@ NobleHUD._medal_atlas = "guis/textures/medal_atlas"
 NobleHUD._medal_data = {
 	first = {
 		name = "First Strike",
-		sfx = "",
+		sfx = "first_strike",
 		icon_xy = {1,0}
 	},
 	headshot = {
@@ -1704,20 +1755,6 @@ function NobleHUD:animate_remove_done_cb(object,new)
 	return false
 end
 
-function NobleHUD:animate_force_done(object,keep)
-	local o = NobleHUD._animate_targets[tostring(object)]
-	if o then 
-		if o.done_cb and type(o.done_cb) == "function" then 
-			o.done_cb(o,nil,unpack(o.args))
-		end
-		if not keep then 
-			self:animate_stop(o)
-		end
-		return true
-	else
-		return false
-	end
-end
 
 function NobleHUD:animate_stop(object)
 	NobleHUD._animate_targets[tostring(object)] = nil
@@ -1751,6 +1788,7 @@ function NobleHUD:animate_fadeout(o,t,dt,start_t,duration,exit_x,exit_y)
 		o:set_x(o:x() + (exit_x * dt / duration))
 	end
 	if ratio >= 1 then 
+		o:set_alpha(0)
 		return true
 	end
 end
@@ -1914,6 +1952,8 @@ function NobleHUD:CreateHUD(orig)
 	self:_create_radar(hud)
 	self:_create_buffs(hud)
 	self:_create_helper(hud)
+	self:_create_carry(hud)
+	self:_create_equipment(hud)
 	self:_create_teammates(hud)
 	self:_create_score(hud)
 	self:_create_killfeed(hud)
@@ -1937,7 +1977,13 @@ function NobleHUD:OnLoaded()
 			--todo switch crosshair to static color on weapon switch
 		end	
 	end
+	
+	managers.hud:script(PlayerBase.PLAYER_INFO_HUD_PD2).panel:child("teammates_panel"):hide()
+	
 	self:_set_radar_range(self:GetRadarDistance())
+	--managers.hud._hud_heist_timer._timer_text:hide()
+--	managers.hud._hud_presenter._hud_panel:child("present_panel"):hide()	
+	
 	--[[
 	for id,data in pairs(managers.criminals._characters) do 
 		if data.taken then 
@@ -1979,8 +2025,9 @@ function NobleHUD:UpdateHUD(t,dt)
 			self._cache.game_state = game_state
 		end
 	end
-	--]]
 
+	
+	--]]
 	local player = managers.player:local_player()
 	if player then 
 --		Console:SetTrackerValue("trackera",self:KillsCache("last_kill_t"))
@@ -2010,7 +2057,7 @@ function NobleHUD:UpdateHUD(t,dt)
 		local killfeed_count = 0
 		for i,item in pairs(self.killfeed) do
 			killfeed_count = killfeed_count + 1
-			if (t - item.start_t > KILLFEED_LIFETIME) then
+			if (t - item.start_t > (item.lifetime or KILLFEED_LIFETIME)) then
 				if item.text and alive(item.text) then 
 					self:animate(item.text,"animate_fadeout_linear",function (o) o:parent():remove(o) end,0.25)
 --					item.text:parent():remove(item.text)
@@ -2379,6 +2426,17 @@ function NobleHUD:UpdateHUD(t,dt)
 --			table.remove(NobleHUD._delayed_callbacks,i)
 		end
 	end
+	--[[
+	for k,v in pairs(NobleHUD._bgboxes) do
+		if v:parent() and v:parent():name() == "objectives_panel" then	
+			Console:SetTrackerValue("trackerb",tostring(v:visible()))
+			Console:SetTrackerValue("trackerc",tostring(v:parent():visible()))
+			Console:SetTrackerValue("trackerd",tostring(v:parent():parent():visible()))
+		end
+	end
+	--]]
+	--Console:SetTrackerValue("trackerb",tostring(managers.hud._hud_objectives._bg_box:visible()))
+	--Console:SetTrackerValue("trackerb",tostring(managers.hud._hud_temp._bg_box:visible()))
 	
 end
 
@@ -2441,7 +2499,7 @@ function NobleHUD:OnEnemyKilled(data)
 				self:AddMedal("spree_sticky",self:KillsCache("grenade",1))
 			end
 		else
-			self:log("Killed " .. tostring(unit_name) .. " with " .. tostring(weapon_id or weapon_unit) .. " (which is not the same as " .. primary_id .. " or " .. secondary_id .. " )")
+			self:log("Killed " .. tostring(unit_name) .. " with misc weapon " .. tostring(weapon_id or weapon_unit))
 		end
 		
 		if from_weapon then 
@@ -2500,6 +2558,18 @@ function NobleHUD:KillsCache(category,amount,set)
 	return 0
 end
 
+function NobleHUD:ClearKillsCache()
+	self._cache.kills = {
+		last_kill_t = 0,
+		spree_count = 0,
+		multi_count = 0,
+		melee = 0,
+		sniper = 0,
+		shotgun = 0,
+		grenade = 0
+	}
+end
+
 function NobleHUD:OnPlayerStateChanged(state)
 	--[[ state can be:
 		jerry1 = "ingame_freefall",
@@ -2517,7 +2587,9 @@ function NobleHUD:OnPlayerStateChanged(state)
 		bipod = "ingame_standard",
 		tased = "ingame_electrified"
 	--]]
-	
+	if state == "fatal" or state == "bleed_out" or state == "arrested" or state == "incapacitated" then 
+		self:ClearKillsCache()
+	end
 	--todo: on enter custody, destroy NobleHUD hud, and create or show custody hud
 end
 
@@ -4397,16 +4469,17 @@ function NobleHUD:_create_objectives(hud)
 --		x = (hud:w()/2) - (300 * 0.5),
 		y = 128
 	})
+	local shadow_offset = 1.5
 	local function get_blink_center_x (w)
 		return (objectives_panel:w() - w) * 0.5
 	end
 	
 	local debug_objectives = objectives_panel:rect({
 		color = Color.purple,
-		visible = true,
+		visible = false,
 		alpha = 0.1
 	})
-	local mission_label = objectives_panel:text({
+	local mission_label = objectives_panel:text({ --not used
 		name = "mission_label",
 		text = "MISSION NAME",
 		vertical = "top",
@@ -4418,13 +4491,13 @@ function NobleHUD:_create_objectives(hud)
 		font_size = tweak_data.hud.active_objective_title_font_size,
 		font = tweak_data.hud.medium_font_noshadow
 	})
---return NobleHUD._objectives_panel:child("objectives_label")
-	local objectives_title = objectives_panel:text({
+	local objectives_title = objectives_panel:text({ 
 		name = "objectives_title",
 		text = "CURRENT OBJECTIVE:",
 		align = "center",
 		layer = 2,
 		color = Color(0.66,0.66,0.66),
+		alpha = 0,
 		font_size = tweak_data.hud.active_objective_title_font_size,
 		font = tweak_data.hud.medium_font_noshadow,
 	})
@@ -4433,9 +4506,10 @@ function NobleHUD:_create_objectives(hud)
 		text = "CURRENT OBJECTIVE:",
 		align = "center",
 		layer = 1,
-		x = objectives_title:x() + 1.5,
-		y = objectives_title:y() + 1.5,
+		x = objectives_title:x() + shadow_offset,
+		y = objectives_title:y() + shadow_offset,
 		color = Color(0,0,0),
+		alpha = 0,
 		font_size = tweak_data.hud.active_objective_title_font_size,
 		font = tweak_data.hud.medium_font_noshadow,
 	})
@@ -4445,13 +4519,13 @@ function NobleHUD:_create_objectives(hud)
 		name = "blink_title",
 		texture = "guis/textures/radar_blip_near",
 		w = title_w,
-		h = title_h,
+		h = title_h / 2,
 		x = get_blink_center_x(title_w),
-		y = 0,
+		y = (title_h / 2),
 		layer = 0,
 		blend_mode = "add",
 		color = Color.white,
-		alpha = 0.5
+		alpha = 0
 	})
 --	blink_title:set_center(objectives_title:center())
 	local objectives_label = objectives_panel:text({
@@ -4464,20 +4538,20 @@ function NobleHUD:_create_objectives(hud)
 		color = Color.white,
 		font_size = tweak_data.hud.active_objective_title_font_size * 1.15,
 		font = tweak_data.hud.medium_font_noshadow,
-		visible = true
+		alpha = 0
 	})
 	local objectives_label_shadow = objectives_panel:text({
 		name = "objectives_label_shadow",
 		text = "SURVIVE",
 		align = "center",
 		vertical = "bottom",
-		x = 1.5,
-		y = 1.5,
+		x = shadow_offset,
+		y = shadow_offset,
 		layer = 1,
 		color = Color.black,
 		font_size = tweak_data.hud.active_objective_title_font_size * 1.15,
 		font = tweak_data.hud.medium_font_noshadow,
-		visible = true
+		alpha = 0
 	})
 	
 	local _,_,label_w,label_h = objectives_label:text_rect()
@@ -4486,16 +4560,106 @@ function NobleHUD:_create_objectives(hud)
 		name = "blink_label",
 		texture = "guis/textures/radar_blip_near",
 		w = label_w,
-		h = label_h,
+		h = label_h / 2,
 		x = get_blink_center_x(label_w),
-		y = objectives_panel:h() - objectives_label:line_height(),
+		y = objectives_panel:h() - (objectives_label:line_height() / 2),
 		layer = 0,
 		blend_mode = "add",
 		color = Color.white,
-		alpha = 0.5
+		alpha = 0
 	})
+	
 --	blink_label:set_center(objectives_label:center())
 	self._objectives_panel = objectives_panel
+end
+
+function NobleHUD:AnimateShowObjective() --not an animate() function, but calls animate() 
+	local objectives_panel = NobleHUD._objectives_panel
+	local objectives_label = objectives_panel:child("objectives_label")
+	local objectives_label_shadow = objectives_panel:child("objectives_label_shadow")
+	local objectives_title = objectives_panel:child("objectives_title")
+	local objectives_title_shadow = objectives_panel:child("objectives_title_shadow")
+--return NobleHUD._objectives_panel:child("blink_label")
+
+	local _,_,label_w,label_h = objectives_label:text_rect()
+	
+	local _,_,title_w,title_h = objectives_title:text_rect()
+
+	local blink_label = NobleHUD._objectives_panel:child("blink_label")
+	local blink_title = NobleHUD._objectives_panel:child("blink_title")
+
+	local kern = -2
+	local title_font_size = tweak_data.hud.active_objective_title_font_size
+	local label_font_size = title_font_size * 1.15
+	local duration = 0.2
+	blink_label:set_size(label_w,label_h)
+	blink_title:set_size(title_w,title_h)
+--	Log(title_w,{color=Color.red})
+--	Log(label_w,{color=Color.blue})
+	objectives_title:set_font_size(0)
+	objectives_title:set_kern(kern)
+	objectives_title:set_alpha(1)
+	objectives_title_shadow:set_font_size(0)
+	objectives_title_shadow:set_kern(kern)
+	objectives_title_shadow:set_alpha(1)
+	objectives_label:set_font_size(0)
+	objectives_label:set_kern(kern)
+	objectives_label:set_alpha(1)
+	objectives_label_shadow:set_font_size(0)
+	objectives_label_shadow:set_kern(kern)
+	objectives_label_shadow:set_alpha(1)
+	self:animate_stop(blink_label)
+	self:animate_stop(blink_title)
+	self:animate_stop(objectives_title)
+	self:animate_stop(objectives_title_shadow)
+	self:animate_stop(objectives_label)
+	self:animate_stop(objectives_label_shadow)
+	local function fadeout_title()
+		self:AddDelayedCallback(
+			function()
+				self:animate(objectives_title,"animate_fadeout",function(o) o:set_font_size(title_font_size) end,0.5)
+				self:animate(objectives_title_shadow,"animate_fadeout",function(o) o:set_font_size(title_font_size) end,0.5)
+			end,
+			nil,
+			5,
+			"fadeout_objective_title"
+		)
+	end
+	local function fadeout_label()
+		self:AddDelayedCallback(
+			function()
+				self:animate(objectives_label,"animate_fadeout",nil,0.5)
+				self:animate(objectives_label_shadow,"animate_fadeout",nil,0.5)
+			end,
+			nil,
+			4,
+			"fadeout_objective_label"
+		)
+	end
+	local function animate_objective_title_in()
+
+		self:animate(objectives_title,"animate_objective_flash",fadeout_title,duration,title_font_size,kern)
+		self:animate(objectives_title_shadow,"animate_objective_flash",nil,duration,title_font_size,kern)
+	end
+	local function animate_objective_text_in()
+		self:animate(objectives_label,"animate_objective_flash",fadeout_label,duration,label_font_size,kern)
+		self:animate(objectives_label_shadow,"animate_objective_flash",nil,duration,label_font_size,kern)
+	end
+	local mid_x = objectives_panel:w() / 2
+	local blinkout_time = 0.25
+	local blinkout_alpha = 0.9
+	local blinkout_stretch_w_mul = 1.25
+	self:AddDelayedCallback(
+		function()
+			blink_label:set_alpha(1)
+			self:animate(blink_label,"animate_objective_blinkout",animate_objective_text_in,blinkout_time,label_w,label_w * blinkout_stretch_w_mul,blinkout_alpha,mid_x)
+		end,
+		nil,
+		0.5,
+		"fadein_objective_title"
+	)
+--	blink_title:set_alpha(1)
+	self:animate(blink_title,"animate_objective_blinkout",animate_objective_title_in,blinkout_time,title_w,title_w * blinkout_stretch_w_mul,blinkout_alpha,mid_x)
 end
 
 function NobleHUD:animate_objective_flash(o,t,dt,start_t,duration,font_size,kern)
@@ -4518,25 +4682,53 @@ function NobleHUD:animate_objective_flash(o,t,dt,start_t,duration,font_size,kern
 	o:set_kern((1 - scale) * kern)
 end
 
-function NobleHUD:animate_objective_blink(o,t,dt,start_t,duration,w,mid_x)
+function NobleHUD:animate_objective_blinkout(o,t,dt,start_t,duration,start_w,end_w,alpha,mid_x)
 --	duration = duration or 0.25
 	local elapsed = t - start_t
 	
 	local scale = elapsed / duration
 	if scale > 1 then 
-		o:set_w(0)
+		o:set_h(0)
 		o:set_alpha(0)
+		o:set_x(mid_x - (o:w() / 2))
 		return true
 	end
-	o:set_w(w * (1 - scale))
-	o:set_x(mid_x - (o:w() / 2)) 
-	o:set_alpha(w * (1 - scale))
+	o:set_alpha(alpha * (1 - scale))
+	o:set_h(o:h() * 0.8) 
+	scale = math.pow(scale,2)
+	o:set_w(start_w + ((end_w + start_w) * (1 - scale)))
+	o:set_x(mid_x - (o:w() / 2))
 end
 
-function NobleHUD:SetObjectiveLabel(text)
+function NobleHUD:SetObjectiveTitle(label)
 	if alive(self._objectives_panel) then 
-		self._objectives_panel:child("objectives_label"):set_text(text)
-		self._objectives_panel:child("objectives_label_shadow"):set_text(text)
+		self._objectives_panel:child("objectives_title"):set_text(label)
+		self._objectives_panel:child("objectives_title_shadow"):set_text(label)
+	end
+end
+
+function NobleHUD:SetObjectiveAmount(data)
+	if alive(self._objectives_panel) then 
+		local progress = ""
+		if data.amount and data.current_amount then 
+			progress = string.gsub(" [$CURRENT/$TOTAL]","$CURRENT",data.current_amount)
+			progress = string.gsub(progress,"$TOTAL",data.amount)
+		end
+		local label = utf8.to_upper(self._cache.current_objective or "") .. progress
+		self._objectives_panel:child("objectives_label"):set_text(label)
+		self._objectives_panel:child("objectives_label_shadow"):set_text(label)
+	end
+end
+
+function NobleHUD:SetObjectiveLabel(label)
+	local progress = ""
+	if NobleHUD._cache.objective_progress and NobleHUD._cache.objective_total then
+		progress = string.gsub(" [$CURRENT/$TOTAL]","$CURRENT",data.current_amount,"$TOTAL",data.amount)
+	end
+	label = label .. progress
+	if alive(self._objectives_panel) then 
+		self._objectives_panel:child("objectives_label"):set_text(label)
+		self._objectives_panel:child("objectives_label_shadow"):set_text(label)
 	end
 end
 
@@ -5228,6 +5420,58 @@ function NobleHUD:_create_revives(amount) --called on internal load
 end
 
 
+function NobleHUD:_create_carry(hud)
+	local carry_panel = hud:panel({
+		name = "carry_panel",
+		h = 50,
+		w = 400,
+		x = 500,
+		y = 500,
+		visible = true
+	})
+	local debug_carry = carry_panel:rect({
+		name = "debug_carry",
+		color = Color.red,
+		alpha = 0.3
+	})
+	
+	local bag_texture, bag_rect = tweak_data.hud_icons:get_icon_data("bag_icon")
+	
+	local bag_icon = carry_panel:bitmap({
+		name = "bag_icon",
+		texture = bag_texture,
+		texture_rect = bag_rect,
+		layer = 2,
+		color = Color.white,
+		alpha = 0.8
+	})	
+	
+	local bag_label = carry_panel:text({
+		name = "bag_label",
+		text = "Kat's Prosthetic Arm",
+		x = 0,
+		y = 0,
+		vertical = "bottom",
+		align = "center",
+		font = "fonts/font_medium_mf",
+		font_size = 24,
+		layer = 1,
+		color = Color.white
+	})
+	
+	
+	
+	
+	
+end
+
+function NobleHUD:animate_show_bag(o,t,dt,start_t)
+
+end
+
+function NobleHUD:animate_hide_bag(o,t,dt,start_t)
+
+end
 
 
 --		COMPASS
@@ -5335,7 +5579,7 @@ function NobleHUD:_create_killfeed(hud)
 	
 	local debug_medal = killfeed_panel:rect({
 		name = "debug",
-		visible = true,
+		visible = false,
 		color = Color.red,
 		alpha = 0.1
 	})
@@ -5351,7 +5595,7 @@ function NobleHUD:AddKillfeedMessage(text,params)
 
 	local function add_text_to_killfeed (text_panel)
 		self._cache.newest_killfeed = nil
-		table.insert(self.killfeed,1,{start_t = Application:time(),text = text_panel})
+		table.insert(self.killfeed,1,{start_t = Application:time(),text = text_panel,lifetime = params.lifetime})
 	end
 	
 	local label = killfeed:text({
@@ -5614,6 +5858,53 @@ function NobleHUD:_create_helper(hud) --auntie dot avatar and subtitles
 
 end
 
+
+--		EQUIPMENT
+function NobleHUD:_create_equipment(hud)
+	local eq_h = 128
+	local equipment_panel = hud:panel({
+		name = "equipment_panel",
+		layer = 1,
+		w = hud:w(),
+		h = eq_h,
+		y = hud:h() + - eq_h,
+	})
+	local debug_eq = equipment_panel:rect({
+		name = "debug_equipment",
+		color = Color.blue,
+		alpha = 0.5,
+		visible = false
+	})
+	self._equipment_panel = equipment_panel
+end
+
+function NobleHUD:layout_equipments(special_equipments,new)
+	local margin = 16
+--	local amount = #special_equipments
+	for i,panel in pairs(special_equipments) do
+		local x = self._equipment_panel:w() - (panel:w() * i) + -margin
+		Log(panel:name() .. "," .. tostring(new))
+		if panel:name() == new then 
+			NobleHUD:animate(panel,"animate_add_equipment",function (o)
+				NobleHUD:animate(o:child("bitmap"),"animate_killfeed_icon_pulse",nil,0.5,panel:w(),1.5,x,panel:y())
+			end,0.1,x)
+		else
+			NobleHUD:animate(panel,"animate_add_equipment",nil,0.1,x)
+		end
+	end
+end
+
+function NobleHUD:animate_add_equipment(o,t,dt,start_t,rate,x,threshold)
+	if math.abs(x - o:x()) < (threshold or 1) then
+		o:set_x(x)
+		o:set_alpha(1)
+		return true
+	end
+	local rate = (x - o:x() / 100)
+	o:set_alpha(rate)
+	o:set_x(o:x() + ((x - o:x()) * rate))
+--	o:set_x(o:x() + (x * dt / duration))
+end
 
 --not implemented; see hudpresenter
 function NobleHUD:animate_helper_subtitle_in(o,str)

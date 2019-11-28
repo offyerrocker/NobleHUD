@@ -400,6 +400,95 @@ Hooks:PostHook(HUDTeammate,"set_grenade_cooldown","noblehud_set_grenade_cooldown
 end)
 
 
+function HUDTeammate:add_special_equipment(data,...)
+	local panel_size = 32
+	local equipment_panel = NobleHUD._equipment_panel:panel({
+		name = data.id,
+		x = NobleHUD._equipment_panel:w() - ((#self._special_equipment + 2) * panel_size),
+		y = 0,
+		layer = 0,
+		alpha = 0,
+		w = panel_size,
+		h = panel_size
+	})
+	local icon, texture_rect = tweak_data.hud_icons:get_icon_data(data.icon)
+	local amount,amount_bg
+	local bitmap = equipment_panel:bitmap({
+		name = "bitmap",
+		texture = icon,
+		texture_rect = texture_rect,
+		rotation = 360,
+		layer = 2,
+		color = Color.white
+	})
+	
+	amount_bg = equipment_panel:child("amount_bg") or equipment_panel:bitmap({
+		name = "amount_bg",
+		texture = "guis/textures/pd2/equip_count",
+		rotation = 360,
+		layer = 2,
+		visible = data.amount and true or false,
+		color = Color.white
+	})
+	amount = equipment_panel:child("amount") or equipment_panel:text({
+		name = "amount",
+		vertical = "center",
+		font_size = 12,
+		align = "center",
+		font = "fonts/font_small_noshadow_mf",
+		rotation = 360,
+		layer = 3,
+		text = tostring(data.amount),
+		color = Color.black,
+		visible = data.amount and true or false,
+		w = panel_size,
+		h = panel_size
+	})
+	
+	amount_bg:set_center(bitmap:center())
+	amount_bg:move(7, 7)
+	amount_bg:set_visible(data.amount and (data.amount > 1) or false)
+	amount:set_center(amount_bg:center())
+	amount:set_visible(data.amount and (data.amount > 1) or false)
+	
+	table.insert(self._special_equipment, equipment_panel)
+	NobleHUD:layout_equipments(self._special_equipment,data.id)
+end
+
+function HUDTeammate:remove_special_equipment(equipment)
+	local eq_panel = NobleHUD._equipment_panel
+	for i,panel in pairs(self._special_equipment) do 
+		if panel:name() == equipment then 
+			local data = table.remove(self._special_equipment,i)
+			panel:child("bitmap"):set_color(Color(0.5,0.5,0.5))
+			NobleHUD:animate(panel,"animate_fadeout",function(o) eq_panel:remove(o) end,0.66)
+			NobleHUD:layout_equipments(self._special_equipment)
+			return
+		end
+	end
+end
+
+function HUDTeammate:set_special_equipment_amount(equipment_id, amount)
+	local eq_panel = NobleHUD._equipment_panel
+	local special_equipment = self._special_equipment
+
+	for i, panel in ipairs(special_equipment) do
+		if panel:name() == equipment_id then
+			panel:child("amount"):set_text(tostring(amount))
+			panel:child("amount"):set_visible(amount > 1)
+			panel:child("amount_bg"):set_visible(amount > 1)
+			return
+		end
+	end
+end
+
+Hooks:PostHook(HUDTeammate,"clear_special_equipment","noblehud_clearequipment",function(self)
+	local eq = NobleHUD._equipment_panel
+	if alive(eq) then 
+		eq:parent():remove(eq)
+	end
+	NobleHUD:_create_equipment_panel()
+end)
 
 if true then return end 
 
