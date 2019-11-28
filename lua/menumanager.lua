@@ -2593,7 +2593,9 @@ function NobleHUD:OnEnemyKilled(data)
 						if data.head_shot then 
 							self:AddMedal("spree_sniper",1)
 						end
-						self:AddMedal("spree_sniper",sniper_count)
+						if sniper_count > 1 then 
+							self:AddMedal("spree_sniper",sniper_count)
+						end
 					end
 				end
 			end
