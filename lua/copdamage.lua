@@ -35,11 +35,13 @@ function CopDamage:damage_melee(attack_data,...)
 	local result = {orig_melee(self,attack_data,...)}
 	if type(result[1]) == "table" and attack_data.attacker_unit == managers.player:player_unit() then 
 		if result[1].type == "death" then 
-			if cool then 
-				NobleHUD:AddMedal("assassination")
-			end
-			if from_behind then
-				NobleHUD:AddMedal("beatdown")
+			if not managers.enemy:is_civilian(self._unit) then 
+				if cool then 
+					NobleHUD:AddMedal("assassination")
+				end
+				if from_behind then
+					NobleHUD:AddMedal("beatdown")
+				end
 			end
 		end
 	end

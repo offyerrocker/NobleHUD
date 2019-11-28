@@ -1,6 +1,7 @@
 Hooks:PostHook(HUDAssaultCorner,"init","noblehud_assaultcorner_init",function(self,hud,full_hud,tweak_hud)
 	self._hud_panel:hide()
---	self._hostages_bg_box:hide()
+	self._hostages_bg_box:hide()
+	self._hud_panel:child("hostages_panel"):set_y(-100)
 end)
 
 --managers.hud._hud_assault_corner:show_point_of_no_return_timer()

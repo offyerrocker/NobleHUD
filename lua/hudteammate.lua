@@ -399,15 +399,14 @@ Hooks:PostHook(HUDTeammate,"set_grenade_cooldown","noblehud_set_grenade_cooldown
 	end
 end)
 
-
+--
 function HUDTeammate:add_special_equipment(data,...)
 	local panel_size = 32
 	local equipment_panel = NobleHUD._equipment_panel:panel({
 		name = data.id,
-		x = NobleHUD._equipment_panel:w() - ((#self._special_equipment + 2) * panel_size),
+		x = 0, --NobleHUD._equipment_panel:w() - ((#self._special_equipment + 2) * panel_size),
 		y = 0,
 		layer = 0,
-		alpha = 0,
 		w = panel_size,
 		h = panel_size
 	})
@@ -419,6 +418,7 @@ function HUDTeammate:add_special_equipment(data,...)
 		texture_rect = texture_rect,
 		rotation = 360,
 		layer = 2,
+--		alpha = 0.01
 		color = Color.white
 	})
 	
@@ -450,7 +450,7 @@ function HUDTeammate:add_special_equipment(data,...)
 	amount_bg:set_visible(data.amount and (data.amount > 1) or false)
 	amount:set_center(amount_bg:center())
 	amount:set_visible(data.amount and (data.amount > 1) or false)
-	
+	--return logall(managers.hud._teammate_panels[1]._special_equipment)
 	table.insert(self._special_equipment, equipment_panel)
 	NobleHUD:layout_equipments(self._special_equipment,data.id)
 end
@@ -467,7 +467,6 @@ function HUDTeammate:remove_special_equipment(equipment)
 		end
 	end
 end
-
 function HUDTeammate:set_special_equipment_amount(equipment_id, amount)
 	local eq_panel = NobleHUD._equipment_panel
 	local special_equipment = self._special_equipment
@@ -490,6 +489,7 @@ Hooks:PostHook(HUDTeammate,"clear_special_equipment","noblehud_clearequipment",f
 	NobleHUD:_create_equipment_panel()
 end)
 
+--]]
 if true then return end 
 
 

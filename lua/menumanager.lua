@@ -5,7 +5,6 @@ FIX OBJECTIVE HUD REMIND UPDATE
 
 ***** TODO: *****
 Notes:
-	* does objectivehud really need the size scaling? would kerning alone work? might look weird linearly scaling though
 		
 	tab should refresh view_timer or call remind objective
 
@@ -80,6 +79,17 @@ Notes:
 				* Static selection
 			* Grenade/deployable area swap
 		* Suspicion?
+		* More Medals:
+			* Seek and Destroy (for bosses?)
+			* Bulltrue for Cloakers
+			* EMP Blast for stunned enemies?
+			* Hero or assist for reviving teammates?
+			* Firebird for midair (jumping/falling) kills
+			* Protector? hard to implement but not impossible
+			* Yoink?
+			* Pull for rappelling enemies?
+			* Headcase somehow?
+			* Reloading?
 
 --current crosshair selection
 			
@@ -131,7 +141,6 @@ Notes:
 		-- Crosshair textures
 			- REMAKE ROCKET RETICLE
 			- Minigun
-			- Pistol
 			- Plasma Rifle/Repeater
 				* Circle
 				* Four arrows (single texture)
@@ -143,6 +152,7 @@ Notes:
 			- Flamethrower
 			- Plasma Launcher
 			- Beam Launcher
+			- Target Designator
 
 		-- Ammo type tick variant textures
 			- DMR
@@ -217,8 +227,11 @@ NobleHUD.color_data = {
 	hud_vitalsfill_yellow = Color(255/255,195/255,74/255),
 	hud_vitalsfill_red = Color(212/255,0/255,0/255),
 	hud_vitalsglow_red = Color(255/255,115/255,115/255), --empty pink flash
+	hud_weapon_color = Color(113/255,202/255,239/255), --"official" blue hud color
 	hud_text_blue = Color(100/255,178/255,255/255),
 	hud_text_flash = Color(254/255,239/255,239/255),
+	hud_killfeed_lightyellow = Color(253/255,255/255,217/255),
+	hud_killfeed_yellow = Color(255/255,231/255,0),
 	hud_lightblue = Color("a1f0ff"), --powder blue; unused
 	hud_bluefill = Color("66cfff"), --sky blue; unused
 	hud_blueoutline = Color("3173bb"),
@@ -230,13 +243,23 @@ NobleHUD.color_data = {
 NobleHUD._mod_path = ModPath
 NobleHUD._settings_path = ModPath .. "noblehud_settings.txt"
 NobleHUD._localization_path = ModPath .. "localization/"
+NobleHUD._cartographer_path = ModPath .. "cartographer/"
 
-NobleHUD._hudpresenter_params = {
+NobleHUD._cartographer_data = {}
+
+NobleHUD._presenter_title_params = {
 	duration = 0.25,
 	lifetime = 7,
-	font_size = 24,
-	color_1 = Color(0.75,0.75,0.2),
-	color_2 = Color(1,1,0.6)
+	font_size = 16,
+	color_1 = NobleHUD.color_data.hud_killfeed_yellow,
+	color_2 = NobleHUD.color_data.hud_killfeed_lightyellow
+}
+NobleHUD._presenter_desc_params = {
+	duration = 0.25,
+	lifetime = 7,
+	font_size = 16,
+	color_1 = NobleHUD.color_data.hud_killfeed_yellow,
+	color_2 = NobleHUD.color_data.hud_killfeed_lightyellow
 }
 
 NobleHUD._HUD_HEALTH_TICKS = 8
@@ -249,7 +272,9 @@ NobleHUD._cache = {
 	objective_total = nil,
 	newest_medal = false,
 	newest_killfeed = false,
+	last_cartographer_t = 0,
 	kills = {
+		close_call = false,
 		last_kill_t = 0,
 		spree_count = 0,
 		multi_count = 0,
@@ -1192,7 +1217,7 @@ NobleHUD._medal_end_y = 400
 NobleHUD._medal_atlas = "guis/textures/medal_atlas"
 
 NobleHUD._medal_data = {
-	first = {
+	first = { --not implemented
 		name = "First Strike",
 		sfx = "first_strike",
 		icon_xy = {1,0}
@@ -1222,12 +1247,12 @@ NobleHUD._medal_data = {
 		sfx = "",
 		icon_xy = {1,5}
 	},
-	revenge = {
+	revenge = { --not implemented
 		name = "Revenge",
 		sfx = "",
 		icon_xy = {1,6}
 	},
-	avenger = {
+	avenger = { --not implemented
 		name = "Avenger",
 		sfx = "",
 		icon_xy = {1,7}
@@ -1285,37 +1310,37 @@ NobleHUD._medal_data = {
 		}
 	},
 	spree_standard = {		
-		[5] = {
+		[10] = {
 			name = "Killing Spree",
 			sfx = "",
 			icon_xy = {2,0}
 		},
-		[10] = {
+		[20] = {
 			name = "Killing Frenzy",
 			sfx = "",
 			icon_xy = {2,1}
 		},
-		[15] = {
+		[30] = {
 			name = "Running Riot",
 			sfx = "",
 			icon_xy = {2,2}
 		},
-		[20] = {
+		[40] = {
 			name = "Rampage",
 			sfx = "",
 			icon_xy = {2,3}
 		},
-		[25] = {
+		[50] = {
 			name = "Untouchable",
 			sfx = "",
 			icon_xy = {2,4}
 		},
-		[30] = {
+		[100] = {
 			name = "Invincible",
 			sfx = "",
 			icon_xy = {2,5}
 		},
-		[35] = {
+		[500] = {
 			name = "Inconceivable",
 			sfx = "",
 			icon_xy = {2,6}
@@ -1326,7 +1351,7 @@ NobleHUD._medal_data = {
 			icon_xy = {2,7}
 		}
 	},
-	spree_assist = {
+	spree_assist = { --not implemented
 		[1] = {
 			name = "Assist",
 			sfx = "",
@@ -1348,7 +1373,7 @@ NobleHUD._medal_data = {
 			icon_xy = {3,3}
 		}
 	},
-	spree_sword = {
+	spree_sword = { --not implemented
 		[5] = {
 			name = "Sword Spree",
 			name = "",
@@ -1366,7 +1391,7 @@ NobleHUD._medal_data = {
 			icon_xy = {3,6}
 		}
 	},
-	spree_grenade = {
+	spree_grenade = { --not implemented properly
 		[5] = {
 			name = "Stick Spree",
 			sfx = "",
@@ -1422,7 +1447,7 @@ NobleHUD._medal_data = {
 			icon_xy = {4,6}
 		}
 	},
-	spree_splatter = {
+	spree_splatter = { --not implemented
 		[5] = {
 			name = "Splatter Spree",
 			sfx = "",
@@ -1439,7 +1464,7 @@ NobleHUD._medal_data = {
 			icon_xy = {4,9}
 		}
 	},
-	spree_wheelman = {
+	spree_wheelman = { --not implemented
 		[1] = {
 			name = "Wheelman",
 			sfx = "",
@@ -1573,6 +1598,11 @@ function NobleHUD.even(n)
 end
 
 function NobleHUD.make_nice_number(num,include_decimal)
+	local is_negative
+	if num < 0 then 
+		is_negative = true
+		num = math.abs(num)
+	end
 	local raw = tostring(num)
 	local int = string.format("%i",num)
 	local length = string.len(int)
@@ -1590,6 +1620,9 @@ function NobleHUD.make_nice_number(num,include_decimal)
 		if decimal_pos then 
 			str = str .. string.sub(raw,(decimal_pos))
 		end
+	end
+	if is_negative then 
+		str = "-" .. str
 	end
 	return str
 end
@@ -1710,7 +1743,6 @@ function NobleHUD.interp_colors(one,two,percent) --interpolates colors based on 
 	return Color(r1 + (r3 * percent),g1 + (g3 * percent), b1 + (b3 * percent))	
 end
 
-
 function NobleHUD:GetMedalIcon(x,y)
 	return self._medal_atlas,{
 		x * 90,y * 90,90,90 --sure hope i got this right
@@ -1755,11 +1787,9 @@ function NobleHUD:animate_remove_done_cb(object,new)
 	return false
 end
 
-
 function NobleHUD:animate_stop(object)
 	NobleHUD._animate_targets[tostring(object)] = nil
 end
-
 
 function NobleHUD:animate_fadeout_linear(o,t,dt,start_t,duration,exit_x,exit_y)
 	duration = duration or 1
@@ -1923,7 +1953,7 @@ end
 
 function NobleHUD:SetRadarDistance(distance)
 	if alive(self._radar_panel) then 
-		self:_set_radar_range(string.gsub(managers.localization:text("noblehud_radar_distance_label"),"$DISTANCE",distance) .. "m")
+		self:_set_radar_range(distance)
 	end
 	self.settings.distance = distance
 end
@@ -1935,7 +1965,6 @@ function NobleHUD:CreateHUD(orig)
 	if not orig:alive(PlayerBase.PLAYER_INFO_HUD_PD2) then 
 		return
 	end	
-	
 	self._ws = managers.gui_data:create_fullscreen_workspace()
 	local ws = self._ws
 	
@@ -1950,6 +1979,7 @@ function NobleHUD:CreateHUD(orig)
 	self:_create_crosshair(hud)
 	self:_create_compass(hud)
 	self:_create_radar(hud)
+	self:_create_cartographer(hud)
 	self:_create_buffs(hud)
 	self:_create_helper(hud)
 	self:_create_carry(hud)
@@ -1958,14 +1988,13 @@ function NobleHUD:CreateHUD(orig)
 	self:_create_score(hud)
 	self:_create_killfeed(hud)
 	self:_create_tabscreen(hud)
-	
+--	managers.hud:script("guis/mask_off_hud"):hide()
 end
 			
 function NobleHUD:OnLoaded()
 	self:set_weapon_info()
 	self:create_revives()
 	self:_set_deployable_equipment(2,true)
-	self:set_mission_name()
 	self:set_score_multiplier()
 	managers.hud:add_updator("NobleHUD_update",callback(NobleHUD,NobleHUD,"UpdateHUD"))
 	self:_switch_weapons(managers.player:local_player():inventory():equipped_selection())
@@ -1978,11 +2007,14 @@ function NobleHUD:OnLoaded()
 		end	
 	end
 	
+	local level_data = managers.job:current_level_data()
+	local level_name = level_data and level_data.name_id
+	self:set_mission_name(level_name and managers.localization:text(level_name) or "")
+	self:LoadCartographerData(level_name)
+			
 	managers.hud:script(PlayerBase.PLAYER_INFO_HUD_PD2).panel:child("teammates_panel"):hide()
 	
 	self:_set_radar_range(self:GetRadarDistance())
-	--managers.hud._hud_heist_timer._timer_text:hide()
---	managers.hud._hud_presenter._hud_panel:child("present_panel"):hide()	
 	
 	--[[
 	for id,data in pairs(managers.criminals._characters) do 
@@ -2011,9 +2043,13 @@ function NobleHUD:OnLoaded()
 	end--]]
 	
 	
+	
+	
 --layout hud stuff
 	self:_sort_teammates()
-
+	if managers.hud:script("guis/mask_off_hud") then 
+		managers.hud:script("guis/mask_off_hud").panel:hide()
+	end
 end
 
 function NobleHUD:UpdateHUD(t,dt)
@@ -2030,6 +2066,16 @@ function NobleHUD:UpdateHUD(t,dt)
 	--]]
 	local player = managers.player:local_player()
 	if player then 
+			
+
+		--medal stuff
+		if self:KillsCache("close_call") and player:character_damage():armor_ratio() >= 1 then 
+			self:KillsCache("close_call",false,true)
+			self:AddMedal("close_call")
+		end
+	
+	
+	
 --		Console:SetTrackerValue("trackera",self:KillsCache("last_kill_t"))
 --		Console:SetTrackerValue("trackerb",t)
 		--animate function stuff
@@ -2113,6 +2159,24 @@ function NobleHUD:UpdateHUD(t,dt)
 		
 		local player_pos = player:position()
 		local state = player:movement():current_state()
+		
+			
+	--cartographer stuff
+		local check_interval = 0.5 --seconds between location checks
+		if true then --use cartographer check
+			if check_interval + NobleHUD._cache.last_cartographer_t <= t then
+				NobleHUD._cache.last_cartographer_t = t
+			
+				local map_result = NobleHUD:ConsultCartographer(player_pos,NobleHUD._cartographer_data)
+				
+				if map_result then 
+					NobleHUD:SetCartographerLabel(map_result)
+				end
+			end
+		end			
+			
+		
+		
 		--self:get_fire_weapon_position(), self:get_fire_weapon_direction()
 	--return managers.player:local_player():movement():current_state():get_fire_weapon_direction()
 	--:rotation():yaw()
@@ -2442,7 +2506,7 @@ end
 
 function NobleHUD:OnEnemyKilled(data)
 	if not data then 
-		self:log("No data found!")
+		self:log("No kill data found!")
 		return
 	end
 	local t = Application:time()
@@ -2462,8 +2526,9 @@ function NobleHUD:OnEnemyKilled(data)
 	local primary_id = primary:get_name_id()
 	local secondary_id = secondary:get_name_id()
 --	local melee = inventory._melee_weapon_unit
-	Log("Killed with " .. tostring(weapon_id) .. "/" .. tostring(data.variant))
-	if data.type and data.type == "neutral" then 
+	Log("Killed " .. tostring(data.type) .. " with " .. tostring(weapon_id) .. "/" .. tostring(data.variant))
+	if data.type and data.type == "neutral" or data.type == "civilians" then 
+		self:ClearKillsCache()
 		--no +1 kills for you, you murderer >:(
 	else
 		local from_weapon
@@ -2505,6 +2570,10 @@ function NobleHUD:OnEnemyKilled(data)
 		if from_weapon then 
 			if not alive(player) or player:character_damage():incapacitated() or player:character_damage():bleed_out() then 
 				self:AddMedal("grave")
+			elseif alive(player) then 
+				if player:character_damage():_max_armor() > 0 and player:character_damage():health_ratio() <= 0.5 and player:character_damage():get_real_armor() <= 0 then 
+					self:KillsCache("close_call",true,true)
+				end
 			end
 			
 			
@@ -2544,18 +2613,17 @@ function NobleHUD:OnEnemyKilled(data)
 end
 
 function NobleHUD:KillsCache(category,amount,set)
-	if NobleHUD._cache.kills[category] then
-		if amount then 
-			if set then 
-				NobleHUD._cache.kills[category] = tonumber(amount) or 0
-			else
-				NobleHUD._cache.kills[category] = NobleHUD._cache.kills[category] + (tonumber(amount) or 0)
-			end
+	if amount ~= nil then 
+		if set then 
+			self._cache.kills[category] = amount
+		elseif type(self._cache.kills[category]) == "number" then 
+			self._cache.kills[category] = self._cache.kills[category] + (tonumber(amount or 0) or 0)
 		end
-		return NobleHUD._cache.kills[category]
+		return self._cache.kills[category]
+	elseif set ~= nil then
+		--self:log("Error: No killcount category found for " .. tostring(category),{color = Color.red})
 	end
-	self:log("Error: No killcount category found for " .. tostring(category),{color = Color.red})
-	return 0
+	return self._cache.kills[category]
 end
 
 function NobleHUD:ClearKillsCache()
@@ -2654,8 +2722,8 @@ function NobleHUD:_create_weapons(hud)
 	--		y = 100,
 			w = 100,
 			h = 50,
-			blend_mode = "add",
-			color = self.color_data.hud_blueoutline,
+--			blend_mode = "add",
+			color = self.color_data.hud_weapon_color,
 			texture = managers.blackmarket:get_weapon_icon_path("amcar"),
 			texture_rect = nil
 		})
@@ -2793,7 +2861,7 @@ function NobleHUD:_create_ammo_ticks(weapon)
 			w = texture_data.icon_w,
 			h = texture_data.icon_h,
 			layer = 2,
-			color = self.color_data.hud_vitalsoutline_blue,
+			color = self.color_data.hud_weapon_color,
 			alpha = 1
 		})
 		local ammo_bg = panel:bitmap({
@@ -2831,9 +2899,9 @@ function NobleHUD:_create_ammo_ticks(weapon)
 				w = texture_data.icon_w,
 				h = texture_data.icon_h,
 				layer = 2,				
-				color = self.color_data.hud_blueoutline, --start out loaded
-				alpha = 0.3,
-				blend_mode = "add",
+				color = self.color_data.hud_weapon_color, --start out loaded
+				alpha = 0.7,
+--				blend_mode = "add",
 				x = 0,
 				y = 0
 			})
@@ -2864,7 +2932,7 @@ function NobleHUD:set_weapon_info()
 		self:_set_weapon_icon(i,base:get_name_id())
 		self:_set_weapon_mag(i,base:get_ammo_remaining_in_clip())
 		self:_set_weapon_reserve(i,base:get_ammo_total() - base:get_ammo_remaining_in_clip()) --todo original ammo counter
-		
+--for k,v in pairs(managers.player:local_player():inventory():available_selections()) do search_class(v.unit:base(),"custom") end
 --		self.weapon_data[i].weapon_type = 
 	end
 	
@@ -2937,10 +3005,10 @@ function NobleHUD:_set_weapon_label(slot,id)
 	
 	if custom_name then 
 		if slot == 1 then 
-			weapon_name = managers.blackmarket:equipped_primary().custom_name
+			weapon_name = managers.blackmarket:equipped_secondary().custom_name
 --		weapon_panel = self._primary_weapon_panel
 		else --secondary
-			weapon_name = managers.blackmarket:equipped_secondary().custom_name
+			weapon_name = managers.blackmarket:equipped_primary().custom_name
 		end
 --		weapon_panel = self._secondary_weapon_panel
 	end
@@ -3698,7 +3766,7 @@ function NobleHUD:_create_grenades(hud)
 			w = icon_size * 2,
 			h = icon_size * 2,
 			alpha = 0.8,
---			visible = false,
+			visible = false, --! temporarily disabled /!\ 
 			x = 0,
 			y = 0
 		})
@@ -3855,6 +3923,7 @@ function NobleHUD:_create_ability(hud) --armor ability slot?
 			h = panel_size,
 			layer = 3,
 --			alpha = 0.7,
+			visible = true,
 			color = self.color_data.hud_vitalsoutline_blue
 		})
 		local ability_fill = panel:bitmap({
@@ -4324,9 +4393,7 @@ function NobleHUD:_set_mission_timer(text) --hud only
 	self._score_panel:child("mission_timer"):set_text(tostring(text))
 end
 
-function NobleHUD:set_mission_name()
-	local level_data = managers.job and managers.job:current_level_data()
-	local level_name = level_data and managers.localization:text(level_data.name_id) or "TRYHARD 2: TRY HARDER"
+function NobleHUD:set_mission_name(level_name)
 	self:_set_mission_name(level_name)
 	
 	local player_box = self._tabscreen:child("scoreboard")
@@ -4439,7 +4506,9 @@ function NobleHUD:animate_score_popup_track(o) --unused; should be moved to hudm
 end
 
 function NobleHUD:set_score_label()
-	self._score_panel:child("score_label"):set_text(NobleHUD.make_nice_number(self.score_session))
+	if not JoyScoreCounter then 
+		self._score_panel:child("score_label"):set_text(NobleHUD.make_nice_number(self.score_session))
+	end
 end
 
 function NobleHUD:_add_score(score)
@@ -4457,6 +4526,9 @@ function NobleHUD:_set_killcount(slot,kills)
 	end
 end
 
+Hooks:Add("JoyScoreCounter_SetScore","noblehud_joyscore_integration",function(total,new)
+	NobleHUD._score_panel:child("score_label"):set_text(NobleHUD.make_nice_number(total))
+end)
 
 --		OBJECTIVES
 
@@ -4527,13 +4599,11 @@ function NobleHUD:_create_objectives(hud)
 		color = Color.white,
 		alpha = 0
 	})
---	blink_title:set_center(objectives_title:center())
 	local objectives_label = objectives_panel:text({
 		name = "objectives_label",
 		text = "SURVIVE",
 		align = "center",
 		vertical = "bottom",
---		y = objectives_title:line_height(),
 		layer = 2,
 		color = Color.white,
 		font_size = tweak_data.hud.active_objective_title_font_size * 1.15,
@@ -4568,8 +4638,6 @@ function NobleHUD:_create_objectives(hud)
 		color = Color.white,
 		alpha = 0
 	})
-	
---	blink_label:set_center(objectives_label:center())
 	self._objectives_panel = objectives_panel
 end
 
@@ -5120,7 +5188,7 @@ function NobleHUD:_create_radar(hud)
 		w = 200,
 		h = 200,
 		x = 32,
-		y = hud:bottom() - 216, --bottom left
+		y = hud:bottom() - 224, --bottom left
 	})
 	--[[
 	local radar_outline = radar_panel:bitmap({
@@ -5138,7 +5206,6 @@ function NobleHUD:_create_radar(hud)
 		color = self.color_data.hud_vitalsfill_blue,
 		alpha = 0.8
 	})
-	
 	local radar_range_label = radar_panel:text({
 		name = "radar_range_label",
 		text = "25m",
@@ -5147,7 +5214,7 @@ function NobleHUD:_create_radar(hud)
 		font = "fonts/font_eurostile_ext",
 		font_size = 16,
 		align = "left",
-		y = -16, --equal to font size
+--		y = -16, --equal to font size
 		vertical = "bottom",
 		alpha = 0.9
 	})
@@ -5242,9 +5309,94 @@ function NobleHUD:animate_blip_move(o,delay)
 end
 
 function NobleHUD:_set_radar_range(text)
-	self._radar_panel:child("radar_range_label"):set_text(tostring(text))	
+	self._radar_panel:child("radar_range_label"):set_text(string.gsub(managers.localization:text("noblehud_radar_distance_label"),"$DISTANCE",text))	
 end
 
+
+
+--		CARTOGRAPHER (location on map)
+
+function NobleHUD:_create_cartographer(hud)
+	local cartographer_h = 32
+	local cartographer_panel = hud:panel({
+		name = "cartographer_panel",
+		w = hud:w(),
+		h = cartographer_h,
+		x = 200,
+		y = hud:bottom() - (cartographer_h + 24)
+	})
+	local debug_cartographer = cartographer_panel:rect({
+		name = "debug_cartographer",
+		visible = false,
+		color = Color.red,
+		alpha = 0.3
+	})
+	local area_label = cartographer_panel:text({
+		name = "area_label",
+		text = "Terrace",
+		color = self.color_data.hud_vitalsoutline_blue,
+		layer = 2,
+		font = "fonts/font_eurostile_ext",
+		font_size = 16,
+		align = "left",
+		vertical = "bottom",
+		alpha = 0.9
+	})
+	
+	self._cartographer_panel = cartographer_panel
+end
+
+function NobleHUD:LoadCartographerData(map_id)
+	local path = self._cartographer_path 
+	if map_id then 
+		path = path .. tostring(map_id) .. ".txt"
+	end
+	if SystemFS:exists( Application:nice_path( path, true )) then
+		
+		local file = io.open(path,"r")	
+		if file then 
+			for k,v in pairs(json.decode(file:read("*all"))) do
+				self._cartographer_data[k] = v
+			end
+		end
+		return self._cartographer_data
+	else
+		NobleHUD:log("No file for map [" .. map_id .. "]",{color = Color(1,0.5,0)})
+	end
+end
+
+function NobleHUD:SetCartographerLabel(label)
+	if label then 
+		self._cartographer_panel:child("area_label"):set_text(label)
+	end
+end
+
+function NobleHUD:ConsultCartographer(pos,map)
+	if pos and map then 
+		local pos_x = math.floor(pos.x)
+		local pos_y = math.floor(pos.y)
+		local pos_z = math.floor(pos.z)
+
+		for k,v in pairs(map) do
+			if (pos_x < v.x_upper) and (pos_x > v.x_lower) then
+				if (pos_y < v.y_upper) and (pos_y > v.y_lower) then
+					if (pos_z < v.z_upper) and (pos_z > v.z_lower) then
+						return v.location
+					else
+--						KineticHUD:c_log("Z",k)
+--						KineticHUD:c_log(v.z_upper,v.z_lower)
+					end
+				else
+--					KineticHUD:c_log("Y",k)
+--					KineticHUD:c_log(v.y_lower,v.y_upper)
+				end
+			else
+--				KineticHUD:c_log("X",k)
+--				KineticHUD:c_log(v.x_lower,v.x_upper)
+			end
+		end
+	end
+end
 
 --		VITALS
 
@@ -5419,7 +5571,6 @@ function NobleHUD:_create_revives(amount) --called on internal load
 	
 end
 
-
 function NobleHUD:_create_carry(hud)
 	local carry_panel = hud:panel({
 		name = "carry_panel",
@@ -5427,7 +5578,7 @@ function NobleHUD:_create_carry(hud)
 		w = 400,
 		x = 500,
 		y = 500,
-		visible = true
+		visible = false
 	})
 	local debug_carry = carry_panel:rect({
 		name = "debug_carry",
@@ -5471,6 +5622,54 @@ end
 
 function NobleHUD:animate_hide_bag(o,t,dt,start_t)
 
+end
+
+
+--		EQUIPMENT
+function NobleHUD:_create_equipment(hud)
+	local eq_h = 128
+	local equipment_panel = hud:panel({
+		name = "equipment_panel",
+		layer = 1,
+		w = hud:w(),
+		h = eq_h,
+		y = hud:h() + - eq_h,
+	})
+	local debug_eq = equipment_panel:rect({
+		name = "debug_equipment",
+		color = Color.blue,
+		alpha = 0.5,
+		visible = false
+	})
+	self._equipment_panel = equipment_panel
+end
+
+function NobleHUD:layout_equipments(special_equipments,new)
+	local margin = 16
+--	local amount = #special_equipments
+	for i,panel in pairs(special_equipments) do
+		local x = self._equipment_panel:w() - (panel:w() * i) + -margin
+--		Log(panel:name() .. "," .. tostring(new))
+		if panel:name() == new then 
+			NobleHUD:animate(panel,"animate_add_equipment",function (o)
+				NobleHUD:animate(o:child("bitmap"),"animate_killfeed_icon_pulse",nil,0.2,panel:w(),1.5,x,panel:y())
+			end,0.1,x)
+		else
+			NobleHUD:animate(panel,"animate_add_equipment",nil,0.1,x)
+		end
+	end
+end
+
+function NobleHUD:animate_add_equipment(o,t,dt,start_t,rate,x,threshold)
+	if math.abs(x - o:x()) < (threshold or 1) then
+		o:set_x(x)
+		o:set_alpha(1)
+		return true
+	end
+--	local alpha = (x - o:x() / 1000)
+--	o:set_alpha(o:alpha() * 1.1)
+	o:set_x(o:x() + ((x - o:x()) * rate))
+--	o:set_x(o:x() + (x * dt / duration))
 end
 
 
@@ -5568,7 +5767,8 @@ function NobleHUD:_create_compass(hud)
 end
 
 
--- KILLFEED
+-- 		KILLFEED
+
 function NobleHUD:_create_killfeed(hud)
 	local killfeed_panel = hud:panel({
 		name = "killfeed_panel",
@@ -5626,7 +5826,7 @@ end
 
 function NobleHUD:AddMedal(name,rank) --from name
 	local medal_data = self._medal_data[name]
---	self:log("Doing NobleHUD:AddMedal(" .. tostring(name) .. "," .. tostring(rank) .. ")",{color = Color.yellow})
+	self:log("Doing NobleHUD:AddMedal(" .. tostring(name) .. "," .. tostring(rank) .. ")",{color = Color.yellow})
 	if rank and medal_data and medal_data[rank] then 
 		return NobleHUD:AddMedalFromData(medal_data[rank])
 	elseif medal_data and not rank then 
@@ -5666,8 +5866,7 @@ function NobleHUD:AddMedalFromData(data) --direct reference to table passed here
 	local function add_bitmap_to_killfeed (bitmap)
 		self._cache.newest_medal = nil
 		table.insert(self.killfeed_icons,1,{start_t = Application:time(),bitmap = bitmap})
-	end		
---		table.insert(self.killfeed_icons,1,{start_t = Application:time(),bitmap = icon})
+	end	
 	
 	if self._cache.newest_medal and alive(self._cache.newest_medal) then 
 		NobleHUD:animate_remove_done_cb(self._cache.newest_medal,
@@ -5677,7 +5876,6 @@ function NobleHUD:AddMedalFromData(data) --direct reference to table passed here
 			end
 		)
 		table.insert(self.killfeed_icons,1,{start_t = Application:time(),bitmap = self._cache.newest_medal})
---		self._cache.newest_medal:set_rotation(0)
 	end
 	self._cache.newest_medal = icon
 	
@@ -5718,7 +5916,6 @@ function NobleHUD:animate_killfeed_icon_twirl(o,t,dt,start_t,duration,add_angle,
 	local ratio = dt / duration
 --	o:set_center(x,y)
 	if start_t + duration < t then
---		Log("Completed animation 2 ".. tostring(start_t+duration) .. " < " .. tostring(t))
 		return true
 	else	
 		o:set_rotation(o:rotation() + (ratio * add_angle))
@@ -5734,7 +5931,6 @@ function NobleHUD:animate_killfeed_icon_pulse(o,t,dt,start_t,duration,icon_size,
 	local sine = math.max(0,math.sin(math.deg(math.pi * ratio)))
 	local size = icon_size * (1 + (pulse_multiplier * sine))
 	if start_t + duration < t then 
---		Log("Completed animation 3")
 		o:set_size(icon_size,icon_size)
 		return true
 	else
@@ -5745,7 +5941,7 @@ end
 
 --		BUFFS
 
-function NobleHUD:_create_buffs(hud) --buffs, cloned from khud
+function NobleHUD:_create_buffs(hud) --buffs, cloned from khud (not implemented)
 	local buffs_panel = hud:panel({
 		name = "buffs_panel",
 		w = 300,
@@ -5758,6 +5954,10 @@ function NobleHUD:_create_buffs(hud) --buffs, cloned from khud
 		visible = false,
 		alpha = 0.1
 	})
+end
+
+function NobleHUD:AddBuff(id,params)
+
 end
 
 --		HELPER
@@ -5859,52 +6059,7 @@ function NobleHUD:_create_helper(hud) --auntie dot avatar and subtitles
 end
 
 
---		EQUIPMENT
-function NobleHUD:_create_equipment(hud)
-	local eq_h = 128
-	local equipment_panel = hud:panel({
-		name = "equipment_panel",
-		layer = 1,
-		w = hud:w(),
-		h = eq_h,
-		y = hud:h() + - eq_h,
-	})
-	local debug_eq = equipment_panel:rect({
-		name = "debug_equipment",
-		color = Color.blue,
-		alpha = 0.5,
-		visible = false
-	})
-	self._equipment_panel = equipment_panel
-end
 
-function NobleHUD:layout_equipments(special_equipments,new)
-	local margin = 16
---	local amount = #special_equipments
-	for i,panel in pairs(special_equipments) do
-		local x = self._equipment_panel:w() - (panel:w() * i) + -margin
-		Log(panel:name() .. "," .. tostring(new))
-		if panel:name() == new then 
-			NobleHUD:animate(panel,"animate_add_equipment",function (o)
-				NobleHUD:animate(o:child("bitmap"),"animate_killfeed_icon_pulse",nil,0.5,panel:w(),1.5,x,panel:y())
-			end,0.1,x)
-		else
-			NobleHUD:animate(panel,"animate_add_equipment",nil,0.1,x)
-		end
-	end
-end
-
-function NobleHUD:animate_add_equipment(o,t,dt,start_t,rate,x,threshold)
-	if math.abs(x - o:x()) < (threshold or 1) then
-		o:set_x(x)
-		o:set_alpha(1)
-		return true
-	end
-	local rate = (x - o:x() / 100)
-	o:set_alpha(rate)
-	o:set_x(o:x() + ((x - o:x()) * rate))
---	o:set_x(o:x() + (x * dt / duration))
-end
 
 --not implemented; see hudpresenter
 function NobleHUD:animate_helper_subtitle_in(o,str)
