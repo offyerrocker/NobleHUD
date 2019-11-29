@@ -6,9 +6,10 @@ FIX OBJECTIVE HUD REMIND UPDATE
 ***** TODO: *****
 Notes:
 		
+		
+	queue objective activities
 	tab should refresh view_timer or call remind objective
 
-	medals should not always necessarily show a killfeed message
 		mod option? (currently save setting)
 
 	&&& BEFORE RELEASE: &&&
@@ -216,7 +217,8 @@ NobleHUD.settings = {
 	crosshair_static_color = {1,0,0},
 	radar_enabled = true,
 	radar_distance = 25,
-	show_all_medals = true
+	show_all_medals = false,
+	announcer_enabled = true
 }
 NobleHUD._bgboxes = {}
 NobleHUD.color_data = {
@@ -244,12 +246,13 @@ NobleHUD._mod_path = ModPath
 NobleHUD._settings_path = ModPath .. "noblehud_settings.txt"
 NobleHUD._localization_path = ModPath .. "localization/"
 NobleHUD._cartographer_path = ModPath .. "cartographer/"
+NobleHUD._announcer_path = ModPath .. "assets/snd/announcer/"
 
 NobleHUD._cartographer_data = {}
 
 NobleHUD._presenter_title_params = {
 	duration = 0.25,
-	lifetime = 7,
+	lifetime = 6,
 	font_size = 16,
 	color_1 = NobleHUD.color_data.hud_killfeed_yellow,
 	color_2 = NobleHUD.color_data.hud_killfeed_lightyellow
@@ -262,10 +265,12 @@ NobleHUD._presenter_desc_params = {
 	color_2 = NobleHUD.color_data.hud_killfeed_lightyellow
 }
 
+NobleHUD._efficient_audio_mode = false --overlaps 
 NobleHUD._HUD_HEALTH_TICKS = 8
 NobleHUD._RADAR_REFRESH_INTERVAL = 0.5
 NobleHUD._radar_refresh_t = 0
 NobleHUD._cache = {
+	killer = {},
 	game_state = "",
 	current_objective = "",
 	objective_progress = nil,
@@ -273,6 +278,8 @@ NobleHUD._cache = {
 	newest_medal = false,
 	newest_killfeed = false,
 	last_cartographer_t = 0,
+	sounds = {},
+	announcer_queue = {},
 	kills = {
 		close_call = false,
 		last_kill_t = 0,
@@ -1224,265 +1231,305 @@ NobleHUD._medal_data = {
 	},
 	headshot = {
 		name = "Headshot",
-		sfx = "",
+		sfx = false,
+		show_text = false,
 		icon_xy = {1,1}
 	},
 	pummel = {
 		name = "Pummel",
-		sfx = "",
+		sfx = false,
+		show_text = false,
 		icon_xy = {1,2}
 	},
 	assassination = {
 		name = "Assassin",
-		sfx = "",
+		show_text = false,
+		sfx = false,
 		icon_xy = {1,3}
 	},
 	beatdown = {
 		name = "Beat Down",
-		sfx = "",
+		show_text = false,
+		sfx = false,
 		icon_xy = {1,4}
 	},
 	close_call = {
 		name = "Close Call",
-		sfx = "",
+		show_text = false,
+		sfx = false,
 		icon_xy = {1,5}
 	},
 	revenge = { --not implemented
 		name = "Revenge",
-		sfx = "",
+		show_text = false,
+		sfx = "revenge",
 		icon_xy = {1,6}
 	},
 	avenger = { --not implemented
 		name = "Avenger",
-		sfx = "",
+		show_text = false,
+		sfx = false,
 		icon_xy = {1,7}
 	},
 	grave = {
-		name = "Kill from the Grave!",
-		sfx = "",
+		name = "Kill from the Grave",
+		show_text = false,
+		sfx = false,
 		icon_xy = {1,8}
+	},
+	extermination = { --not implemented yet
+		name = "Extermination",
+		show_text = true,
+		disabled = true,
+		sfx = "extermination",
+		icon_xy = {0,9} --!
+	},
+	sniper = {
+		name = "Sniper Kill", --headshot only
+		sfx = false,
+		icon_xy = {4,0}
+	},
+	betrayal = {
+		name = "Betrayal",
+		sfx = "betrayal", --betrayal, suicide, and betrayed are only in the medals table so that its sound file will be loaded at the same time as all the others
+		icon_xy = {-1,-1},
+		show_text = false
+	},
+	suicide = {
+		name = "Suicide",
+		sfx = "suicide",
+		icon_xy = {-1,-1},
+		show_text = false
+	},
+	betrayed = {
+		name = "Betrayed",
+		sfx = "betrayed",
+		icon_xy = {-1,-1},
+		show_text = false
 	},
 	multikill = {
 		[2] = {
 			name = "Double Kill",
-			sfx = "",
+			sfx = "multikill_2",
 			icon_xy = {0,0}
 		},
 		[3] = {
 			name = "Triple Kill",
-			sfx = "",
+			sfx = "multikill_3",
 			icon_xy = {0,1}
 		},
 		[4] = {
 			name = "Overkill", --obligatory joke here
-			sfx = "",
+			sfx = "multikill_4",
 			icon_xy = {0,2}
 		},
 		[5] = {
 			name = "Killtacular",
-			sfx = "",
+			sfx = "multikill_5",
 			icon_xy = {0,3}
 		},
 		[6] = {
 			name = "Killtrocity",
-			sfx = "",
+			sfx = "multikill_6",
 			icon_xy = {0,4}
 		},
 		[7] = {
 			name = "Killimanjaro",
-			sfx = "",
+			sfx = "multikill_7",
 			icon_xy = {0,5}
 		},
 		[8] = {
 			name = "Killtastrophe",
-			sfx = "",
+			sfx = "multikill_8",
 			icon_xy = {0,6}
 		},
 		[9] = {
 			name = "Killpocalypse",
-			sfx = "",
+			sfx = "multikill_9",
 			icon_xy = {0,7}
 		},
 		[10] = {	
 			name = "Killionaire",
-			sfx = "",
+			sfx = "multikill_10",
 			icon_xy = {0,8}
 		}
 	},
-	spree_standard = {		
+	spree_all = {		
 		[10] = {
 			name = "Killing Spree",
-			sfx = "",
+			sfx = "spree_all_1",
 			icon_xy = {2,0}
 		},
 		[20] = {
 			name = "Killing Frenzy",
-			sfx = "",
+			sfx = "spree_all_2",
 			icon_xy = {2,1}
 		},
 		[30] = {
 			name = "Running Riot",
-			sfx = "",
+			sfx = "spree_all_3",
 			icon_xy = {2,2}
 		},
 		[40] = {
 			name = "Rampage",
-			sfx = "",
+			sfx = "spree_all_4",
 			icon_xy = {2,3}
 		},
 		[50] = {
 			name = "Untouchable",
-			sfx = "",
+			sfx = "spree_all_5",
 			icon_xy = {2,4}
 		},
 		[100] = {
 			name = "Invincible",
-			sfx = "",
+			sfx = "spree_all_6",
 			icon_xy = {2,5}
 		},
 		[500] = {
 			name = "Inconceivable",
-			sfx = "",
+			sfx = "spree_all_7",
 			icon_xy = {2,6}
 		},
 		[1000] = {				
 			name = "Unfrigginbelievable",
-			sfx = "",
+			sfx = "spree_all_8",
 			icon_xy = {2,7}
 		}
 	},
 	spree_assist = { --not implemented
 		[1] = {
 			name = "Assist",
-			sfx = "",
+			sfx = false,
 			icon_xy = {3,0}
 		},
 		[5] = {		
 			name = "Assist Spree",
-			sfx = "",
+			sfx = "spree_assist_1",
 			icon_xy = {3,1}
 		},
 		[10] = {
 			name = "Sidekick",
-			sfx = "",
+			sfx = "spree_assist_2",
 			icon_xy = {3,2}
 		},
 		[15] = {
 			name = "Second Gunman",
-			sfx = "",
+			sfx = "spree_assist_3",
 			icon_xy = {3,3}
 		}
 	},
 	spree_sword = { --not implemented
 		[5] = {
 			name = "Sword Spree",
-			name = "",
-			sfx = "",
+			sfx = "spree_sword_1",
 			icon_xy = {3,4}
 		},
 		[10] = {
 			name = "Slice 'n Dice",
-			sfx = "",
+			sfx = "spree_sword_2",
 			icon_xy = {3,5}
 		},
 		[15] = {
 			name = "Cutting Crew",
-			sfx = "",
+			sfx = "spree_sword_3",
 			icon_xy = {3,6}
 		}
 	},
 	spree_grenade = { --not implemented properly
 		[5] = {
 			name = "Stick Spree",
-			sfx = "",
+			sfx = "spree_grenade_1",
 			icon_xy = {3,7}
 		},
 		[10] = {
 			name = "Sticky Fingers",
-			sfx = "",
+			sfx = "spree_grenade_2",
 			icon_xy = {3,8}
 		},
 		[15] = {
 			name = "Corrected",
-			sfx = "",
+			sfx = "spree_grenade_3",
 			icon_xy = {3,9}
 		}
 	},
 	spree_sniper = {
-		[1] = {
-			name = "Sniper Kill", --headshot only
-			sfx = "",
-			icon_xy = {4,0}
-		},
 		[5] = {
 			name = "Sniper Spree",
-			sfx = "",
+			sfx = "spree_sniper_1",
 			icon_xy = {4,1}
 		},
 		[10] = {
-			name = "Sniper Spree",
-			sfx = "",
+			name = "Sharpshooter",
+			sfx = "spree_sniper_2",
 			icon_xy = {4,2}
 		},
 		[15] = {
 			name = "Be the Bullet",
-			sfx = "",
+			sfx = "spree_sniper_3",
 			icon_xy = {4,3}
 		}
 	},
 	spree_shotgun = {
 		[5] = {
 			name = "Shotgun Spree",
-			sfx = "",
+			sfx = "spree_shotgun_1",
 			icon_xy = {4,4}
 		},
 		[10] = {
 			name = "Open Season",
-			sfx = "",
+			sfx = "spree_shotgun_2",
 			icon_xy = {4,5}
 		},
 		[15] = {
 			name = "Buck Wild",
-			sfx = "",
+			sfx = "spree_shotgun_3",
 			icon_xy = {4,6}
 		}
 	},
 	spree_splatter = { --not implemented
 		[5] = {
 			name = "Splatter Spree",
-			sfx = "",
+			sfx = "spree_splatter_1",
 			icon_xy = {4,7}
 		},
 		[10] = {
 			name = "Vehicular Manslaughter",
-			sfx = "",
+			sfx = "spree_splatter_2",
 			icon_xy = {4,8}
 		},
 		[15] = {
 			name = "Sunday Driver",
-			sfx = "",
+			sfx = "spree_splatter_3",
 			icon_xy = {4,9}
 		}
 	},
 	spree_wheelman = { --not implemented
 		[1] = {
 			name = "Wheelman",
-			sfx = "",
+			disabled = true,
+			show_text = false,
+			sfx = false,
 			icon_xy = {1,9}
 		},
 		[5] = { --couldn't find the icons for these
 			name = "Wheelman Spree",
-			sfx = "",
+			show_text = false,
+			disabled = true,
+			sfx = "spree_wheelman_1",
 			icon_xy = {1,9}
 		},
 		[10] = {
 			name = "Road Hog",
-			sfx = "",
+			disabled = true,
+			show_text = false,
+			sfx = "spree_wheelman_2",
 			icon_xy = {1,9}
 		},
 		[15] = {
 			name = "Road Rage",
-			sfx = "",
+			disabled = true,
+			show_text = false,
+			sfx = "spree_wheelman_3",
 			icon_xy = {1,9}
 		}
 	}
@@ -1909,6 +1956,10 @@ function NobleHUD:ShowAllMedalMessages()
 	return self.settings.show_all_medals
 end
 
+function NobleHUD:AnnouncerEnabled() 
+	return self.settings.announcer_enabled
+end
+
 		--SET SETTINGS
 function NobleHUD:SetCrosshairEnabled(enabled)
 	self.crosshair_enabled = enabled
@@ -1992,6 +2043,8 @@ function NobleHUD:CreateHUD(orig)
 end
 			
 function NobleHUD:OnLoaded()
+	self:LoadXAudioSounds()
+
 	self:set_weapon_info()
 	self:create_revives()
 	self:_set_deployable_equipment(2,true)
@@ -2060,14 +2113,35 @@ function NobleHUD:UpdateHUD(t,dt)
 			Hooks:Call("OnGameStateChange",t,self._cache.game_state,game_state)
 			self._cache.game_state = game_state
 		end
-	end
-
-	
+	end	
 	--]]
+
+	local announcer = self._announcer_sound_source
+	if announcer and self._cache.announcer_queue[1] then 
+		if announcer:get_state() ~= 1 then 
+			announcer:set_buffer(self._cache.sounds[self._cache.announcer_queue[1]])
+			announcer:play()
+			table.remove(self._cache.announcer_queue,1)
+		end
+	end
+--[[	
+	for i,item in ipairs(self._cache.announcer_queue) do 
+		if item and self._announcer_sound_source then 
+			local sound_state = self._announcer_sound_source:get_state() 
+			if sound_state ~= 1 then
+				self._announcer_sound_source:set_buffer(self._cache.sounds[item])
+				self._announcer_sound_source:play()
+				table.remove(self._cache.announcer_queue,i)
+				break
+			end
+		else
+			table.remove(self._cache.announcer_queue,i)
+		end
+	end
+--]]	
 	local player = managers.player:local_player()
 	if player then 
-			
-
+	
 		--medal stuff
 		if self:KillsCache("close_call") and player:character_damage():armor_ratio() >= 1 then 
 			self:KillsCache("close_call",false,true)
@@ -2529,6 +2603,7 @@ function NobleHUD:OnEnemyKilled(data)
 	Log("Killed " .. tostring(data.type) .. " with " .. tostring(weapon_id) .. "/" .. tostring(data.variant))
 	if data.type and data.type == "neutral" or data.type == "civilians" then 
 		self:ClearKillsCache()
+		self:PlayAnnouncerSound("Betrayal")
 		--no +1 kills for you, you murderer >:(
 	else
 		local from_weapon
@@ -2543,12 +2618,7 @@ function NobleHUD:OnEnemyKilled(data)
 			if self:KillsCache("last_kill_t") > t then 
 				self:KillsCache("melee",1)
 			end
-			if data.cool then --trigger implemented in copdamage
-				self:AddMedal("beatdown")
-			end
-			if data.from_behind then --trigger implemented in copdamage
-				self:AddMedal("assassination")			
-			end
+			--triggers for beatdown and assassination are in copdamage since that information is not passed to here
 			self:AddMedal("pummel")
 		
 			self:_set_killcount(3,managers.statistics:session_killed_by_weapon(weapon_id))
@@ -2561,7 +2631,7 @@ function NobleHUD:OnEnemyKilled(data)
 			local ptd = tweak_data.blackmarket.projectiles
 			if ptd[weapon_id] and ptd[weapon_id].is_a_grenade then
 				from_weapon = 3
-				self:AddMedal("spree_sticky",self:KillsCache("grenade",1))
+				self:AddMedal("spree_grenade",self:KillsCache("grenade",1))
 			end
 		else
 			self:log("Killed " .. tostring(unit_name) .. " with misc weapon " .. tostring(weapon_id or weapon_unit))
@@ -2591,7 +2661,7 @@ function NobleHUD:OnEnemyKilled(data)
 					if category == "snp" then 
 						sniper_count = self:KillsCache("sniper",1)
 						if data.head_shot then 
-							self:AddMedal("spree_sniper",1)
+							self:AddMedal("sniper")
 						end
 						if sniper_count > 1 then 
 							self:AddMedal("spree_sniper",sniper_count)
@@ -2605,7 +2675,7 @@ function NobleHUD:OnEnemyKilled(data)
 			else
 				multi_count = self:KillsCache("multi_count",1,true)
 			end
-			self:AddMedal("spree_standard",spree_count)
+			self:AddMedal("spree_all",spree_count)
 			self:KillsCache("last_kill_t",t,true)
 		end
 
@@ -2668,6 +2738,80 @@ function NobleHUD:OnGameStateChanged(before_state,state)
 		--show player hud
 	end
 end
+
+
+function NobleHUD:ClearKiller(peer_id)
+	if peer_id then 
+		self._cache.killer[peer_id] = nil
+	end
+end
+
+function NobleHUD:SetKiller(unit,peer_id)
+	if unit and alive(unit) and unit.character_damage and unit:character_damage() and not unit:character_damage():dead() then 
+		peer_id = peer_id or managers.network:session():local_peer():id() or 1
+		self._cache.killer[peer_id] = unit
+	end
+end
+
+
+function NobleHUD:LoadXAudioSounds()
+    if blt.xaudio then
+        blt.xaudio.setup()
+		
+		local function loadsound(name,snd)
+			local path = NobleHUD._announcer_path .. snd .. ".ogg"
+			if self._efficient_audio_mode then 
+				self:log("Loading sound to _cache: " .. tostring(name) .. " " .. tostring(snd))
+				self._cache.sounds[name] = path
+			else
+				self:log("Loading sound to buffer and _cache: " .. tostring(name) .. " [" .. tostring(snd)..".ogg]")
+				self._cache.sounds[name] = XAudio.Buffer:new(path)
+			end
+		end
+		
+		-- Announcer (Downes/Chief)
+		if not self._efficient_audio_mode then 
+			self._announcer_sound_source = self._announcer_sound_source or XAudio.Source:new()
+		end
+		for medal_name,medal in pairs(self._medal_data) do 
+			if medal.sfx and medal.sfx ~= "" and not medal.disabled then 
+				loadsound(medal.name,medal.sfx)
+			else
+				for tier,tiered_medal in pairs(medal) do 
+					if type(tier) == "number" then 
+						if tiered_medal.sfx and tiered_medal.sfx ~= "" and not tiered_medal.disabled then 							
+							loadsound(tiered_medal.name,tiered_medal.sfx)
+						end
+					end
+				end
+			end
+		end
+		
+		
+		-- Auntie Dot
+		--...IF I HAD ONE
+		--self._helper_sound_source = self._helper_sound_source or XAudio.Source:new()
+	end
+end
+
+function NobleHUD:PlayAnnouncerSound(name)
+		local snd = self._cache.sounds[name]
+		if snd then 
+			if self._efficient_audio_mode then 
+				XAudio.Source:new(XAudio.Buffer:new(snd))
+			else
+				if self._announcer_sound_source then 
+					self._cache.announcer_queue[#self._cache.announcer_queue + 1] = name
+--					self._announcer_sound_source:set_buffer(snd)
+--					self._announcer_sound_source:play()
+				end
+			end
+		else
+			Log("PlayAnnouncerSound(): sound [" .. name .. "] not found",{color = Color.red})
+		end
+end
+
+
 
 --		WEAPONS
 
@@ -3147,7 +3291,7 @@ function NobleHUD:_set_firemode(slot,firemode,in_burst_mode)
 	self:_get_crosshair_by_info(slot,"single"):set_visible(false)
 	self:_get_crosshair_by_info(slot,"auto"):set_visible(false)
 	self:_get_crosshair_by_info(slot,"underbarrel"):set_visible(false)
-	OffyLib:c_log("Toggled firemode" .. tostring(slot) .. tostring(firemode))
+--	OffyLib:c_log("Toggled firemode" .. tostring(slot) .. tostring(firemode))
 	self:_get_crosshair_by_info(slot,firemode):set_visible(true)
 
 	local panel = slot == 1 and self._primary_weapon_panel or self._secondary_weapon_panel
@@ -3877,8 +4021,8 @@ end
 
 function NobleHUD:_activate_ability_radial(time_left,time_total)
 
-	self:log("grenades time_left: " .. time_left)
-	self:log("grenades time_total: " .. time_total)
+--	self:log("grenades time_left: " .. time_left)
+--	self:log("grenades time_total: " .. time_total)
 
 	local grenades_panel = self._grenades_panel:child("primary_grenade_panel")
 	local grenades_outline = grenades_panel:child("grenade_outline")
@@ -5363,7 +5507,7 @@ function NobleHUD:LoadCartographerData(map_id)
 		end
 		return self._cartographer_data
 	else
-		NobleHUD:log("No file for map [" .. map_id .. "]",{color = Color(1,0.5,0)})
+		NobleHUD:log("No cartographer file for map [" .. map_id .. "]",{color = Color(1,0.5,0)})
 	end
 end
 
@@ -5826,15 +5970,15 @@ function NobleHUD:AddKillfeedMessage(text,params)
 	return label
 end
 
-function NobleHUD:AddMedal(name,rank) --from name
-	local medal_data = self._medal_data[name]
-	self:log("Doing NobleHUD:AddMedal(" .. tostring(name) .. "," .. tostring(rank) .. ")",{color = Color.yellow})
+function NobleHUD:AddMedal(category,rank) --from name
+	local medal_data = self._medal_data[category]
+--	self:log("Doing NobleHUD:AddMedal(" .. tostring(category) .. "," .. tostring(rank) .. ")",{color = Color.yellow})
 	if rank and medal_data and medal_data[rank] then 
-		return NobleHUD:AddMedalFromData(medal_data[rank])
+		return NobleHUD:AddMedalFromData(medal_data[rank],category)
 	elseif medal_data and not rank then 
-		return NobleHUD:AddMedalFromData(medal_data)
+		return NobleHUD:AddMedalFromData(medal_data,category)
 	else
---		self:log("ERROR: NobleHUD:AddMedal(" .. tostring(name) .. "," .. tostring(rank) .. ") (bad medal)",{color = Color.red})
+--		self:log("ERROR: NobleHUD:AddMedal(" .. tostring(category) .. "," .. tostring(rank) .. ") (bad medal)",{color = Color.red})
 	end
 end
 
@@ -5842,6 +5986,8 @@ function NobleHUD:AddMedalFromData(data) --direct reference to table passed here
 	local killfeed = self._killfeed_panel
 	if not (data and data.icon_xy) then 
 		self:log("ERROR: bad data to AddMedalFromData(" .. tostring(data) .. ")")
+		return
+	elseif data.disabled then 
 		return
 	end
 	self.num_medals = self.num_medals + 1
@@ -5883,10 +6029,10 @@ function NobleHUD:AddMedalFromData(data) --direct reference to table passed here
 	
 	self:animate(icon,"animate_killfeed_icon_twirl",function(o) o:set_rotation(0); NobleHUD:animate(o,"animate_killfeed_icon_pulse",add_bitmap_to_killfeed,0.3,icon_size,1.5) end,0.25,180,start_x,start_y)
 	
-	if data.sfx then 
-		--play sound sfx here
+	if data.sfx and self:AnnouncerEnabled() then 
+		self:PlayAnnouncerSound(data.name)
 	end
-	if data.show_message or self:ShowAllMedalMessages() then 
+	if data.show_text or self:ShowAllMedalMessages() then 
 		self:AddKillfeedMessage(data.name,{font_size = 16})
 	end
 	return icon
@@ -6061,8 +6207,6 @@ function NobleHUD:_create_helper(hud) --auntie dot avatar and subtitles
 end
 
 
-
-
 --not implemented; see hudpresenter
 function NobleHUD:animate_helper_subtitle_in(o,str)
 	local text = o:text()
@@ -6102,10 +6246,6 @@ function NobleHUD:helper_is_typing()
 	--return not self._helper_current_event
 end
 
-function NobleHUD:_layout_vanilla() --todo determine which vanilla hud elements to hide
-	
-end
-
 Hooks:Add("LocalizationManagerPostInit", "noblehud_addlocalization", function( loc )
 	local path = NobleHUD._localization_path
 	
@@ -6120,7 +6260,7 @@ Hooks:Add("LocalizationManagerPostInit", "noblehud_addlocalization", function( l
 end)	
 --[[
 
-Hooks:Add("MenuManagerInitialize", "commandprompt_initmenu", function(menu_manager)
+Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	MenuCallbackHandler.commandprompt_tagunit = function(self)
 		local unit = Console:GetFwdRay("unit")
 		Console:SetFwdRayUnit(unit)

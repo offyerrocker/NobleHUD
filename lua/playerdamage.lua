@@ -32,3 +32,37 @@ function PlayerDamage:_update_armor_hud(t, dt) --overridden
 		self._hurt_value = math.min(1, self._hurt_value + dt)
 	end
 end
+
+local orig_dmg_m = PlayerDamage.damage_melee
+function PlayerDamage:damage_melee(attack_data,...)
+	local bleed_out = self._bleed_out
+	local result = {orig_dmg_m(self,attack_data,...)}
+
+	if not bleed_out and self._bleed_out then 
+		if attack_data.attacker_unit then 
+			NobleHUD:SetKiller(attack_data.attacker_unit)
+		end
+	end
+	return unpack(result)
+end
+
+local orig_dmg_b = PlayerDamage.damage_bullet
+function PlayerDamage:damage_bullet(attack_data,...)
+	local bleed_out = self._bleed_out
+	local result = {orig_dmg_b(self,attack_data,...)}
+	if not bleed_out and self._bleed_out then 
+		if attack_data.attacker_unit then 
+			NobleHUD:SetKiller(attack_data.attacker_unit)
+		end
+	end
+	return unpack(result)
+end
+--[[
+Hooks:PostHook(PlayerDamage,"damage_melee","noblehud_damage_melee",function(self,attack_data,...)
+end)
+
+Hooks:PostHook(PlayerDamage,"damage_bullet","noblehud_damage_bullet",function(self,attack_data,...)
+end)
+Hooks:PostHook(PlayerDamage,"damage_simple","noblehud_damage_simple",function(self,attack_data,...)
+end)
+--]]
