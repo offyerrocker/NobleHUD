@@ -1,10 +1,14 @@
 --[[ 
 
-FIX OBJECTIVE HUD REMIND UPDATE
 
 
 ***** TODO: *****
 Notes:
+
+CHANGE COPDAMAGE CHECKING to use
+	CopDamage:_check_damage_achievements()
+instead of posthooking everything
+
 		
 		
 	queue objective activities
