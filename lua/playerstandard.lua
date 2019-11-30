@@ -1,6 +1,23 @@
 if not NobleHUD then return end
+--[[
+Hooks:PostHook(PlayerStandard,"_start_action_interact","noblehud_playerstandard_startinteract",function(self,t, input, timer, interact_object)
+	local final_timer = timer
+	final_timer = managers.modifiers:modify_value("PlayerStandard:OnStartInteraction", final_timer, interact_object)
+	self._interact_expire_t = final_timer
+	
+	local start_timer = 0
+	self._interact_params = {
+		object = interact_object,
+		timer = final_timer,
+		tweak_data = interact_object:interaction().tweak_data
+	}
 
-
+	self:_play_unequip_animation()
+	managers.hud:show_interaction_bar(start_timer, final_timer)
+	managers.network:session():send_to_peers_synched("sync_teammate_progress", 1, true, self._interact_params.tweak_data, final_timer, false)
+	self._unit:network():send("sync_interaction_anim", true, self._interact_params.tweak_data)
+end
+--]]
 local orig_check_fire = PlayerStandard._check_action_primary_attack
 function PlayerStandard:_check_action_primary_attack(t,input,...)
 	if self._equipped_unit and (input.btn_primary_attack_state or input.btn_primary_attack_release) then 

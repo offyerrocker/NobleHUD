@@ -2,7 +2,19 @@ Hooks:PostHook(HUDAssaultCorner,"init","noblehud_assaultcorner_init",function(se
 	self._hud_panel:hide()
 	self._hostages_bg_box:hide()
 	self._hud_panel:child("hostages_panel"):set_y(-100)
+	self._hud_panel:child("hostages_panel"):set_alpha(0)
 end)
+
+function HUDAssaultCorner:_show_hostages()
+	if not self._point_of_no_return then
+--		self._hud_panel:child("hostages_panel"):show()
+	end
+end
+
+function HUDAssaultCorner:_hide_hostages()
+--	self._hud_panel:child("hostages_panel"):hide()
+end
+
 
 --managers.hud._hud_assault_corner:show_point_of_no_return_timer()
 --._hud_panel:child("assault_panel")

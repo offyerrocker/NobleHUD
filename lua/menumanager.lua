@@ -15,6 +15,7 @@ instead of posthooking everything
 	tab should refresh view_timer or call remind objective
 
 		mod option? (currently save setting)
+		
 
 	&&& BEFORE RELEASE: &&&
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER
@@ -25,11 +26,11 @@ instead of posthooking everything
 			- Rocket reticle will not proc???
 			- CROSSHAIR DETECTION SHOULD BE FROM PLAYER, NOT CAMERA
 			- Swapping while aiming at an enemy keeps the crosshair color
-			- grenade kills don't proc sticky medal
-
+			- ADS should maintain mostly still reticle, unusable otherwise
 
 		%% FEATURES: %%
-			* Hostages panel
+			* Assault Banner
+				- Hostages panel
 			* Interaction in top right (under weapons)
 			* Carry panel
 			* Chat panel
@@ -63,13 +64,12 @@ instead of posthooking everything
 			
 	&& LOW PRIORITY FEATURES: &&
 		* Weapon swap interrupts sprees? at least, it should for weapon-specific ones
-		* Should graze kills give sniper medals? currently, they don't
 		* Auntie dot
 			* Subtitles: Auntie dot voice lines with associated queues
 			* background non-lit grid should probably be invisible, or flicker to invisible after flickering off
 			* should be layered over as the loading screen, and stretched to fit screen
 			* during loading screen, should be under text but above blackscreen;
-			* in-game, should be entirely below hud
+			* in-game, should be entirely below hud, layerwise
 		* Joker panel
 		* Animate function for text that randomly hides individual characters (similar to auntie dot's fadeout function)
 			* Given list of integers representing non-space character positions, foreach hide animate(text:set_color_range(pos,pos,color:with_alpha(a))) after random(n) delay
@@ -95,6 +95,9 @@ instead of posthooking everything
 			* Pull for rappelling enemies?
 			* Headcase somehow?
 			* Reloading?
+
+		&& DECISIONS &&
+			* Should graze kills give sniper medals? currently, they don't
 
 --current crosshair selection
 			
@@ -222,7 +225,8 @@ NobleHUD.settings = {
 	radar_enabled = true,
 	radar_distance = 25,
 	show_all_medals = false,
-	announcer_enabled = true
+	announcer_enabled = true,
+	interact_style = 1
 }
 NobleHUD._bgboxes = {}
 NobleHUD.color_data = {
@@ -269,7 +273,7 @@ NobleHUD._presenter_desc_params = {
 	color_2 = NobleHUD.color_data.hud_killfeed_lightyellow
 }
 
-NobleHUD._efficient_audio_mode = false --overlaps 
+NobleHUD._efficient_audio_mode = false --voice lines, if procced simultaneously, will overlap if true, rather than queue
 NobleHUD._HUD_HEALTH_TICKS = 8
 NobleHUD._RADAR_REFRESH_INTERVAL = 0.5
 NobleHUD._radar_refresh_t = 0
@@ -1263,7 +1267,7 @@ NobleHUD._medal_data = {
 		sfx = false,
 		icon_xy = {1,5}
 	},
-	revenge = { --not implemented
+	revenge = {
 		name = "Revenge",
 		show_text = false,
 		sfx = "revenge",
@@ -1281,7 +1285,7 @@ NobleHUD._medal_data = {
 		sfx = false,
 		icon_xy = {1,8}
 	},
-	extermination = { --not implemented yet
+	extermination = { --not implemented
 		name = "Extermination",
 		show_text = true,
 		disabled = true,
@@ -1291,7 +1295,68 @@ NobleHUD._medal_data = {
 	sniper = {
 		name = "Sniper Kill", --headshot only
 		sfx = false,
+		show_text = false,
 		icon_xy = {4,0}
+	},
+	firebird = { --not implemented
+		name = "Firebird",
+		sfx = false,
+		show_text = false,
+		icon_xy = {7,0}
+	},
+	bulltrue = { --not implemented
+		name = "Bulltrue",
+		sfx = false,
+		show_text = false,
+		icon_xy = {7,1}
+	},
+	headcase = { --not implemented
+		name = "Headcase",
+		sfx = false,
+		show_text = false,
+		icon_xy = {7,2}
+	},
+	pull = { --not implemented
+		name = "Pull",
+		sfx = false,
+		show_text = false,
+		icon_xy = {7,3}
+	},
+	hero = { --not implemented
+		name = "Hero",
+		sfx = false,
+		show_text = false,
+		icon_xy = {7,4}
+	},
+	protector = { --not implemented
+		name = "Protector",
+		sfx = false,
+		show_text = false,
+		icon_xy = {7,5}
+	},
+	showstopper = { --not implemented
+		name = "Showstopper",
+		sfx = false,
+		show_text = false,
+		icon_xy = {7,6}
+	},
+	skyjack = { --not implemented
+		name = "Skyjack",
+		sfx = false,
+		show_text = false,
+		icon_xy = {7,7}
+	},
+	seek_and_destroy = { --not implemented
+		name = "Seek and Destroy",
+		sfx = false,
+		show_text = false,
+		icon_xy = {7,8}
+	},
+	last_man_standing = { --not implemented
+		name = "Last Man Standing",
+		sfx = "last_man_standing",
+		show_text = false,
+		icon_xy = {7,9}
 	},
 	betrayal = {
 		name = "Betrayal",
@@ -1302,6 +1367,18 @@ NobleHUD._medal_data = {
 	suicide = {
 		name = "Suicide",
 		sfx = "suicide",
+		icon_xy = {-1,-1},
+		show_text = false
+	},
+	round_over = {
+		name = "Round Over",
+		sfx = "round_over",
+		icon_xy = {-1,-1},
+		show_text = false
+	},
+	game_over = {
+		name = "Game Over",
+		sfx = "game_over",
 		icon_xy = {-1,-1},
 		show_text = false
 	},
@@ -2031,6 +2108,7 @@ function NobleHUD:CreateHUD(orig)
 	self:_create_grenades(hud) --this refers to the element in the top left; either deployables or grenades may be displayed here
 	self:_create_ability(hud) --this refers to the element in the bottom left (above radar); either deployables or grenades may be displayed here
 	self:_create_objectives(hud) 
+	self:_create_interact(hud)
 	self:_create_crosshair(hud)
 	self:_create_compass(hud)
 	self:_create_radar(hud)
@@ -2145,6 +2223,7 @@ function NobleHUD:UpdateHUD(t,dt)
 --]]	
 	local player = managers.player:local_player()
 	if player then 
+
 	
 		--medal stuff
 		if self:KillsCache("close_call") and player:character_damage():armor_ratio() >= 1 then 
@@ -2238,6 +2317,7 @@ function NobleHUD:UpdateHUD(t,dt)
 		local player_pos = player:position()
 		local state = player:movement():current_state()
 		
+
 			
 	--cartographer stuff
 		local check_interval = 0.5 --seconds between location checks
@@ -2388,103 +2468,164 @@ function NobleHUD:UpdateHUD(t,dt)
 					self:remove_radar_blip(data.unit,blip_key)
 				end
 			end
-			
+		end
 -- ************** CROSSHAIR ************** 
-			if true then --crosshair enabled
-				local fwd_ray = player:movement():current_state()._fwd_ray	
-				local focused_person = fwd_ray and fwd_ray.unit
-	--			local crosshair = self._crosshair_panel::child("crosshair_subparts"):child("crosshair_1") --todo function to handle crosshair modifications
-				local crosshair_color = Color.white
-				if alive(focused_person) and (self._cache.crosshair_enemy ~= focused_person) then
-					self._cache.crosshair_enemy = focused_person --only update crosshair colors if different selected unit than last 
-					if focused_person:character_damage() then 
-						if not focused_person:character_damage():dead() then 
-							local f_m = focused_person:movement()
-							local f_t = f_m and f_m:team() and f_m:team().id
-							if f_t then 
-								if focused_person:brain() and focused_person:brain().is_current_logic and focused_person:brain():is_current_logic("intimidated") then 
-									f_t = "converted_enemy"
-								end
-								crosshair_color = self:get_blip_color_by_team(f_t)
-							elseif not f_m then --old color determination method
-	--							self:log("NO CROSSHAIR UNIT TEAM")
-	--							if managers.enemy:is_enemy(focused_person) then 
-	--							elseif managers.enemy:is_civilian(focused_person) then
-	--							elseif managers.criminals:character_name_by_unit(focused_person) then
-								--else, is probably a car.
+		if true then --crosshair enabled
+			local fwd_ray = player:movement():current_state()._fwd_ray	
+			local focused_person = fwd_ray and fwd_ray.unit
+--			local crosshair = self._crosshair_panel::child("crosshair_subparts"):child("crosshair_1") --todo function to handle crosshair modifications
+			local crosshair_color = Color.white
+			if alive(focused_person) and (self._cache.crosshair_enemy ~= focused_person) then
+				self._cache.crosshair_enemy = focused_person --only update crosshair colors if different selected unit than last 
+				if focused_person:character_damage() then 
+					if not focused_person:character_damage():dead() then 
+						local f_m = focused_person:movement()
+						local f_t = f_m and f_m:team() and f_m:team().id
+						if f_t then 
+							if focused_person:brain() and focused_person:brain().is_current_logic and focused_person:brain():is_current_logic("intimidated") then 
+								f_t = "converted_enemy"
 							end
+							crosshair_color = self:get_blip_color_by_team(f_t)
+						elseif not f_m then --old color determination method
+--							self:log("NO CROSSHAIR UNIT TEAM")
+--							if managers.enemy:is_enemy(focused_person) then 
+--							elseif managers.enemy:is_civilian(focused_person) then
+--							elseif managers.criminals:character_name_by_unit(focused_person) then
+							--else, is probably a car.
 						end
-					elseif focused_person:base() and focused_person:base().can_apply_tape_loop and focused_person:base():can_apply_tape_loop() then 	
-						crosshair_color = self:get_blip_color_by_team("law1")
 					end
-					self:_set_crosshair_color(crosshair_color)
+				elseif focused_person:base() and focused_person:base().can_apply_tape_loop and focused_person:base():can_apply_tape_loop() then 	
+					crosshair_color = self:get_blip_color_by_team("law1")
 				end
-				
-				
-				if self:UseCrosshairShake() then 
-					--if settings.allow_crosshair_shake then 
-					local crosshair_stability = self:GetCrosshairStability() * 10
-					--theoretically, the raycast position (assuming perfect accuracy) at [crosshair_stability] meters;
-					--practically, the higher the number, the less sway shake
-					local weapon_direction = state:get_fire_weapon_direction()
-					local weapon_position = state:get_fire_weapon_position()
+				self:_set_crosshair_color(crosshair_color)
+			end
+			
+			
+			if self:UseCrosshairShake() then 
+				--if settings.allow_crosshair_shake then 
+				local crosshair_stability = self:GetCrosshairStability() * 10
+				--theoretically, the raycast position (assuming perfect accuracy) at [crosshair_stability] meters;
+				--practically, the higher the number, the less sway shake
+				local weapon_direction = state:get_fire_weapon_direction()
+				local weapon_position = state:get_fire_weapon_position()
 --					if base_uses_sight_position then 
 --do stuff here						
 --					end
-					
-					local c_p = self._ws:world_to_screen(viewport_cam,weapon_position + (weapon_direction * crosshair_stability))
-					local c_w = (c_p.x or 0) -- + (self._crosshair_panel:w() / 2)
-					local c_h = (c_p.y or 0) -- + (self._crosshair_panel:h() / 2)
-		--			Console:SetTrackerValue("trackerc",tostring(c_w))
-		--			Console:SetTrackerValue("trackerd",tostring(c_h))
-					self._crosshair_panel:set_center(c_w,c_h)	
-				end
 				
-				--bloom
-				if true then 
+				local c_p = self._ws:world_to_screen(viewport_cam,weapon_position + (weapon_direction * crosshair_stability))
+				local c_w = (c_p.x or 0) -- + (self._crosshair_panel:w() / 2)
+				local c_h = (c_p.y or 0) -- + (self._crosshair_panel:h() / 2)
+	--			Console:SetTrackerValue("trackerc",tostring(c_w))
+	--			Console:SetTrackerValue("trackerd",tostring(c_h))
+				self._crosshair_panel:set_center(c_w,c_h)	
+			end
+			
+			--bloom
+			if true then 
 --					Console:SetTrackerValue("trackera",self.weapon_data.bloom)
-					local bloom_decay_mul = 1.5 -- 3
-					if self.weapon_data.bloom > 0 then 
-						self.weapon_data.bloom = math.max(self.weapon_data.bloom - (bloom_decay_mul * dt),0)
-						local bloom = 0
-						if false then --exponential decay
-							bloom = 1 - math.pow(1 - self.weapon_data.bloom,2)
-						else
-							bloom = self.weapon_data.bloom
-						end
+				local bloom_decay_mul = 1.5 -- 3
+				if self.weapon_data.bloom > 0 then 
+					self.weapon_data.bloom = math.max(self.weapon_data.bloom - (bloom_decay_mul * dt),0)
+					local bloom = 0
+					if false then --exponential decay
+						bloom = 1 - math.pow(1 - self.weapon_data.bloom,2)
+					else
+						bloom = self.weapon_data.bloom
+					end
 --						Console:SetTrackerValue("trackerb",bloom)
-						self:_set_crosshair_bloom(bloom)
+					self:_set_crosshair_bloom(bloom)
 --						bloom = 1 - math.pow(bloom,2) -- 0 to 1, sq
-						
+					
 --						bloom = ((1 - (bloom * bloom)) * bloom_duration) / bloom_duration
 --[[
-						if true then 
-							
---							self.weapon_data.bloom = 1 - math.pow((dt + 1 - self.weapon_data.bloom) * 0.5,2)
+					if true then 
 						
+--							self.weapon_data.bloom = 1 - math.pow((dt + 1 - self.weapon_data.bloom) * 0.5,2)
+					
 --							local bloom_duration = 2
 --							self.weapon_data.bloom = math.pow(math.clamp((self.weapon_data.bloom - dt),0,1) * bloom_duration,2)
-							
-						elseif false then --linear decay
-							self.weapon_data.bloom = self.weapon_data.bloom * 0.97
-							if self.weapon_data.bloom - 0.001 < 0 then
-								self.weapon_data.bloom = 0
-							end
-						else --quadratic decay
-							self.weapon_data.bloom = math.max(self.weapon_data.bloom - 0.01,0)
+						
+					elseif false then --linear decay
+						self.weapon_data.bloom = self.weapon_data.bloom * 0.97
+						if self.weapon_data.bloom - 0.001 < 0 then
+							self.weapon_data.bloom = 0
 						end
-						--]]
+					else --quadratic decay
+						self.weapon_data.bloom = math.max(self.weapon_data.bloom - 0.01,0)
 					end
-					
-					if true then --special crosshairs like grenade launcher altimeter
-						self:_set_crosshair_altimeter(viewport_cam:rotation():pitch())
-					end
-					
+					--]]
 				end
+				
+				if true then --special crosshairs like grenade launcher altimeter
+					self:_set_crosshair_altimeter(viewport_cam:rotation():pitch())
+				end
+				
 			end
 		end
 		
-
+		
+		--interact stuff
+		
+		--local state = managers.player:local_player():movement():current_state(); return tweak_data.interaction[state._interact_params.tweak_data].text_id
+		local interact = state._interact_params
+		local interact_panel = self._interact_panel
+		if interact then 
+			interact_panel:show()
+			local interact_style = self.settings.interact_style
+			
+			
+			local floating_panel = interact_panel:child("floating_panel")
+			local itd = tweak_data.interaction[interact.tweak_data or ""] or {text_id = "ERROR"}
+			local interact_text_id = managers.localization:text(itd.text_id)
+			floating_panel:child("interact_name"):set_text(utf8.to_upper(interact_text_id or "ERROR"))
+			floating_panel:child("interact_progress"):set_text(string.format("%0.01fs",(interact.timer and t - interact.timer) or -99.99))
+			local interact_v = interact_panel:child("trace_vertical")
+			local interact_h = interact_panel:child("trace_horizontal")
+			local interacting_pos = interact.object and interact.object:position()
+			if interacting_pos then 
+			
+				local interact_pos = self._ws:world_to_screen(viewport_cam,interacting_pos)
+				local i_x_d
+				local i_y_d
+				if interact_style == 1 then
+					i_x_d = floating_panel:x() - interact_pos.x
+					i_y_d = floating_panel:y() - interact_pos.y
+					interact_v:set_height(i_y_d)
+					interact_v:set_x(interact_pos.x)
+					interact_v:set_y(interact_pos.y)
+				
+					interact_h:set_width(i_x_d)
+					interact_h:set_x(interact_pos.x)
+					interact_h:set_y(interact_pos.y + interact_v:height())
+				elseif interact_style == 2 then
+					floating_panel:set_x(math.clamp(interact_pos.x,0,interact_panel:w() - floating_panel:w()))		
+					floating_panel:set_y(math.clamp(interact_pos.y,0,interact_panel:h() - floating_panel:h()))
+					i_x_d = floating_panel:x() - interact_pos.x
+					i_y_d = floating_panel:y() - interact_pos.y
+					
+					interact_v:set_height(i_y_d)
+					interact_v:set_x(interact_pos.x)
+					interact_v:set_y(interact_pos.y)
+				
+					interact_h:set_width(i_x_d)
+					interact_h:set_x(interact_pos.x)
+					interact_h:set_y(floating_panel:y() + interact_v:height())
+					
+				elseif interact_style == 3 then 
+					--not sure what to do with this one
+					floating_panel:set_x(math.clamp(interact_pos.x,0,interact_panel:w() - floating_panel:w()))		
+					floating_panel:set_y(math.clamp(interact_pos.y,0,interact_panel:h() - floating_panel:h()))
+				end
+				
+	--			self:log(tostring(object:position()))
+			end
+		else
+			interact_panel:hide()
+		end
+		
+		
+		
+		
 -- ************** SCORE ************** 
 		if false then 
 		--starting positions for score popups
@@ -2907,10 +3048,10 @@ function NobleHUD:_create_weapons(hud)
 			align = "right",
 			vertical = "top",
 			color = self.color_data.white,
-			x = -24,
+--			x = -24,
 --			alpha = 0.5,
 			font = "fonts/font_eurostile_ext",
-			font_size = 12,
+			font_size = 24,
 			layer = 6
 		})
 		local firemode_indicator = panel:bitmap({
@@ -4313,7 +4454,7 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 		layer = 0,
 		rotation = 360,
 		texture = "guis/textures/teammate_nameplate_vacant",
-		color = self.color_data.hud_bluefill,
+		color = self.color_data.hud_weapon_color,
 		w = 24,
 		h = 24,
 		y = (teammate_h - (24)) * 0.5
@@ -5914,6 +6055,92 @@ function NobleHUD:_create_compass(hud)
 	})
 	
 	return compass_panel
+end
+
+
+--		INTERACTION
+
+function NobleHUD:_create_interact(hud)
+	local interact_panel = hud:panel({
+		name = "interact_panel",
+		w = hud:w(),
+		h = hud:h()
+	})
+	
+	local floating_w = 100
+	local floating_h = 100
+	
+	local floating_panel = interact_panel:panel({
+		name = "floating_panel",
+		w = floating_w,
+		h = floating_h,
+		x = (hud:w() + floating_w) /2,
+		y = (hud:h() + floating_h) /2
+	})
+
+	local texture,texture_rect = tweak_data.hud_icons:get_icon_data("wp_target")
+	local interact_outline = floating_panel:bitmap({
+		name = "interact_outline",
+		texture = texture,
+		texture_rect = texture_rect,
+		w = 32,
+		h = 32,
+		x = 50,
+		y = 50,
+		layer = 1,
+		alpha = 1,
+		color = Color(0,0.3,0.9)
+	})
+	
+	local trace_vertical = interact_panel:bitmap({
+		name = "trace_vertical",
+		texture = "guis/textures/test_blur_df",
+		w = 2,
+		h = 2,
+		layer = 1,
+		alpha = 1,
+		rotation = 0,
+		color = Color(1,0.3,0.9)
+	})
+	local trace_horizontal = interact_panel:bitmap({
+		name = "trace_horizontal",
+		texture = "guis/textures/test_blur_df",
+		w = 2,
+		h = 2,
+		layer = 1,
+		alpha = 1,
+		rotation = 0,
+		color = Color(0.3,1,0.9)
+	})
+	
+	local interact_name = floating_panel:text({
+		name = "interact_name",
+		text = "Open Door",
+		align = "center",
+		color = self.color_data.hud_vitalsoutline_blue,
+		font = "fonts/font_eurostile_ext",
+		font_size = 12,
+		layer = 4
+	})
+	local interact_progress = floating_panel:text({
+		name = "interact_progress",
+		text = "10s",
+		align = "center",
+		color = self.color_data.hud_vitalsoutline_blue,
+		font = "fonts/font_eurostile_ext",
+		font_size = 12,
+		y = interact_name:line_height(),
+		layer = 5
+	})
+	
+	local debug_interact = floating_panel:rect({
+		name = "debug",
+		visible = false,
+		color = Color.red,
+		alpha = 0.1
+	})
+	
+	self._interact_panel = interact_panel
 end
 
 
