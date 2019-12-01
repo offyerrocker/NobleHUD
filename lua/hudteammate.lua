@@ -196,6 +196,9 @@ Hooks:PostHook(HUDTeammate,"set_ammo_amount_by_type","noblehud_set_ammo",functio
 --	NobleHUD:log(table.concat({type,max_clip,current_clip,current_left,max,weapon_panel},","))
 	NobleHUD:_set_weapon_reserve(slot,math.max(current_left - current_clip,current_left))
 	NobleHUD:_set_weapon_mag(slot,current_clip,max_clip)
+--	NobleHUD:SetFloatingAmmo(current_clip,max_clip)
+--	Log(Application:time() .. ":" .. "Set" .. current_clip .. " /" .. max_clip)
+
 end)
 
 Hooks:PostHook(HUDTeammate,"set_deployable_equipment","noblehud_set_deployable_equipment",function(self,data)

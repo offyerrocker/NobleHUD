@@ -4,13 +4,16 @@ end)
 
 
 function HUDTemp:show_carry_bag(carry_id, value)
-
+	NobleHUD:ShowCarry(carry_id,value)
 end
 
 function HUDTemp:hide_carry_bag()
-
+	NobleHUD:HideCarry()
 end
 
+function HUDTemp:set_stamina_value(value)
+	NobleHUD:SetStamina(value)
+end
 
 	--[[
 function HUDTemp:_animate_show_bag_panel(bag_panel)

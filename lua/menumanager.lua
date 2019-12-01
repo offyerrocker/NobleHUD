@@ -9,15 +9,17 @@ CHANGE COPDAMAGE CHECKING to use
 	CopDamage:_check_damage_achievements()
 instead of posthooking everything
 
+--
 		
-		
-	queue objective activities
-	tab should refresh view_timer or call remind objective
 
-		mod option? (currently save setting)
 		
 
 	&&& BEFORE RELEASE: &&&
+
+		- Carry panel is bare-bones
+			* Intro/outro animation
+			* Placement
+			
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER
 	
 	
@@ -31,8 +33,6 @@ instead of posthooking everything
 		%% FEATURES: %%
 			* Assault Banner
 				- Hostages panel
-			* Interaction in top right (under weapons)
-			* Carry panel
 			* Chat panel
 			* Teammates panel
 				-circleplus/character name
@@ -62,7 +62,9 @@ instead of posthooking everything
 				* Show weapon icon (PLAYERNAME [WEAPON_ICON] ENEMYNAME) ?
 
 			
-	&& LOW PRIORITY FEATURES: &&
+	&& LOW PRIORITY FEATURES: &&		
+		* Queue objective activities rather than stopping current
+		* Tab should refresh view_timer or call remind objective
 		* Weapon swap interrupts sprees? at least, it should for weapon-specific ones
 		* Auntie dot
 			* Subtitles: Auntie dot voice lines with associated queues
@@ -1938,6 +1940,10 @@ function NobleHUD:animate_fadeout(o,t,dt,start_t,duration,exit_x,exit_y)
 	duration = duration or 1
 	local ratio = math.pow((t - start_t) / duration,2)
 	
+	if ratio >= 1 then 
+		o:set_alpha(0)
+		return true
+	end
 	o:set_alpha(1 - ratio)
 	if exit_y then 
 		o:set_y(o:y() + (exit_y * dt / duration))
@@ -1945,9 +1951,28 @@ function NobleHUD:animate_fadeout(o,t,dt,start_t,duration,exit_x,exit_y)
 	if exit_x then 
 		o:set_x(o:x() + (exit_x * dt / duration))
 	end
+end
+
+function NobleHUD:animate_fadein(o,t,dt,start_t,duration,start_x,end_x,start_y,end_y)
+	duration = duration or 1
+	local ratio = math.pow((t - start_t) / duration,2)
+	
 	if ratio >= 1 then 
-		o:set_alpha(0)
+		o:set_alpha(1)
+		if end_x then 
+			o:set_x(end_x)
+		end 
+		if end_y then 
+			o:set_y(end_y)
+		end
 		return true
+	end
+	o:set_alpha(ratio)
+	if start_x and end_x then 
+		o:set_x(start_x + ((end_x - start_x) * ratio))
+	end
+	if start_y and end_y then 
+		o:set_y(start_y + ((end_y - start_y) * ratio))
 	end
 end
 
@@ -1992,6 +2017,10 @@ end
 
 function NobleHUD:GetRadarDistance()
 	return self.settings.radar_distance
+end
+
+function NobleHUD:IsFloatingAmmoPanelEnabled()
+	return false
 end
 
 function NobleHUD:get_blip_color_by_team(team_name)
@@ -2120,7 +2149,9 @@ function NobleHUD:CreateHUD(orig)
 	self:_create_teammates(hud)
 	self:_create_score(hud)
 	self:_create_killfeed(hud)
+	self:_create_stamina(hud)
 	self:_create_tabscreen(hud)
+	self:_create_floating_ammo(hud)
 --	managers.hud:script("guis/mask_off_hud"):hide()
 end
 			
@@ -2231,7 +2262,7 @@ function NobleHUD:UpdateHUD(t,dt)
 			self:AddMedal("close_call")
 		end
 	
-	
+		
 	
 --		Console:SetTrackerValue("trackera",self:KillsCache("last_kill_t"))
 --		Console:SetTrackerValue("trackerb",t)
@@ -2350,14 +2381,7 @@ function NobleHUD:UpdateHUD(t,dt)
 
 		local compass_yaw = ((cam_aim) / 180) - 1 --should this perhaps use modulo
 		--todo get range of cam_aim
-		
---		Console:SetTrackerValue("trackera",cam_aim)
---		Console:SetTrackerValue("trackerb",self._compass_panel:child("compass_strip"):x())
---		Console:SetTrackerValue("trackerc",compass_yaw)
-		
---		Console:SetTrackerValue("trackerd",compass_yaw)
-		
-		--(0.5 + (math.rad(cam_aim * 0.5) / math.pi)) - 1
+	
 		self._compass_panel:child("compass_strip"):set_x(compass_yaw * self._compass_panel:w())
 		
 --todo make radar update dotcolor for converted enemies
@@ -2564,30 +2588,46 @@ function NobleHUD:UpdateHUD(t,dt)
 		end
 		
 		
+		local inventory = player:inventory()
+		
+		--experimental mag count hud
+		if self:IsFloatingAmmoPanelEnabled() then
+			local floating_ammo_panel = self._floating_ammo_panel	
+			local wpn_unit = inventory:equipped_unit()
+			NobleHUD.assbutt = wpn_unit
+			local wpn_unit_pos = wpn_unit and wpn_unit:position()
+			local wpn_unit_screen_pos = wpn_unit_pos and self._ws:world_to_screen(viewport_cam,wpn_unit_pos + ( player:camera():rotation():y() * 100)) --
+			if wpn_unit_screen_pos then 
+				floating_ammo_panel:set_x(wpn_unit_screen_pos.x)
+				floating_ammo_panel:set_y(wpn_unit_screen_pos.y)
+			end
+		end
+		
+		
+		
 		--interact stuff
 		
 		--local state = managers.player:local_player():movement():current_state(); return tweak_data.interaction[state._interact_params.tweak_data].text_id
 		local interact = state._interact_params
 		local interact_panel = self._interact_panel
 		if interact then 
-			interact_panel:show()
 			local interact_style = self.settings.interact_style
 			
 			
 			local floating_panel = interact_panel:child("floating_panel")
-			local itd = tweak_data.interaction[interact.tweak_data or ""] or {text_id = "ERROR"}
-			local interact_text_id = managers.localization:text(itd.text_id)
-			floating_panel:child("interact_name"):set_text(utf8.to_upper(interact_text_id or "ERROR"))
-			floating_panel:child("interact_progress"):set_text(string.format("%0.01fs",(interact.timer and t - interact.timer) or -99.99))
+--			local itd = tweak_data.interaction[interact.tweak_data or ""] or {text_id = "ERROR"}
+--			local interact_text_id = managers.localization:text(itd.text_id)
+--			floating_panel:child("interact_name"):set_text(utf8.to_upper(interact_text_id or "ERROR"))
+--			floating_panel:child("interact_progress"):set_text(string.format("%0.01fs",(interact.timer and t - interact.timer) or -99.99))
 			local interact_v = interact_panel:child("trace_vertical")
 			local interact_h = interact_panel:child("trace_horizontal")
 			local interacting_pos = interact.object and interact.object:position()
 			if interacting_pos then 
-			
 				local interact_pos = self._ws:world_to_screen(viewport_cam,interacting_pos)
 				local i_x_d
 				local i_y_d
 				if interact_style == 1 then
+					--panel stays still, but lines trace between unit and panel onscreen
 					i_x_d = floating_panel:x() - interact_pos.x
 					i_y_d = floating_panel:y() - interact_pos.y
 					interact_v:set_height(i_y_d)
@@ -2598,6 +2638,7 @@ function NobleHUD:UpdateHUD(t,dt)
 					interact_h:set_x(interact_pos.x)
 					interact_h:set_y(interact_pos.y + interact_v:height())
 				elseif interact_style == 2 then
+					--panel moves to unit position onscreen, but lines trace between remaining unit and panel distance if offscreen
 					floating_panel:set_x(math.clamp(interact_pos.x,0,interact_panel:w() - floating_panel:w()))		
 					floating_panel:set_y(math.clamp(interact_pos.y,0,interact_panel:h() - floating_panel:h()))
 					i_x_d = floating_panel:x() - interact_pos.x
@@ -2612,15 +2653,11 @@ function NobleHUD:UpdateHUD(t,dt)
 					interact_h:set_y(floating_panel:y() + interact_v:height())
 					
 				elseif interact_style == 3 then 
-					--not sure what to do with this one
+					--panel moves to unit position onscreen
 					floating_panel:set_x(math.clamp(interact_pos.x,0,interact_panel:w() - floating_panel:w()))		
 					floating_panel:set_y(math.clamp(interact_pos.y,0,interact_panel:h() - floating_panel:h()))
 				end
-				
-	--			self:log(tostring(object:position()))
 			end
-		else
-			interact_panel:hide()
 		end
 		
 		
@@ -2906,10 +2943,10 @@ function NobleHUD:LoadXAudioSounds()
 		local function loadsound(name,snd)
 			local path = NobleHUD._announcer_path .. snd .. ".ogg"
 			if self._efficient_audio_mode then 
-				self:log("Loading sound to _cache: " .. tostring(name) .. " " .. tostring(snd))
+--				self:log("Loading sound to _cache: " .. tostring(name) .. " " .. tostring(snd))
 				self._cache.sounds[name] = path
 			else
-				self:log("Loading sound to buffer and _cache: " .. tostring(name) .. " [" .. tostring(snd)..".ogg]")
+--				self:log("Loading sound to buffer and _cache: " .. tostring(name) .. " [" .. tostring(snd)..".ogg]")
 				self._cache.sounds[name] = XAudio.Buffer:new(path)
 			end
 		end
@@ -2955,7 +2992,6 @@ function NobleHUD:PlayAnnouncerSound(name)
 			Log("PlayAnnouncerSound(): sound [" .. name .. "] not found",{color = Color.red})
 		end
 end
-
 
 
 --		WEAPONS
@@ -3039,7 +3075,7 @@ function NobleHUD:_create_weapons(hud)
 			color = self.color_data.white,
 			alpha = 0.66,
 			font = "fonts/font_eurostile_ext",
-			font_size = 12,
+			font_size = 16,
 			layer = 6
 		})
 		local reserve_label = panel:text({ --total ammo count for current weapon
@@ -3241,6 +3277,7 @@ function NobleHUD:_set_weapon_reserve(slot,amount)
 end
 
 function NobleHUD:_set_weapon_mag(slot,amount,max_amount)
+	self:SetFloatingAmmo(amount,max_amount)
 	amount = amount or 0
 	max_amount = max_amount or 1
 	local weapon_panel
@@ -3342,6 +3379,9 @@ function NobleHUD:_switch_weapons(id)
 		self:_create_ammo_ticks(base) --:set_visible(i == id)
 		if id == i then 		
 			self:_set_weapon_label(id,base:get_name_id()) --only one shared weapon label, used by master weapon panel
+		else
+			self:SetFloatingAmmo(base:get_ammo_remaining_in_clip(),base:get_ammo_max_per_clip())
+--			Log(Application:time() .. ":" .. "Set" .. base:get_ammo_remaining_in_clip() .. " /" .. base:get_ammo_max_per_clip())
 		end
 		self:_set_weapon_icon(i,base:get_name_id())
 		self:_set_weapon_mag(i,base:get_ammo_remaining_in_clip())
@@ -3421,6 +3461,57 @@ function NobleHUD:animate_switch_weapon_in(o)
 
 end
 	
+	
+--		FLOATING MAG INDICATOR
+
+function NobleHUD:_create_floating_ammo(hud)
+	local floating_ammo_panel = hud:panel({
+		name = "floating_ammo_panel",
+		h = 50,
+		w = 100,
+		visible = false --disabled for now
+	})
+	local margin = 4
+	local bg = floating_ammo_panel:rect({
+		name = "bg",
+		color = Color.black,
+		alpha = 0.3,
+		layer = 1
+	})
+	local label = floating_ammo_panel:text({
+		name = "magazine",
+		text = "69/420",
+--		vertical = "center",
+--		align = "center",
+		x = margin/2,
+		y = margin/2,
+		font = tweak_data.hud_players.ammo_font,
+		font_size = 16,
+		layer = 3
+	})
+	self._floating_ammo_panel = floating_ammo_panel
+end
+
+function NobleHUD:SetFloatingAmmo(current,total)
+	local margin = 4
+	local magazine = self._floating_ammo_panel:child("magazine")
+	if not (current and total and self:IsFloatingAmmoPanelEnabled()) then 
+		return
+	end
+	magazine:set_text(tostring(current) .. "/" .. tostring(total))
+	if current == 0 then 
+		magazine:set_color(self.color_data.hud_vitalsfill_red)
+	elseif current < total / 3 then
+		magazine:set_color(self.color_data.hud_vitalsfill_yellow)
+	else
+		magazine:set_color(Color.white)
+	end
+	local x,y,w,h = magazine:text_rect()
+	self._floating_ammo_panel:set_w(w + margin)
+	self._floating_ammo_panel:set_h(h + margin)
+	
+end
+
 
 	-- FIREMODE
 
@@ -4404,6 +4495,90 @@ function NobleHUD:_set_deployable_equipment(index,skip_anim)
 end
 
 
+--		STAMINA	
+	
+function NobleHUD:_create_stamina(hud)
+	local icon_size = 48
+	local stamina_panel = hud:panel({
+		name = "stamina_panel",
+		w = icon_size,
+		h = icon_size,
+		alpha = 0,
+		x = 170,
+		y = 430
+	})
+	
+	local stamina_outline = stamina_panel:bitmap({
+		name = "stamina_outline",
+		texture = "guis/textures/ability_circle_outline",
+		w = icon_size,
+		h = icon_size,
+		render_template = "VertexColorTexturedRadial",
+		layer = 4
+--		color = self.color_data.hud_vitalsoutline_blue
+	})
+	
+	local stamina_fill = stamina_panel:bitmap({
+		name = "stamina_fill",
+		texture = "guis/textures/ability_circle_fill",
+		w = icon_size,
+		h = icon_size,
+		alpha = 0.3,
+		layer = 2,
+		color = self.color_data.hud_vitalsfill_blue
+	})
+	
+	local stamina_icon = stamina_panel:bitmap({
+		name = "stamina_icon",
+		texture = "guis/textures/pd2/skilltree/icons_atlas",
+		texture_rect = {
+			1 * 64, --or 7, 3
+			8 * 64,
+			64,
+			64
+		},
+		w = 32,
+		h = 32,
+		layer = 3,
+		color = self.color_data.hud_vitalsoutline_blue
+	})
+	stamina_icon:set_center(icon_size/2,icon_size/2)
+	
+	self._stamina_panel = stamina_panel
+	local debug_stamina = stamina_panel:rect({
+		color = Color.red,
+		visible = false,
+		alpha = 0.1
+	})
+end
+
+function NobleHUD:SetStamina(current,total)
+	local player = managers.player:local_player()
+	local stamina_panel = self._stamina_panel
+	if current and alive(player) then 
+		local movement = player:movement()
+		local total = total or movement:_max_stamina()
+		local progress = current/total
+		stamina_panel:child("stamina_outline"):set_color(Color(progress,1,1))
+		if total - current <= 0.001 then 
+			self:animate(stamina_panel,"animate_fadeout_linear",nil,0.75)
+--			stamina_panel:set_alpha(math.max(stamina_panel:alpha() - managers.player:player_timer():delta_time(),0))
+		elseif stamina_panel:alpha() < 1 then 
+--			self:animate(stamina_panel,"animate_fadein",nil,0.75)
+			stamina_panel:set_alpha(math.clamp(stamina_panel:alpha() * 1.3,0.001,1))
+		end
+		
+		if movement:is_above_stamina_threshold() then 
+			stamina_panel:child("stamina_icon"):set_color(self.color_data.hud_blueoutline)
+			stamina_panel:child("stamina_fill"):set_color(self.color_data.hud_bluefill)
+		else
+			stamina_panel:child("stamina_fill"):set_color(Color(0.3,0.3,0.3))
+			stamina_panel:child("stamina_icon"):set_color(Color(0.6,0.6,0.6))
+		end
+	end
+end
+
+
 --		TEAMMATES
 
 function NobleHUD:_create_teammates(hud)
@@ -4820,6 +4995,7 @@ end
 Hooks:Add("JoyScoreCounter_SetScore","noblehud_joyscore_integration",function(total,new)
 	NobleHUD._score_panel:child("score_label"):set_text(NobleHUD.make_nice_number(total))
 end)
+
 
 --		OBJECTIVES
 
@@ -5604,7 +5780,6 @@ function NobleHUD:_set_radar_range(text)
 end
 
 
-
 --		CARTOGRAPHER (location on map)
 
 function NobleHUD:_create_cartographer(hud)
@@ -5862,18 +6037,24 @@ function NobleHUD:_create_revives(amount) --called on internal load
 	
 end
 
+
+--		CARRY
+
 function NobleHUD:_create_carry(hud)
+	local margin_w = 4
+	
 	local carry_panel = hud:panel({
 		name = "carry_panel",
 		h = 50,
 		w = 400,
-		x = 500,
-		y = 500,
-		visible = false
+		x = 200,
+		y = 100,
+		visible = false --set visible on pickup bag
 	})
 	local debug_carry = carry_panel:rect({
 		name = "debug_carry",
 		color = Color.red,
+		visible = false,
 		alpha = 0.3
 	})
 	
@@ -5891,28 +6072,114 @@ function NobleHUD:_create_carry(hud)
 	local bag_label = carry_panel:text({
 		name = "bag_label",
 		text = "Kat's Prosthetic Arm",
-		x = 0,
+		x = bag_rect[3] + margin_w,
 		y = 0,
-		vertical = "bottom",
-		align = "center",
+--		vertical = "bottom",
+--		align = "center",
 		font = "fonts/font_medium_mf",
 		font_size = 24,
 		layer = 1,
 		color = Color.white
 	})
+	local bag_value = carry_panel:text({
+		name = "bag_value",
+		text = "10 Cr",
+		y = bag_label:line_height(),
+		font = "font_eurostile_ext",
+		font_size = 16,
+		layer = 1,
+		color = Color.White
+	})
+	self._carry_panel = carry_panel
+end
+
+function NobleHUD:SetBagLabel(id,value) --not used
+	local td = tweak_data.carry[tostring(id)]
+	local carry_panel = self._carry_panel
+	if td then 
+		local name = td.name_id and managers.localization:text(td.name_id) or "Kat's Prosthetic Arm"
+		carry_panel:child("bag_label"):set_text(name)
+		if value then 
+			carry_panel:child("bag_value"):set_text(managers.experience:cash_string(value))
+		end
+	else
+		self:log("ERROR: SetBagLabel(" .. tostring(id) .. "): No carry tweak data found",{color = Color.red})
+	end
+end
+
+function NobleHUD:ShowCarry(id,value)
+	local carry_panel = self._carry_panel
+	local bag_label = carry_panel:child("bag_label")
+	local bag_icon = carry_panel:child("bag_icon")
 	
+	NobleHUD:animate_stop(carry_panel)
+	NobleHUD:animate_stop(bag_label)
+	NobleHUD:animate_stop(bag_icon)
 	
-	
+	local td = tweak_data.carry[tostring(id)]
+	local visible = carry_panel:visible()
+	carry_panel:set_alpha(1)
+	carry_panel:show()
+	if td then 
+		local name = td.name_id and managers.localization:text(td.name_id) or "Kat's Prosthetic Arm"
+		self:animate(bag_icon,"animate_blink",function(o) o:show() end,1.75,2)
+		self:animate(bag_label,"animate_type_text",nil,0.5,name or bag_label:text(),"_",3)
+--			bag_label:set_text(name)
+		if value then 
+			carry_panel:child("bag_value"):set_text(managers.experience:cash_string(value))
+		else
+			carry_panel:child("bag_value"):set_text("")
+		end
+	else
+		self:log("ERROR: ShowCarry(" .. tostring(id) .. "," .. tostring(value) .. "): No carry tweak data found",{color = Color.red})
+	end	
 	
 	
 end
 
-function NobleHUD:animate_show_bag(o,t,dt,start_t)
-
+function NobleHUD:HideCarry()
+	local carry_panel = self._carry_panel
+	local bag_label = carry_panel:child("bag_label")
+	local bag_icon = carry_panel:child("bag_icon")
+	bag_icon:show()
+	self:animate_stop(bag_label)
+	self:animate_stop(bag_icon)
+	carry_panel:set_alpha(0.5)
+	self:animate(carry_panel,"animate_blink",function (o)
+			o:hide()
+			o:set_alpha(1)
+			bag_label:set_text("")
+		end,
+		1.75,
+		6
+	)
+	carry_panel:child("bag_value"):set_text("")
 end
 
-function NobleHUD:animate_hide_bag(o,t,dt,start_t)
+function NobleHUD:animate_blink(o,t,dt,start_t,duration,blink_speed)
+--blink speed is approximately equal to blinks per second
+	o:set_visible(math.abs(0.5 + math.sin((t - start_t) * (blink_speed or 1) * 360)) < 0.5)
+	if t - start_t > duration then
+		return true
+	end
+end
 
+function NobleHUD:animate_type_text(o,t,dt,start_t,duration,text,type_char,post_duration,blink_speed)
+	post_duration = post_duration or 0
+
+	type_char = type_char or "_"
+	if t - start_t > (duration + post_duration) then 
+		o:set_text(text)
+		return true
+	elseif t - start_t < duration then
+		local length = string.len(text)
+		local ratio = (t - start_t) / duration
+		o:set_text(string.sub(text,1,math.clamp(ratio * length,1,length)) .. type_char)
+	elseif math.sin((t - start_t) * 360  * (blink_speed or 2)) > 0 then 
+		o:set_text(text .. type_char)
+	else
+		o:set_text(text)
+	end
 end
 
 
@@ -6064,23 +6331,26 @@ function NobleHUD:_create_interact(hud)
 	local interact_panel = hud:panel({
 		name = "interact_panel",
 		w = hud:w(),
-		h = hud:h()
+		h = hud:h(),
+		visible = false
 	})
 	
-	local floating_w = 100
+	local floating_w = 400
 	local floating_h = 100
 	
 	local floating_panel = interact_panel:panel({
 		name = "floating_panel",
 		w = floating_w,
 		h = floating_h,
-		x = (hud:w() + floating_w) /2,
-		y = (hud:h() + floating_h) /2
+		x = hud:w() - (floating_w + 50),
+		y = 200
+--		x = (hud:w() + floating_w) /2,
+--		y = (hud:h() + floating_h) /2
 	})
 
 	local texture,texture_rect = tweak_data.hud_icons:get_icon_data("wp_target")
-	local interact_outline = floating_panel:bitmap({
-		name = "interact_outline",
+	local interact_bitmap = floating_panel:bitmap({
+		name = "interact_bitmap",
 		texture = texture,
 		texture_rect = texture_rect,
 		w = 32,
@@ -6094,40 +6364,44 @@ function NobleHUD:_create_interact(hud)
 	
 	local trace_vertical = interact_panel:bitmap({
 		name = "trace_vertical",
-		texture = "guis/textures/test_blur_df",
+		visible = false, --temp disabled cause it's ugly
+		texture = "guis/textures/ar_crosshair_2",
+		blend_mode = "add",
 		w = 2,
 		h = 2,
 		layer = 1,
 		alpha = 1,
 		rotation = 0,
-		color = Color(1,0.3,0.9)
+		color = self.color_data.hud_bluefill
 	})
 	local trace_horizontal = interact_panel:bitmap({
 		name = "trace_horizontal",
-		texture = "guis/textures/test_blur_df",
+		visible = false, --temp disabled cause it's ugly
+		texture = "guis/textures/ar_crosshair_2",
 		w = 2,
 		h = 2,
 		layer = 1,
 		alpha = 1,
+		blend_mode = "add",
 		rotation = 0,
-		color = Color(0.3,1,0.9)
+		color = self.color_data.hud_bluefill
 	})
 	
 	local interact_name = floating_panel:text({
 		name = "interact_name",
-		text = "Open Door",
-		align = "center",
+		text = "Enter Warthog",
+		align = "right",
 		color = self.color_data.hud_vitalsoutline_blue,
-		font = "fonts/font_eurostile_ext",
-		font_size = 12,
+		font = tweak_data.hud.medium_font_noshadow,
+		font_size = 16,
 		layer = 4
 	})
 	local interact_progress = floating_panel:text({
 		name = "interact_progress",
-		text = "10s",
-		align = "center",
+		text = "1s",
+		align = "right",
 		color = self.color_data.hud_vitalsoutline_blue,
-		font = "fonts/font_eurostile_ext",
+		font = tweak_data.hud.medium_font_noshadow,
 		font_size = 12,
 		y = interact_name:line_height(),
 		layer = 5
@@ -6143,6 +6417,99 @@ function NobleHUD:_create_interact(hud)
 	self._interact_panel = interact_panel
 end
 
+function NobleHUD:ShowInteract(data)
+	local interact_panel = self._interact_panel
+	local floating_panel = interact_panel:child("floating_panel")
+	local interact_name = floating_panel:child("interact_name")
+	self:animate_stop(interact_panel)
+	interact_panel:set_w(1280)
+	interact_name:set_font_size(16)
+	
+	if data then
+		local text = data.text or "Press $INTERACT to interact"
+		interact_name:set_text(text)
+		
+		if data.icon then 
+			local texture,texture_rect = tweak_data.hud_icons:get_icon_data(data.icon)
+			floating_panel:child("interact_bitmap"):set_image(texture)
+			if texture_rect then 
+				floating_panel:child("interact_bitmap"):set_texture_rect(texture_rect)
+			end
+		end
+		
+	end
+	if not interact_panel:visible() then 
+		self:animate(interact_name,"animate_killfeed_text_in",nil,0.15,interact_name:font_size(),self.color_data.hud_text_blue,self.color_data.hud_text_flash)
+	end
+--	local itd = tweak_data.interaction[interact.tweak_data or ""] or {text_id = "ERROR"}
+--	local interact_text_id = managers.localization:text(itd.text_id)
+	interact_panel:show()
+end
+
+function NobleHUD:HideInteract(cancelled)
+	local interact_panel = self._interact_panel
+	if not cancelled then 
+		interact_panel:hide()
+	end
+	interact_panel:child("floating_panel"):child("interact_progress"):set_text("")
+	interact_panel:child("trace_vertical"):set_h(0)
+	interact_panel:child("trace_horizontal"):set_w(0)
+end
+
+
+
+function NobleHUD:SetInteractProgress(current,total)
+	local interact_panel = self._interact_panel
+	local floating_panel = interact_panel:child("floating_panel")
+	local interact_progress = floating_panel:child("interact_progress")
+	interact_progress:set_text(string.format("%0.01fs",math.abs(total - current) or -99.99))
+--	local _,_,w,_ = interact_progress:text_rect()
+--	floating_panel:set_w(w)
+	
+--	local itd = tweak_data.interaction[interact.tweak_data or ""] or {text_id = "ERROR"}
+--	local interact_text_id = managers.localization:text(itd.text_id)
+--	floating_panel:child("interact_name"):set_text(utf8.to_upper(interact_text_id or "ERROR"))
+
+end
+
+function NobleHUD:SetInteractValid(valid,id)
+	local interact_panel = self._interact_panel
+	local floating_panel = interact_panel:child("floating_panel")
+	local interact_name = floating_panel:child("interact_name")
+	if not valid then 
+--		interact_name:hide()
+		interact_name:set_color(self.color_data.hud_vitalsfill_red)
+	else
+--		interact_name:show()
+		interact_name:set_color(self.color_data.hud_vitalsfill_blue)
+	end
+	
+	if text_id then
+		interact_name:set_text(managers.localization:to_upper_text(text_id))
+--		local _,_,w,_ = interact_name:text_rect()
+--		floating_panel:set_w(w)
+	end
+end
+
+function NobleHUD:AnimateInteractDone()
+	local interact_panel = self._interact_panel
+	
+	self:animate(interact_panel,"animate_interact_done",function()
+		NobleHUD:HideInteract()
+	end,0.75,interact_panel:w())
+end
+
+function NobleHUD:animate_interact_done(o,t,dt,start_t,duration,start_w)
+--	local floating_panel = o:child("floating_panel")
+	local ratio = (t - start_t) / duration
+--	Console:SetTrackerValue("trackera",ratio)
+	if ratio >= 1 then 
+		o:set_w(start_w)
+		o:child("floating_panel"):child("interact_progress"):set_text("")
+		return true
+	end
+	o:set_w(start_w * (1 - math.pow(ratio,2)))
+end
 
 -- 		KILLFEED
 
