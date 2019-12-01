@@ -15,25 +15,25 @@ instead of posthooking everything
 		
 
 	&&& BEFORE RELEASE: &&&
-
-		- Carry panel is bare-bones
-			* Intro/outro animation
-			* Placement
 			
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER
 	
 	
 		%% BUGS:
-			- hide radar when in camera?
+			- hide radar when in camera
 			- Rocket reticle will not proc???
 			- CROSSHAIR DETECTION SHOULD BE FROM PLAYER, NOT CAMERA
-			- Swapping while aiming at an enemy keeps the crosshair color
+			- Swapping while aiming at an enemy or aiming at invalid ray (eg. empty/too far distance on ray such as on Lab Rats) keeps the crosshair color
 			- ADS should maintain mostly still reticle, unusable otherwise
 
 		%% FEATURES: %%
+			* Fix custody/hud creation system
+			
 			* Assault Banner
 				- Hostages panel
 			* Chat panel
+			* Health variants (stoic health, ex-pres stored health, absorb overshields)
+			
 			* Teammates panel
 				-circleplus/character name
 					- center to subpanel
@@ -46,23 +46,19 @@ instead of posthooking everything
 					- Blink on shields depleted?
 				- ammo?
 				- downs?
-			* Fix custody/hud creation system
 			* Score panel
 				* Use basic; if JoyScore present, use this instead
 					* Update JoyScore to hooks system to allow better compatibility
 			* Tab menu
-			* Stamina panel
-			* Health variants (stoic health, ex-pres stored health, absorb overshields)
 			* Mod options
 				* Crosshair/reticle stuff
 				* Placement and Scaling
 				* Keybinds for Safety etc
-			* Killfeed
-				* Record medals with score
-				* Show weapon icon (PLAYERNAME [WEAPON_ICON] ENEMYNAME) ?
 
 			
-	&& LOW PRIORITY FEATURES: &&		
+	&& LOW PRIORITY FEATURES: &&
+		* Organize color data
+			- Ability circle needs a baked-blue asset
 		* Queue objective activities rather than stopping current
 		* Tab should refresh view_timer or call remind objective
 		* Weapon swap interrupts sprees? at least, it should for weapon-specific ones
@@ -85,7 +81,19 @@ instead of posthooking everything
 				* By weapon type
 				* Static selection
 			* Grenade/deployable area swap
-		* Suspicion?
+		* Suspicion panel?
+		* Crosshair stuff
+			* add crosshair data for everything lol
+			* melee crosshair
+			* based on weapon type
+			* manually selectable 
+			* customizable based on type
+			* customizable alpha (master)
+			
+		* Killfeed/JoyScore
+			* Record medals with score
+			* Show weapon icon (PLAYERNAME [WEAPON_ICON] ENEMYNAME) ?
+			* Implement campaign-similar scoring system; medals should award score
 		* More Medals:
 			* Seek and Destroy (for bosses?)
 			* Bulltrue for Cloakers
@@ -100,18 +108,9 @@ instead of posthooking everything
 
 		&& DECISIONS &&
 			* Should graze kills give sniper medals? currently, they don't
-
---current crosshair selection
 			
-	* on firemode change, switch crosshair visible
-	* add crosshair data for everything lol
-	* melee crosshair
-	* based on weapon type
-	* manually selectable 
-	* customizable based on type
-	* customizable alpha (master)
-	
 	&& BEAUTIFY EXISTING: &&
+		* Carry indicator is kind of hard to see
 		* Grenade/Ability
 			* Ability circle reduces with active ability time
 			* Ability activation animation
@@ -119,11 +118,13 @@ instead of posthooking everything
 			* Counter is unreadable- needs shadow or better placement
 				* shadow is better, to show during flashbangs
 		* Visual ammo counter is out of control for large-mag weapons
-			* Above x should just be a bar tbh
+			* Mag count is kind of hard to see, might want to have an option to make the big number the mag
+			* Above x bullets should just be a bar tbh
 			* Saw should use a radial meter
 			* Realign bullet tick alignments
 		* Reticle/Weapon stuff
-			* Streamline like the whole process, it's unreadable
+			* DMR should be scaled down ever so slightly
+			* Streamline like the whole code process, it's unreadable
 			* Adjust positioning of subpanels (new font?)
 			* Firemode indicator
 			* Underbarrel should change reticle
@@ -177,7 +178,7 @@ instead of posthooking everything
 		-- HUD waypoints
 			- dotchevron (EG o> KAT) 
 			
---grenade outline
+--grenade/ability outline (baked blue color for vertex radial render template)
 		-- Replacement tube for auntie dot
 --score banner
 --score banner small
@@ -186,8 +187,6 @@ instead of posthooking everything
 - bloom funcs should all have a reference to their own crosshair tweakdata
 - bloom funcs should also have reference to their own weapon tweakdata
 - crosshair data blacklist should be replaced by a manual override list for weapon ids
-
--- add other medals?
 
 CODE:
 
@@ -250,6 +249,10 @@ NobleHUD.color_data = {
 --	hud_blueoutline = Color(168/255,203/255,255/255), --shield/hp outline color; unused
 	hud_text = Color.white,
 	hud_compass = Color("2EA1FF")
+}
+
+NobleHUD.special_chars = {
+	skull = ""
 }
 
 NobleHUD._mod_path = ModPath
@@ -1621,7 +1624,7 @@ NobleHUD._medal_data = {
 NobleHUD.num_medals = 0
 
 NobleHUD._animate_targets = {
---[[ example:
+--[[ example: (probably outdated)
 	'[Panel: 0xd34db33f "objectives_panel"]' = {
 		object = [Panel: 0xd34db33f "objectives_panel"],
 		func = [function: 0xd34db330],
@@ -2688,17 +2691,6 @@ function NobleHUD:UpdateHUD(t,dt)
 		
 		
 		self:_set_mission_timer(NobleHUD.format_seconds(managers.game_play_central:get_heist_timer()))
-				
---		local brush_1 = Draw:brush(Color.green)
---		local brush_2 = Draw:brush(Color.red)
-		
---		brush_1:line(state:get_fire_weapon_position(),state:get_fire_weapon_position() + (state:get_fire_weapon_direction() * 5000))
---		brush_2:line(viewport_cam:position(),viewport_cam:position() + (cam_rot_a * 5000))
-		
---		Console:SetTrackerValue("trackera",tostring(managers.player:local_player():movement():current_state():get_fire_weapon_direction()))
---		Console:SetTrackerValue("trackerb",tostring(cam_rot_a))
-		
-		
 
 		if t > self._helper_last_sequence_t then
 --			self._helper_last_sequence_t = t + 3
@@ -2707,8 +2699,8 @@ function NobleHUD:UpdateHUD(t,dt)
 --			managers.hud:_set_helper_pattern()
 		end
 		--[[
-		if t > Console._dot_last_t then
-			Console._dot_last_t = t + 3
+		if t > self._dot_last_t then
+			self._dot_last_t = t + 3
 			local function random_index (tbl) --i hate everything about this
 				local length = 0
 				for k,v in pairs(tbl) do 
@@ -2723,7 +2715,7 @@ function NobleHUD:UpdateHUD(t,dt)
 					end
 				end
 			end
-			local p = random_index(Console._patterns)
+			local p = random_index(self._patterns)
 			if p then 
 				self:_set_helper_pattern(p)
 			end
@@ -4523,7 +4515,6 @@ function NobleHUD:_create_stamina(hud)
 		texture = "guis/textures/ability_circle_fill",
 		w = icon_size,
 		h = icon_size,
-		alpha = 0.3,
 		layer = 2,
 		color = self.color_data.hud_vitalsfill_blue
 	})
@@ -4863,9 +4854,8 @@ function NobleHUD:set_mission_name(level_name)
 	self:_set_mission_name(level_name)
 	
 	local player_box = self._tabscreen:child("scoreboard")
-	local skull_char = "" 
 	local difficulty_index = managers.job:current_difficulty_stars()
-	player_box:child("title_box"):child("title_label"):set_text(level_name .. " /// " .. string.rep(skull_char .. " ",difficulty_index))
+	player_box:child("title_box"):child("title_label"):set_text(level_name .. " /// " .. string.rep(self.special_chars.skull .. " ",difficulty_index))
 	player_box:child("title_box"):child("title_label_2"):set_text(utf8.to_upper(Global.game_settings.difficulty))
 end
 
@@ -6042,13 +6032,12 @@ end
 
 function NobleHUD:_create_carry(hud)
 	local margin_w = 4
-	
+	local carry_w = 400
 	local carry_panel = hud:panel({
 		name = "carry_panel",
-		h = 50,
-		w = 400,
-		x = 200,
+		x = 32,
 		y = 100,
+		h = 50,
 		visible = false --set visible on pickup bag
 	})
 	local debug_carry = carry_panel:rect({
@@ -6088,7 +6077,7 @@ function NobleHUD:_create_carry(hud)
 		font = "font_eurostile_ext",
 		font_size = 16,
 		layer = 1,
-		color = Color.White
+		color = Color.white
 	})
 	self._carry_panel = carry_panel
 end
@@ -6112,9 +6101,9 @@ function NobleHUD:ShowCarry(id,value)
 	local bag_label = carry_panel:child("bag_label")
 	local bag_icon = carry_panel:child("bag_icon")
 	
-	NobleHUD:animate_stop(carry_panel)
-	NobleHUD:animate_stop(bag_label)
-	NobleHUD:animate_stop(bag_icon)
+	self:animate_stop(carry_panel)
+	self:animate_stop(bag_label)
+	self:animate_stop(bag_icon)
 	
 	local td = tweak_data.carry[tostring(id)]
 	local visible = carry_panel:visible()
