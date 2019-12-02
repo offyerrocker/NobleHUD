@@ -284,6 +284,10 @@ NobleHUD._RADAR_REFRESH_INTERVAL = 0.5
 NobleHUD._radar_refresh_t = 0
 NobleHUD._cache = {
 	killer = {},
+	score_timer_mult = 1,
+	score_popups_count = 0,
+	score_popups = {},
+	score_session = 0,
 	game_state = "",
 	current_objective = "",
 	objective_progress = nil,
@@ -294,6 +298,12 @@ NobleHUD._cache = {
 	sounds = {},
 	announcer_queue = {},
 	kills = {
+		multipliers = {
+			spree_all = 1,
+			multikill = 1,
+			spree_assist = 1,
+			spree_sword = 1
+		},
 		close_call = false,
 		last_kill_t = 0,
 		spree_count = 0,
@@ -301,6 +311,7 @@ NobleHUD._cache = {
 		melee = 0,
 		sniper = 0,
 		shotgun = 0,
+		saw = 0,
 		grenade = 0
 	},
 	crosshair_enemy = false -- enemy currently in sights; for dynamic crosshair color efficiency (unused)
@@ -1173,26 +1184,77 @@ NobleHUD._helper_sequences = {
 	}
 }
 
+
+
 NobleHUD.score_unit_points = {
-	cop = false, --false means disabled
-	cop_female = false,
-	city_swat = false,
-	security = false,
-	bolivian = false,
-	bolivian_indoors = false,
-	civilian = -50,
-	civilian_female = -50,
+	civilian = -25, 
+	civilian_female = -25,
 	sniper = 3, --sniper
 	shield = 5, --shield
 	phalanx_minion = 5, --winters shield
+	phalanx_vip = 100, --winters
 	medic = 6, --medic
 	taser = 7, --taser
 	spooc = 10, --cloaker 
-	tank = 12 --dozer (all variants)
+	tank = 12, --dozer
+	tank_hw = 12, --headless dozer
+	tank_medic = 12,
+	tank_mini = 12,
+	security_undominatable = -1000, --garrett
+	mute_security_undominatable = -1000, --also garrett i guess
+	security = 1,
+	gensec = 1,
+	cop = 1,
+	cop_scared = 1,
+	cop_female = 1,
+	fbi = 1,
+	swat = 1,
+	heavy_swat = 1,
+	heavy_swat_sniper = 1,
+	fbi_swat = 1,
+	fbi_heavy_swat = 1,
+	city_swat = 1,
+	gangster = 1,
+	biker = 1,
+	biker_escape = 1,
+	mobster = 1,
+	mobster_boss = 100, --commissar fucks again asshole
+	biker_boss = 100, --the biker heist day 2 boss 
+	chavez_boss = 100, --panic room man
+	hector_boss = 100, 
+	hector_boss_no_armor = 100,
+	bolivian = 1,
+	bolivian_indoors = 1,
+	drug_lord_boss = 100, --sosa
+	drug_lord_boss_stealth = 100, --also sosa
+	deathvox_guard = 1,
+	deathvox_gman = 1,
+	deathvox_lightar = 1,
+	deathvox_lightshot = 1,
+	deathvox_heavyar = 1,
+	deathvox_heavyshot = 1,
+	deathvox_shield = 5,
+	deathvox_medic = 6,
+	deathvox_taser = 7,
+	deathvox_tank = 12,
+	deathvox_cloaker = 10,
+	deathvox_sniper = 3,
+	deathvox_greendozer = 12,
+	deathvox_blackdozer = 12,
+	deathvox_lmgdozer = 12,
+	deathvox_medicdozer = 12,
+	deathvox_guarddozer = 12,
+	deathvox_grenadier = 7,
+	deathvox_cop_pistol = 1,
+	deathvox_cop_smg = 1,
+	deathvox_cop_revolver = 1, 
+	deathvox_cop_shotgun = 1,
+	deathvox_fbi_rookie = 1,
+	deathvox_fbi_hrt = 1,
+	deathvox_fbi_veteran = 1
 }
 
 NobleHUD.score_multipliers = {
-	headshot = 2,
 	difficulty = {
 		easy = 1,
 		normal = 2,
@@ -1201,12 +1263,25 @@ NobleHUD.score_multipliers = {
 		easy_wish = 5.5,
 		overkill_290 = 6,
 		sm_wish = 6.5
+	},
+	time_generic = {
+		--[mission timer (seconds)] = multiplier
+		--if timer < key then score = value
+		[1] = {
+			threshold = 10 * 60,
+			multiplier = 2,
+		},
+		[2] = {
+			threshold = 15 * 60,
+			multiplier = 1.5,
+		},
+		[3] = {
+			threshold = 20 * 60,
+			multiplier = 1.2
+		}
 	}
 }
 
-NobleHUD.score_popups = {}
-NobleHUD.score_session = 0
-NobleHUD.score_popups_count = 0
 NobleHUD.num_killfeed_messages = 0
 local MAX_KILLFEED_ENTRIES = 10
 
@@ -1229,6 +1304,11 @@ NobleHUD._killfeed_start_y = 420
 NobleHUD._killfeed_end_x = 100
 NobleHUD._killfeed_end_y = 430
 
+NobleHUD._popup_start_x = 800
+NobleHUD._popup_start_y = 400
+NobleHUD._popup_end_x = 800
+NobleHUD._popup_end_y = 400
+
 NobleHUD._medal_start_x = 64
 NobleHUD._medal_start_y = 400
 NobleHUD._medal_end_x = 64
@@ -1238,381 +1318,436 @@ NobleHUD._medal_atlas = "guis/textures/medal_atlas"
 
 NobleHUD._medal_data = {
 	first = { --not implemented
-		name = "First Strike",
+		name = "first",
+		multiplier = 2.0,
 		sfx = "first_strike",
+		show_text = true,
 		icon_xy = {1,0}
 	},
 	headshot = {
-		name = "Headshot",
+		name = "headshot",
+		multiplier = 1.25,
 		sfx = false,
 		show_text = false,
 		icon_xy = {1,1}
 	},
+	assist = {
+		name = "assist",
+		sfx = false,
+		icon_xy = {3,0}
+	},
 	pummel = {
-		name = "Pummel",
+		name = "pummel",
 		sfx = false,
 		show_text = false,
 		icon_xy = {1,2}
 	},
-	assassination = {
-		name = "Assassin",
+	assassination = { --stealth
+		name = "assassin",
+		multiplier = 1.25,
 		show_text = false,
 		sfx = false,
 		icon_xy = {1,3}
 	},
-	beatdown = {
-		name = "Beat Down",
+	beatdown = { --from behind
+		name = "beatdown",
 		show_text = false,
 		sfx = false,
 		icon_xy = {1,4}
 	},
 	close_call = {
-		name = "Close Call",
+		name = "close_call",
 		show_text = false,
 		sfx = false,
 		icon_xy = {1,5}
 	},
 	revenge = {
-		name = "Revenge",
+		name = "revenge",
 		show_text = false,
 		sfx = "revenge",
 		icon_xy = {1,6}
 	},
 	avenger = { --not implemented
-		name = "Avenger",
+		name = "avenger",
 		show_text = false,
 		sfx = false,
 		icon_xy = {1,7}
 	},
 	grave = {
-		name = "Kill from the Grave",
+		name = "grave",
 		show_text = false,
 		sfx = false,
 		icon_xy = {1,8}
 	},
 	extermination = { --not implemented
-		name = "Extermination",
+		name = "extermination",
 		show_text = true,
 		disabled = true,
 		sfx = "extermination",
 		icon_xy = {0,9} --!
 	},
 	sniper = {
-		name = "Sniper Kill", --headshot only
+		name = "sniper", --headshot only
 		sfx = false,
 		show_text = false,
 		icon_xy = {4,0}
 	},
-	firebird = { --not implemented
-		name = "Firebird",
+	firebird = {
+		name = "firebird",
 		sfx = false,
 		show_text = false,
-		icon_xy = {7,0}
+		icon_xy = {5,0}
 	},
-	bulltrue = { --not implemented
-		name = "Bulltrue",
+	bulltrue = {
+		name = "bulltrue",
 		sfx = false,
 		show_text = false,
-		icon_xy = {7,1}
+		icon_xy = {5,1}
 	},
 	headcase = { --not implemented
-		name = "Headcase",
+		name = "headcase",
 		sfx = false,
 		show_text = false,
-		icon_xy = {7,2}
+		icon_xy = {5,2}
 	},
 	pull = { --not implemented
-		name = "Pull",
+		name = "pull",
 		sfx = false,
 		show_text = false,
-		icon_xy = {7,3}
+		icon_xy = {5,3}
 	},
 	hero = { --not implemented
-		name = "Hero",
+		name = "hero",
 		sfx = false,
 		show_text = false,
-		icon_xy = {7,4}
+		icon_xy = {5,4}
 	},
 	protector = { --not implemented
-		name = "Protector",
+		name = "protector",
 		sfx = false,
 		show_text = false,
-		icon_xy = {7,5}
+		icon_xy = {5,5}
 	},
 	showstopper = { --not implemented
-		name = "Showstopper",
+		name = "showstopper",
 		sfx = false,
 		show_text = false,
-		icon_xy = {7,6}
+		icon_xy = {5,6}
 	},
 	skyjack = { --not implemented
-		name = "Skyjack",
+		name = "skyjack",
 		sfx = false,
 		show_text = false,
-		icon_xy = {7,7}
+		icon_xy = {5,5}
 	},
 	seek_and_destroy = { --not implemented
-		name = "Seek and Destroy",
+		name = "seek",
 		sfx = false,
 		show_text = false,
-		icon_xy = {7,8}
+		icon_xy = {5,8}
+	},
+	splatter = { --VERY not implemented (no sound or bitmap)
+		name = "splatter",
+		multiplier = 1.25,
+		disabled = true,
+		sfx = false,
+		show_text = false,
+		icon_xy = {-1,-1}
 	},
 	last_man_standing = { --not implemented
-		name = "Last Man Standing",
+		name = "last_man",
 		sfx = "last_man_standing",
 		show_text = false,
 		icon_xy = {7,9}
 	},
 	betrayal = {
-		name = "Betrayal",
+		name = "betrayal",
 		sfx = "betrayal", --betrayal, suicide, and betrayed are only in the medals table so that its sound file will be loaded at the same time as all the others
 		icon_xy = {-1,-1},
 		show_text = false
 	},
 	suicide = {
-		name = "Suicide",
+		name = "suicide",
 		sfx = "suicide",
 		icon_xy = {-1,-1},
 		show_text = false
 	},
 	round_over = {
-		name = "Round Over",
+		name = "round_over",
 		sfx = "round_over",
 		icon_xy = {-1,-1},
 		show_text = false
 	},
 	game_over = {
-		name = "Game Over",
+		name = "game_over",
 		sfx = "game_over",
 		icon_xy = {-1,-1},
 		show_text = false
 	},
 	betrayed = {
-		name = "Betrayed",
+		name = "betrayed",
 		sfx = "betrayed",
 		icon_xy = {-1,-1},
 		show_text = false
 	},
 	multikill = {
 		[2] = {
-			name = "Double Kill",
+			name = "multi_2",
+			multiplier = 1.2,
 			sfx = "multikill_2",
+			show_text = true,
 			icon_xy = {0,0}
 		},
 		[3] = {
-			name = "Triple Kill",
+			name = "multi_3",
+			multiplier = 1.3,
 			sfx = "multikill_3",
+			show_text = true,
 			icon_xy = {0,1}
 		},
 		[4] = {
-			name = "Overkill", --obligatory joke here
+			name = "multi_4", --obligatory joke here
+			multiplier = 1.4,
 			sfx = "multikill_4",
+			show_text = true,
 			icon_xy = {0,2}
 		},
 		[5] = {
-			name = "Killtacular",
+			name = "multi_5",
+			multiplier = 1.5,
 			sfx = "multikill_5",
+			show_text = true,
 			icon_xy = {0,3}
 		},
 		[6] = {
-			name = "Killtrocity",
+			name = "multi_6",
+			multiplier = 1.6,
 			sfx = "multikill_6",
+			show_text = true,
 			icon_xy = {0,4}
 		},
 		[7] = {
-			name = "Killimanjaro",
+			name = "multi_7",
+			multiplier = 1.7,
 			sfx = "multikill_7",
+			show_text = true,
 			icon_xy = {0,5}
 		},
 		[8] = {
-			name = "Killtastrophe",
+			name = "multi_8",
+			multiplier = 1.8,
 			sfx = "multikill_8",
+			show_text = true,
 			icon_xy = {0,6}
 		},
 		[9] = {
-			name = "Killpocalypse",
+			name = "multi_9",
+			multiplier = 1.9,
 			sfx = "multikill_9",
+			show_text = true,
 			icon_xy = {0,7}
 		},
 		[10] = {	
-			name = "Killionaire",
+			name = "multi_10",
+			multiplier = 2.0,
 			sfx = "multikill_10",
+			show_text = true,
 			icon_xy = {0,8}
 		}
 	},
 	spree_all = {		
 		[10] = {
-			name = "Killing Spree",
+			name = "spree_all_1",
+			multiplier = 1.1,
 			sfx = "spree_all_1",
+			show_text = true,
 			icon_xy = {2,0}
 		},
 		[20] = {
-			name = "Killing Frenzy",
+			name = "spree_all_2",
+			multiplier = 1.2,
 			sfx = "spree_all_2",
+			show_text = true,
 			icon_xy = {2,1}
 		},
 		[30] = {
-			name = "Running Riot",
+			name = "spree_all_3",
+			multiplier = 1.25,
 			sfx = "spree_all_3",
+			show_text = true,
 			icon_xy = {2,2}
 		},
 		[40] = {
-			name = "Rampage",
+			name = "spree_all_4",
+			multiplier = 1.3,
 			sfx = "spree_all_4",
+			show_text = true,
 			icon_xy = {2,3}
 		},
 		[50] = {
-			name = "Untouchable",
+			name = "spree_all_5",
+			multiplier = 1.35,
 			sfx = "spree_all_5",
+			show_text = true,
 			icon_xy = {2,4}
 		},
 		[100] = {
-			name = "Invincible",
+			name = "spree_all_6",
+			multiplier = 1.4,
 			sfx = "spree_all_6",
+			show_text = true,
 			icon_xy = {2,5}
 		},
 		[500] = {
-			name = "Inconceivable",
+			name = "spree_all_7",
+			multiplier = 1.45,
 			sfx = "spree_all_7",
+			show_text = true,
 			icon_xy = {2,6}
 		},
 		[1000] = {				
-			name = "Unfrigginbelievable",
+			multiplier = 1.5,
+			name = "spree_all_8",
 			sfx = "spree_all_8",
+			show_text = true,
 			icon_xy = {2,7}
 		}
 	},
 	spree_assist = { --not implemented
-		[1] = {
-			name = "Assist",
-			sfx = false,
-			icon_xy = {3,0}
-		},
-		[5] = {		
-			name = "Assist Spree",
+		[5] = {	
+			name = "spre_assist_1",
+			multiplier = 1.1,
 			sfx = "spree_assist_1",
+			show_text = true,
 			icon_xy = {3,1}
 		},
 		[10] = {
-			name = "Sidekick",
+			name = "spre_assist_2",
+			multiplier = 1.15,
 			sfx = "spree_assist_2",
+			show_text = true,
 			icon_xy = {3,2}
 		},
 		[15] = {
-			name = "Second Gunman",
+			name = "spre_assist_3",
+			multiplier = 1.2,
 			sfx = "spree_assist_3",
+			show_text = true,
 			icon_xy = {3,3}
 		}
 	},
 	spree_sword = { --not implemented
 		[5] = {
-			name = "Sword Spree",
+			multiplier = 1.25,
+			name = "spree_sword_1",
 			sfx = "spree_sword_1",
 			icon_xy = {3,4}
 		},
 		[10] = {
-			name = "Slice 'n Dice",
+			name = "spree_sword_2",
+			multiplier = 1.5,
 			sfx = "spree_sword_2",
 			icon_xy = {3,5}
 		},
 		[15] = {
-			name = "Cutting Crew",
+			name = "spree_sword_3",
+			multiplier = 1.75,
 			sfx = "spree_sword_3",
 			icon_xy = {3,6}
 		}
 	},
 	spree_grenade = { --not implemented properly
 		[5] = {
-			name = "Stick Spree",
+			name = "spree_grenade_1",
 			sfx = "spree_grenade_1",
 			icon_xy = {3,7}
 		},
 		[10] = {
-			name = "Sticky Fingers",
+			name = "spree_grenade_2",
 			sfx = "spree_grenade_2",
 			icon_xy = {3,8}
 		},
 		[15] = {
-			name = "Corrected",
+			name = "spree_grenade_3",
 			sfx = "spree_grenade_3",
 			icon_xy = {3,9}
 		}
 	},
 	spree_sniper = {
 		[5] = {
-			name = "Sniper Spree",
+			name = "spree_sniper_1",
 			sfx = "spree_sniper_1",
 			icon_xy = {4,1}
 		},
 		[10] = {
-			name = "Sharpshooter",
+			name = "spree_sniper_2",
 			sfx = "spree_sniper_2",
 			icon_xy = {4,2}
 		},
 		[15] = {
-			name = "Be the Bullet",
+			name = "spree_sniper_3",
 			sfx = "spree_sniper_3",
 			icon_xy = {4,3}
 		}
 	},
 	spree_shotgun = {
 		[5] = {
-			name = "Shotgun Spree",
+			name = "spree_shotgun_1",
 			sfx = "spree_shotgun_1",
 			icon_xy = {4,4}
 		},
 		[10] = {
-			name = "Open Season",
+			name = "spree_shotgun_2",
 			sfx = "spree_shotgun_2",
 			icon_xy = {4,5}
 		},
 		[15] = {
-			name = "Buck Wild",
+			name = "spree_shotgun_3",
 			sfx = "spree_shotgun_3",
 			icon_xy = {4,6}
 		}
 	},
 	spree_splatter = { --not implemented
 		[5] = {
-			name = "Splatter Spree",
+			name = "spree_splatter_1",
 			sfx = "spree_splatter_1",
 			icon_xy = {4,7}
 		},
 		[10] = {
-			name = "Vehicular Manslaughter",
+			name = "spree_splatter_2",
 			sfx = "spree_splatter_2",
 			icon_xy = {4,8}
 		},
 		[15] = {
-			name = "Sunday Driver",
+			name = "spree_splatter_3",
 			sfx = "spree_splatter_3",
 			icon_xy = {4,9}
 		}
 	},
 	spree_wheelman = { --not implemented
 		[1] = {
-			name = "Wheelman",
+			name = "wheelman",
 			disabled = true,
 			show_text = false,
 			sfx = false,
 			icon_xy = {1,9}
 		},
 		[5] = { --couldn't find the icons for these
-			name = "Wheelman Spree",
+			name = "spree_wheelman_1",
 			show_text = false,
 			disabled = true,
 			sfx = "spree_wheelman_1",
 			icon_xy = {1,9}
 		},
 		[10] = {
-			name = "Road Hog",
+			name = "spree_wheelman_2",
 			disabled = true,
 			show_text = false,
 			sfx = "spree_wheelman_2",
 			icon_xy = {1,9}
 		},
 		[15] = {
-			name = "Road Rage",
+			name = "spree_wheelman_3",
 			disabled = true,
 			show_text = false,
 			sfx = "spree_wheelman_3",
@@ -2062,7 +2197,7 @@ function NobleHUD:get_crosshair_color_by_team(team_name)
 end
 
 function NobleHUD:GetMultikillTime()
-	return 2
+	return 1.5
 end
 
 function NobleHUD:ShowAllMedalMessages()
@@ -2164,7 +2299,10 @@ function NobleHUD:OnLoaded()
 	self:set_weapon_info()
 	self:create_revives()
 	self:_set_deployable_equipment(2,true)
-	self:set_score_multiplier()
+	
+	self:SetTotalScoreMultiplierDisplay()
+	
+--	self:set_score_multiplier()
 	managers.hud:add_updator("NobleHUD_update",callback(NobleHUD,NobleHUD,"UpdateHUD"))
 	self:_switch_weapons(managers.player:local_player():inventory():equipped_selection())
 	if self:IsCrosshairEnabled() then 
@@ -2437,7 +2575,7 @@ function NobleHUD:UpdateHUD(t,dt)
 					local distance_to_person = NobleHUD.vec2_distance(player_pos,person_pos)
 					local v_distance = player_pos.z - person_pos.z
 --[[					
-						if data.unit == Console.tagged_unit then 		
+						if data.unit == Console.tagged_unit then 
 							Console:SetTrackerValue("trackere",RADAR_DISTANCE_MID .. "," .. RADAR_DISTANCE_MAX .. "," .. RADAR_DISTANCE_MAX_SQ)
 							local distance_to_person_2 = mvector3.distance(player_pos,person_pos) --actual
 							Console:SetTrackerValue("trackera","Exact vertical distance: " .. v_distance)
@@ -2500,7 +2638,7 @@ function NobleHUD:UpdateHUD(t,dt)
 		if true then --crosshair enabled
 			local fwd_ray = player:movement():current_state()._fwd_ray	
 			local focused_person = fwd_ray and fwd_ray.unit
---			local crosshair = self._crosshair_panel::child("crosshair_subparts"):child("crosshair_1") --todo function to handle crosshair modifications
+--			local crosshair = self._crosshair_panel:child("crosshair_subparts"):child("crosshair_1") --todo function to handle crosshair modifications
 			local crosshair_color = Color.white
 			if alive(focused_person) and (self._cache.crosshair_enemy ~= focused_person) then
 				self._cache.crosshair_enemy = focused_person --only update crosshair colors if different selected unit than last 
@@ -2667,6 +2805,55 @@ function NobleHUD:UpdateHUD(t,dt)
 		
 		
 -- ************** SCORE ************** 
+	self:UpdateScoreTimerMultiplier(t) --set multiplier based on heist timer
+	self:SetTotalScoreMultiplierDisplay()
+	local popup_queues = 0
+	if true then  --check is debug only
+		local function fadeout_popup(o,popup_death_momentum)
+			self:animate(o,"animate_fadeout",function (o) o:parent():remove(o) end,0.66,nil,popup_death_momentum)
+		end
+		local popup_duration = self:GetPopupDuration()
+		for i,popup_data in ipairs(self._cache.score_popups) do 
+			local popup = popup_data.popup
+			local style = popup_data.style
+			local popup_unit = popup_data.unit
+			local popup_start_t = popup_data.start_t
+			
+			
+			
+			if not (popup_start_t and popup and style and alive(popup)) then 
+				table.remove(self._cache.score_popups,i)
+--				self._cache.score_popups[i] = nil
+				if popup and alive(popup) then 
+					self:animate(popup,"animate_fadeout",function(o) o:parent():remove(o) end,1)
+				end
+			else
+				if type(self[style]) == "function" then 
+					if style == "animate_popup_queue" then 
+						popup_queues = popup_queues + 1
+					end
+					local popup_height = self:GetPopupFontSize() + 2
+					local popup_animate_result = self[style](self,popup,t,dt,popup_start_t,popup_duration,popup_unit,self._popup_end_y + (popup_queues * popup_height))
+					if popup_animate_result then
+						table.remove(self._cache.score_popups,i)
+						fadeout_popup(popup,popup_animate_result)
+--						self._cache.score_popups[i] = nil
+--						popup:parent():remove(popup)
+					else
+						--not done animating, so continue
+					end
+				else
+					self:log("Popup " .. popup:name() .. " [ #" .. tostring(i) .. " ] " .. " has invalid style [" .. style .. "]; Removing...",{color = Color.red})					
+--					self._cache.score_popups[i] = nil
+					table.remove(self._cache.score_popups,i)
+					fadeout_popup(popup)
+--					self:animate(popup,"animate_fadeout",function(o) o:parent():remove(o) end,1)				
+				end
+			end
+		end	
+	end
+		
+	
 		if false then 
 		--starting positions for score popups
 			for i,popup_data in pairs(score_popups) do 
@@ -2752,7 +2939,155 @@ function NobleHUD:UpdateHUD(t,dt)
 	
 end
 
-function NobleHUD:OnEnemyKilled(data)
+function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
+--	logall(attack_data)
+	local t = Application:time()
+	local player = attack_data.attacker_unit
+	if not alive(player) then
+		return
+	elseif player ~= managers.player:local_player() then
+--		self:AddMedal("grave")
+		return
+	end
+	local player_movement = player:movement()
+	local player_weapon = attack_data.weapon_unit
+	local weapon_base = alive(player_weapon) and player_weapon:base()
+	local player_weapon_categories
+	local player_weapon_id = weapon_base and weapon_base.get_name_id and weapon_base:get_name_id() or ""
+	if weapon_base then 
+		player_weapon_categories = weapon_base and weapon_base.categories and weapon_base:categories()
+	end
+	local player_state = managers.player:current_state()
+	local variant = attack_data.variant
+	local base = unit:base()
+	local movement = unit:movement()
+	local unit_type = base._tweak_table
+	local is_cop = CopDamage.is_cop(unit_type)
+	local unit_anim = unit.anim_data and unit:anim_data()
+
+	local medal_multiplier = 1
+
+	if CopDamage.is_civilian(unit:base()._tweak_table) then
+		self:ClearKillsCache()
+		self:PlayAnnouncerSound("Betrayal")
+		--no +1 kills for you, you murderer >:(
+	else
+		if player:character_damage():_max_armor() > 0 and player:character_damage():health_ratio() <= 0.5 and player:character_damage():get_real_armor() <= 0 then 
+			self:KillsCache("close_call",true,true)
+		end
+		
+		if player:character_damage():incapacitated() or player:character_damage():bleed_out() then 
+			self:AddMedal("grave")
+		end
+	
+		if movement and movement:rope_unit() then 
+			self:AddMedal("pull")
+		end
+		
+		if player_movement and player_movement:zipline_unit() then 
+			self:AddMedal("firebird")
+		end
+		
+		local action = movement and movement._active_actions[1]
+--		NobleHUD.buttass = movement and movement._active_actions --!
+		
+		local action_type = action and action:type()
+		if unit_type == "spooc" then
+			if action_type == "spooc" then
+				if action:is_flying_strike() then
+					self:AddMedal("bulltrue")
+				elseif not action:has_striken() then
+					self:AddMedal("showstopper")
+				end
+			end
+		end
+		
+		if weapon_base and weapon_base.thrower_unit then
+			if variant == "explosion" then 
+				local ptd = tweak_data.blackmarket.projectiles[player_weapon_id]
+				if ptd and ptd.is_a_grenade then
+					self:AddMedal("spree_grenade",self:KillsCache("grenade",1))
+				end
+			--	return
+			end
+		elseif variant == "bullet" then 
+		
+			if head then
+				self:AddMedal("headshot")
+				medal_multiplier = medal_multiplier * self:GetMedalMultiplier("headshot")
+			end
+			local is_sniper,is_shotgun,is_saw		
+
+			if type(player_weapon_categories) == "table" then 
+				for _,cat in pairs(player_weapon_categories) do 
+					if cat == "shotgun" then 
+						is_shotgun = true
+					elseif cat == "snp" then 
+						is_sniper = true
+					elseif cat == "saw" then 
+						is_saw = true
+					end
+				end
+			end
+			
+			if is_sniper then 
+				if head then 
+					self:AddMedal("sniper")
+				end
+				self:AddMedal("spree_sniper",self:KillsCache("sniper",1))
+			end
+			if is_shotgun then 
+				self:AddMedal("spree_shotgun",self:KillsCache("shotgun",1))	
+			end
+			if is_saw then 
+				local saw_count = self:KillsCache("saw",1)
+				self:AddMedal("spree_sword",saw_count)
+				medal_multiplier = medal_multiplier * self:GetMedalMultiplier("spree_sword",saw_count)
+			end
+			
+
+		elseif variant == "melee" then 
+			self:KillsCache("melee",1)
+			self:AddMedal("pummel")
+				
+			if attack_data.cool then 
+				NobleHUD:AddMedal("assassination")
+				medal_multiplier = medal_multiplier * self:GetMedalMultiplier("assassination")
+			end
+			if attack_data.from_behind then
+				NobleHUD:AddMedal("beatdown")
+			end
+			Log("Was melee")
+		elseif variant == "graze" then 
+			--nothing special
+		end
+		
+		
+		if action_type == "reload" then 
+			Log("Is reloading")
+			--self:AddMedal("reload_this") --haven't added assets for it yet lol
+		end
+		
+		local multikill_count = 1
+		if self:KillsCache("last_kill_t") + self:GetMultikillTime() >= t then 
+			multikill_count = self:KillsCache("multi_count",1)
+			self:AddMedal("multikill",multikill_count)
+		else
+			self:KillsCache("multi_count",multikill_count,true)
+		end
+		local spree_count = self:KillsCache("spree_count",1)
+		
+		medal_multiplier = medal_multiplier * self:GetMedalMultiplier("multikill",multikill_count)
+		medal_multiplier = medal_multiplier * self:GetMedalMultiplier("spree_all",spree_count)
+		self:AddMedal("spree_all",spree_count)
+		self:KillsCache("last_kill_t",t,true)
+	end
+	attack_data.name = attack_data.name or unit_type
+	self:TallyScore(attack_data,unit,medal_multiplier)
+end
+
+function NobleHUD:OnEnemyKilledOld(data)
+	--temp disabled
 	if not data then 
 		self:log("No kill data found!")
 		return
@@ -2855,7 +3190,8 @@ function NobleHUD:OnEnemyKilled(data)
 
 	end
 --	self:log(data.type or "nope") --team
-	self:_tally_score(data)
+	self:TallyScore(data)
+--	self:_tally_score(data)
 end
 
 function NobleHUD:KillsCache(category,amount,set)
@@ -2865,21 +3201,72 @@ function NobleHUD:KillsCache(category,amount,set)
 		elseif type(self._cache.kills[category]) == "number" then 
 			self._cache.kills[category] = self._cache.kills[category] + (tonumber(amount or 0) or 0)
 		end
-		return self._cache.kills[category]
 	elseif set ~= nil then
 		--self:log("Error: No killcount category found for " .. tostring(category),{color = Color.red})
 	end
+	
 	return self._cache.kills[category]
+end
+
+function NobleHUD:GetMedalMultiplier(category,current_tier)
+	local medal_data = self._medal_data and self._medal_data[category]
+	if medal_data then 
+		if medal_data.multiplier then 
+			return medal_data.multiplier
+		elseif not medal_data.name then 
+			local multiplier = 1
+--			local current_tier = tier self._cache.kills[category]
+			if not current_tier then 
+				Log("ERROR: Bad category " .. tostring(category))
+				return
+			end
+			for tier,tiered_data in pairs(medal_data) do 
+				if tier == current_tier then
+					return tiered_data.multiplier and math.max(tiered_data.multiplier,multiplier) or multiplier
+				elseif tier < current_tier then 
+					multiplier = tiered_data.multiplier and math.max(tiered_data.multiplier,multiplier) or multiplier
+				end
+			end
+			return multiplier
+		end
+	else
+		self:log("ERROR: GetMedalMultiplier() Bad category!",{color = Color.red})
+	end
+	return 1
+
+--[[
+	category = category and tostring(category)
+	if category then
+		if self._cache.kills[category] then 
+			if reset then 
+				return self._cache.kills[category]
+			else
+				self._cache.kills[category] then 
+					
+				end
+			end
+		elseif category then 
+			self._cache.kills[category] = amount
+		end	
+		
+	end
+	--]]
 end
 
 function NobleHUD:ClearKillsCache()
 	self._cache.kills = {
+		spree_all_mul = 1,
+		multi_mul = 1,
+		spree_assist_mul = 1,
+		spree_sword_mul = 1,
+		close_call = false,
 		last_kill_t = 0,
 		spree_count = 0,
 		multi_count = 0,
 		melee = 0,
 		sniper = 0,
 		shotgun = 0,
+		saw = 0,
 		grenade = 0
 	}
 end
@@ -2932,14 +3319,14 @@ function NobleHUD:LoadXAudioSounds()
     if blt.xaudio then
         blt.xaudio.setup()
 		
-		local function loadsound(name,snd)
+		local function loadsound(snd)
 			local path = NobleHUD._announcer_path .. snd .. ".ogg"
 			if self._efficient_audio_mode then 
---				self:log("Loading sound to _cache: " .. tostring(name) .. " " .. tostring(snd))
-				self._cache.sounds[name] = path
+--				self:log("Loading sound to _cache: " .. tostring(snd))
+				self._cache.sounds[snd] = path
 			else
---				self:log("Loading sound to buffer and _cache: " .. tostring(name) .. " [" .. tostring(snd)..".ogg]")
-				self._cache.sounds[name] = XAudio.Buffer:new(path)
+--				self:log("Loading sound to buffer and _cache: [" .. tostring(snd)..".ogg]")
+				self._cache.sounds[snd] = XAudio.Buffer:new(path)
 			end
 		end
 		
@@ -2949,12 +3336,12 @@ function NobleHUD:LoadXAudioSounds()
 		end
 		for medal_name,medal in pairs(self._medal_data) do 
 			if medal.sfx and medal.sfx ~= "" and not medal.disabled then 
-				loadsound(medal.name,medal.sfx)
+				loadsound(medal.sfx)
 			else
 				for tier,tiered_medal in pairs(medal) do 
 					if type(tier) == "number" then 
 						if tiered_medal.sfx and tiered_medal.sfx ~= "" and not tiered_medal.disabled then 							
-							loadsound(tiered_medal.name,tiered_medal.sfx)
+							loadsound(tiered_medal.sfx)
 						end
 					end
 				end
@@ -4516,7 +4903,7 @@ function NobleHUD:_create_stamina(hud)
 		w = icon_size,
 		h = icon_size,
 		layer = 2,
-		color = self.color_data.hud_vitalsfill_blue
+		color = self.color_data.hud_vitalsoutline_blue 
 	})
 	
 	local stamina_icon = stamina_panel:bitmap({
@@ -4531,7 +4918,7 @@ function NobleHUD:_create_stamina(hud)
 		w = 32,
 		h = 32,
 		layer = 3,
-		color = self.color_data.hud_vitalsoutline_blue
+		color = self.color_data.hud_vitalsfill_blue
 	})
 	stamina_icon:set_center(icon_size/2,icon_size/2)
 	
@@ -4560,8 +4947,8 @@ function NobleHUD:SetStamina(current,total)
 		end
 		
 		if movement:is_above_stamina_threshold() then 
-			stamina_panel:child("stamina_icon"):set_color(self.color_data.hud_blueoutline)
-			stamina_panel:child("stamina_fill"):set_color(self.color_data.hud_bluefill)
+			stamina_panel:child("stamina_icon"):set_color(self.color_data.hud_bluefill)
+			stamina_panel:child("stamina_fill"):set_color(self.color_data.hud_blueoutline)
 		else
 			stamina_panel:child("stamina_fill"):set_color(Color(0.3,0.3,0.3))
 			stamina_panel:child("stamina_icon"):set_color(Color(0.6,0.6,0.6))
@@ -4741,6 +5128,10 @@ end
 --		SCORE COUNTER
 
 function NobleHUD:_create_score(hud)
+self._popups_panel = hud:panel({
+	name = "popups_panel"
+})
+
 	local margin_w = 4
 	local margin_h = 12
 	local banner_h = 24
@@ -4837,13 +5228,180 @@ function NobleHUD:_create_score(hud)
 	self._score_panel = score_panel
 end
 
-function NobleHUD:set_score_multiplier() --hud only
-	local multiplier = self:get_total_global_score_multiplier()
-	self:_set_score_multiplier(string.format("%0.02fx",multiplier))
+function NobleHUD:TallyScore(data,unit,medal_multiplier)
+	local name = tostring(data.name)
+	local score = self:GetRawScoreFromUnitName(name)
+	local localized_unitname = managers.localization:text("noblehud_unitname_" .. name)
+	local total_multiplier = self:GetTotalScoreMultiplier()
+	
+	--get global score mult here
+	if score then 
+--		score = score * global_score_mult
+		if (score > 0) then 
+			score = score * medal_multiplier
+		end
+		score = score * total_multiplier
+		if self:GetScorePopupsEnabled() then 
+			self:CreateScorePopup(localized_unitname,score,unit)
+		end
+		self:AddScore(score)
+		self:SetScoreLabel(NobleHUD.make_nice_number(self._cache.score_session))
+	else
+		--unit is worth no score, or unit name is wrong
+	end
 end
 
-function NobleHUD:_set_score_multiplier(text) --hud only
-	self._score_panel:child("score_multiplier_label"):set_text(text)
+function NobleHUD:PopupsEnabled()
+	return true
+end
+
+function NobleHUD:UpdateScoreTimerMultiplier(t)
+	t = t or managers.game_play_central:get_heist_timer()
+	
+	local mission_timer_mult = self._cartographer_data and self._cartographer_data.map_time_score or self.score_multipliers.time_generic
+	--map-specific score timer multipliers aren't implemented so it will always use the default timer
+	
+	local score_timer_mult
+	for _,timer_data in ipairs(mission_timer_mult) do
+		if timer_data.threshold > t then 
+			score_timer_mult = timer_data.multiplier
+			break
+		end
+	end	
+	self._cache.score_timer_mult = score_timer_mult
+	return score_timer_mult
+end
+
+function NobleHUD:GetTotalScoreMultiplier(mult)
+	mult = mult or 1
+	
+	local difficulty = Global.game_settings and Global.game_settings.difficulty
+	local mult_data = self.score_multipliers
+	local score_timer_mult = self._cache.score_timer_mult or 1
+	
+	--[[
+	if not self._cache.timer_score_multiplier then 
+		local timer = managers.game_play_central:get_heist_timer()
+		local mission_timer_mult = self._cartographer_data and self._cartographer_data.map_time_score or mult_data.time_generic	
+		for _,timer_data in ipairs(mission_timer_mult) do
+			if timer < timer_data.threshold then 
+				timer_mult = timer_data.multiplier
+				break
+			end
+		end
+		self._cache.timer_score_multiplier = timer_mult
+	else
+		timer_mult = self._cache.timer_score_multiplier
+	end
+	--]]
+	mult = mult * score_timer_mult
+	mult = mult * (mult_data.difficulty[difficulty or "easy"] or 1)
+--	local mutators = managers.mutators:mutators()
+	--mutator multipliers go here
+	return mult
+end
+
+function NobleHUD:SetTotalScoreMultiplierDisplay()
+	self._score_panel:child("score_multiplier_label"):set_text(string.format("%0.02fx",self:GetTotalScoreMultiplier()))
+end
+
+function NobleHUD:GetRawScoreFromUnitName(unit_name)
+	return NobleHUD.score_unit_points[unit_name] or 0
+end
+
+function NobleHUD:SetScoreLabel(text)
+	self._score_panel:child("score_label"):set_text(text)
+end
+
+function NobleHUD:GetScorePopupsEnabled()
+	return true
+end
+
+function NobleHUD:AddScore(score)
+	self._cache.score_session = self._cache.score_session + (tonumber(score) or 0)
+end
+
+function NobleHUD:GetPopupFontSize()
+	return 16
+end
+
+function NobleHUD:CreateScorePopup(name,score,unit)
+	local text
+	local color 
+	if score < 0 then 
+		text = "-" .. tostring(score) 
+		color = Color.red
+	else
+		text = "+" .. tostring(score)
+		color = Color.white
+	end
+	if self:ScorePopupShowsUnitName() then 
+		text = text .. " " .. name
+	end
+	
+	local popups_panel = self._popups_panel
+	local font_size = self:GetPopupFontSize()
+	
+	local popup = popups_panel:text({
+		name = "popup_" .. tostring(self._cache.score_popups_count),
+		layer = 1,
+		text = text,
+		x = self._popup_start_x,
+		y = self._popup_start_y + ((font_size + 2) * (#self._cache.score_popups + 1)),
+		font = "fonts/font_large_mf",
+		font_size = font_size,
+		alpha = 0,
+		color = color
+		
+	})
+	self._cache.score_popups_count = self._cache.score_popups_count + 1
+	
+	local style = self:GetPopupStyle()
+	
+	table.insert(self._cache.score_popups,{
+		popup = popup,
+		style = style,
+		unit = unit,
+		start_t = Application:time()
+	})
+	--[[
+	self._cache.score_popups[self._cache.score_popups_count] = {
+		popup = popup,
+		style = style,
+		unit = unit,
+		start_t = Application:time()
+	}
+	--]]
+	
+	if style == "animate_popup_athena" or style == "animate_popup_bluespider" then 
+		popup:set_align("center")
+	end
+	
+--	self:animate(popup,animate_style,nil)
+	
+end
+
+function NobleHUD:GetPopupDuration()
+	return 3
+end
+
+function NobleHUD:GetPopupStyle()
+	--[[
+	local setting = self.settings.popup_style
+	local styles = {
+		[1] = "animate_popup_bluespider",
+		[2] = "animate_popup_athena",
+		[3] = "animate_popup_stack",
+		[4] = "animate_popup_queue",
+		[5] = "animate_popup_nightfall"
+	}
+	return styles[setting] or "animate_bluespider"
+	--]]
+	return "animate_popup_queue"
+end
+
+function NobleHUD:ScorePopupShowsUnitName()
+	return true
 end
 
 function NobleHUD:_set_mission_timer(text) --hud only
@@ -4864,15 +5422,100 @@ function NobleHUD:_set_mission_name(text)
 	objectives_panel:child("mission_label"):set_text(text)
 end
 
+function NobleHUD:_set_killcount(slot,kills)
+	kills = tostring(kills)
+	if slot == 1 then --primary
+		self._primary_weapon_panel:child("kills_label"):set_text(kills .. "")
+	elseif slot == 2 then --secondary
+		self._secondary_weapon_panel:child("kills_label"):set_text(kills .. "")
+	elseif slot == 3 then --melee
+--		self._melee_weapon_panel:child("kills_label"):set_text(kills .. "")
+	end
+end
+
+function NobleHUD:animate_popup_bluespider(o,t,dt,start_t,duration,unit)
+	if alive(unit) then 
+		local viewport = managers.viewport:get_current_camera()
+		local unit_pos = NobleHUD._ws:world_to_screen(viewport_cam,unit:position())
+		if unit_pos then 
+			o:set_center(unit_pos.x,unit_pos.y)
+		end
+	end
+	return true
+end
+function NobleHUD:animate_popup_athena(o,t,dt,start_t,duration,unit)
+	return true
+end
+function NobleHUD:animate_popup_stack(o,t,dt,start_t,duration)
+	return true
+end
+
+function NobleHUD:animate_popup_queue(o,t,dt,start_t,duration,unit,dest_y,rate)
+--[[
+	Log(type(o))
+	Log(tostring(o))
+	Log(type(t))
+	Log(tostring(t))
+	Log(type(dt))
+	Log(tostring(dt))
+	Log(type(start_t))
+	Log(tostring(start_t))
+	Log(type(duration))
+	Log(tostring(duration))
+	--]]
+--	if true then return 1 end
+	rate = rate or 3
+	local oy = o:y()
+	o:set_alpha(o:alpha() + (dt * 3)) --will always become fully visible in 1/3 seconds
+	if t - start_t > duration then 
+		return math.sign(dest_y - oy)
+	end
+	o:set_y(oy + (10 * dt * (dest_y - oy) / rate))
+end
+function NobleHUD:animate_popup_bluespider(o,t,dt,start_t,duration)
+	return true
+end
+
+--below this line, score functions are deprecated
+
+function NobleHUD:set_score_multiplier() --hud + effect
+	local multiplier = self:get_total_global_score_multiplier()
+	
+	self:_set_score_multiplier(string.format("%0.02fx",multiplier))
+end
+
+function NobleHUD:_set_score_multiplier(text) --hud only
+	self._score_panel:child("score_multiplier_label"):set_text(text)
+end
+
 function NobleHUD:_get_score_from_unit(unit_name)
-	return NobleHUD.score_unit_points[unit_name] or 10
+	return NobleHUD.score_unit_points[unit_name] or 0
 end
 
 function NobleHUD:get_total_global_score_multiplier(mult) --arg optional
-	local difficulty = Global.game_settings and Global.game_settings.difficulty
 	mult = mult or 1
-	mult = mult * (self.score_multipliers.difficulty[difficulty or "easy"] or 1)
 	
+	local difficulty = Global.game_settings and Global.game_settings.difficulty
+	local mult_data = self.score_multipliers
+	local timer_mult = 1
+	--[[
+	if not self._cache.timer_score_multiplier then 
+		local timer = managers.game_play_central:get_heist_timer()
+		local mission_timer_mult = self._cartographer_data and self._cartographer_data.map_time_score or mult_data.time_generic	
+		for _,timer_data in ipairs(mission_timer_mult) do
+			if timer < timer_data.threshold then 
+				timer_mult = timer_data.multiplier
+				break
+			end
+		end
+		self._cache.timer_score_multiplier = timer_mult
+	else
+		timer_mult = self._cache.timer_score_multiplier
+	end
+	--]]
+	mult = mult * timer_mult
+	mult = mult * (mult_data.difficulty[difficulty or "easy"] or 1)
+--	local mutators = managers.mutators:mutators()
 	--mutator multipliers go here
 	return mult
 end
@@ -4895,6 +5538,17 @@ function NobleHUD:_tally_score(data)
 		return
 	end	
 	self:log("ERROR: _tally_score(" .. concat(data,",") .. ")")
+end
+
+
+function NobleHUD:_add_score(score)
+	self.score_session = self.score_session + (tonumber(score or 0) or 0)
+end
+
+function NobleHUD:set_score_label()
+	if not JoyScoreCounter then 
+		self._score_panel:child("score_label"):set_text(NobleHUD.make_nice_number(self.score_session))
+	end
 end
 
 function NobleHUD:create_score_popup(score,unit,unitname)
@@ -4925,6 +5579,7 @@ function NobleHUD:create_score_popup(score,unit,unitname)
 		alpha = 0,
 		color = color
 	})
+	
 	self.score_popups[self.score_popups_count] = {
 		element = popup,
 		unit = unit
@@ -4959,27 +5614,6 @@ function NobleHUD:animate_score_popup_track(o) --unused; should be moved to hudm
 	local pos = self._ws:world_to_screen(viewport_cam,unit:position())
 	o:set_x(pos.x)
 	o:set_y(pos.y)
-end
-
-function NobleHUD:set_score_label()
-	if not JoyScoreCounter then 
-		self._score_panel:child("score_label"):set_text(NobleHUD.make_nice_number(self.score_session))
-	end
-end
-
-function NobleHUD:_add_score(score)
-	self.score_session = self.score_session + (tonumber(score or 0) or 0)
-end
-
-function NobleHUD:_set_killcount(slot,kills)
-	kills = tostring(kills)
-	if slot == 1 then --primary
-		self._primary_weapon_panel:child("kills_label"):set_text(kills .. "")
-	elseif slot == 2 then --secondary
-		self._secondary_weapon_panel:child("kills_label"):set_text(kills .. "")
-	elseif slot == 3 then --melee
---		self._melee_weapon_panel:child("kills_label"):set_text(kills .. "")
-	end
 end
 
 Hooks:Add("JoyScoreCounter_SetScore","noblehud_joyscore_integration",function(total,new)
@@ -6559,24 +7193,26 @@ end
 
 function NobleHUD:AddMedal(category,rank) --from name
 	local medal_data = self._medal_data[category]
---	self:log("Doing NobleHUD:AddMedal(" .. tostring(category) .. "," .. tostring(rank) .. ")",{color = Color.yellow})
+	self:log("Doing NobleHUD:AddMedal(" .. tostring(category) .. "," .. tostring(rank) .. ")",{color = Color.yellow})
 	if rank and medal_data and medal_data[rank] then 
 		return NobleHUD:AddMedalFromData(medal_data[rank],category)
 	elseif medal_data and not rank then 
 		return NobleHUD:AddMedalFromData(medal_data,category)
-	else
---		self:log("ERROR: NobleHUD:AddMedal(" .. tostring(category) .. "," .. tostring(rank) .. ") (bad medal)",{color = Color.red})
+	elseif not (medal_data or rank) then
+		self:log("ERROR: NobleHUD:AddMedal(" .. tostring(category) .. "," .. tostring(rank) .. ") (bad medal)",{color = Color.red})
 	end
 end
 
-function NobleHUD:AddMedalFromData(data) --direct reference to table passed here
+function NobleHUD:AddMedalFromData(data,category) --direct reference to table passed here
 	local killfeed = self._killfeed_panel
 	if not (data and data.icon_xy) then 
 		self:log("ERROR: bad data to AddMedalFromData(" .. tostring(data) .. ")")
 		return
 	elseif data.disabled then 
+		self:log("Did not add medal " .. tostring(category) .. " (disabled)")
 		return
 	end
+	--local x = 1; local y = 3; NobleHUD._medal_data.bulltrue.icon_xy = {x,y}; NobleHUD:AddMedal("bulltrue")
 	self.num_medals = self.num_medals + 1
 	local texture,texture_rect = self:GetMedalIcon(unpack(data.icon_xy))
 	local icon_size = 32
@@ -6616,11 +7252,15 @@ function NobleHUD:AddMedalFromData(data) --direct reference to table passed here
 	
 	self:animate(icon,"animate_killfeed_icon_twirl",function(o) o:set_rotation(0); NobleHUD:animate(o,"animate_killfeed_icon_pulse",add_bitmap_to_killfeed,0.3,icon_size,1.5) end,0.25,180,start_x,start_y)
 	
+	local name = data.name and managers.localization:text("noblehud_medal_" .. data.name)
+	
 	if data.sfx and self:AnnouncerEnabled() then 
-		self:PlayAnnouncerSound(data.name)
+		self:PlayAnnouncerSound(data.sfx)
 	end
+	
+	
 	if data.show_text or self:ShowAllMedalMessages() then 
-		self:AddKillfeedMessage(data.name,{font_size = 16})
+		self:AddKillfeedMessage(name .. "!",{font_size = 16})
 	end
 	return icon
 end
@@ -6844,7 +7484,7 @@ Hooks:Add("LocalizationManagerPostInit", "noblehud_addlocalization", function( l
 		end
 	end
 	loc:load_localization_file(path .. "english.txt")
-end)	
+end)
 --[[
 
 Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)

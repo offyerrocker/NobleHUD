@@ -1,4 +1,4 @@
-Hooks:PostHook(StatisticsManager,"killed","noblehud_statistics_killed",function(self,data)
+Hooks:PostHook(StatisticsManager,"akilled","noblehud_statistics_killed",function(self,data)
 	local stat, err = pcall(function ()
 		NobleHUD:OnEnemyKilled(data)
 	end)
