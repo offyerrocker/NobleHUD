@@ -3,7 +3,7 @@
 	"description" : "I do know how to pick em.",
 	"author" : "Offyerrocker",
 	"contact" : "Discord: Offyerrocker#3878",
-	"version" : "0.3",
+	"version" : "0.5b",
 	"blt_version" : 2,
 	"priority" : 7,
 	"color" : "255 128 0",
@@ -43,6 +43,10 @@
 		{
 			"hook_id" : "lib/managers/hud/hudtemp",
 			"script_path" : "lua/hudtemp.lua"
+		},
+		{
+			"hook_id" : "lib/managers/hud/hudchat",
+			"script_path" : "lua/hudchat.lua"
 		},
 		{
 			"hook_id": "lib/managers/hud/hudpresenter",

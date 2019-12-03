@@ -9,6 +9,10 @@ Hooks:PostHook(HUDManager,"_setup_player_info_hud_pd2","noblehud_create_ws",func
 	end
 end)
 
+function HUDManager:pd_start_progress(current, total, msg, icon_id)
+	--do nothing
+end
+
 --pretty much everything below is for Auntie Dot
 
 function HUDManager:_set_helper_pattern(pattern_name)

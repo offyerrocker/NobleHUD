@@ -1,0 +1,78 @@
+{
+	"menu_id" : "noblehud_score_options",
+	"parent_menu_id" : "noblehud_options",
+	"title" : "noblehud_score_options_title",
+	"description" : "noblehud_score_options_desc",
+	"back_callback" : "noblehud_score_options_close",
+	"items" : [
+		{
+			"type" : "toggle",
+			"id" : "id_noblehud_set_popups_enabled",
+			"title" : "noblehud_set_popups_enabled_title",
+			"description" : "noblehud_set_popups_enabled_desc",
+			"callback" : "callback_noblehud_set_popups_enabled",
+			"value" : "popups_enabled"
+		},
+		{
+			"type" : "toggle",
+			"id" : "id_noblehud_set_announcer_enabled",
+			"title" : "noblehud_set_announcer_enabled_title",
+			"description" : "noblehud_set_announcer_enabled_desc",
+			"callback" : "callback_noblehud_set_announcer_enabled",
+			"value" : "announcer_enabled"
+		},
+		{
+			"type" : "toggle",
+			"id" : "id_noblehud_set_medals_enabled",
+			"title" : "noblehud_set_medals_enabled_title",
+			"description" : "noblehud_set_medals_enabled_desc",
+			"callback" : "callback_noblehud_set_medals_enabled",
+			"value" : "medals_enabled"
+		},
+		{
+			"type" : "toggle",
+			"id" : "id_noblehud_set_show_all_medals",
+			"title" : "noblehud_set_show_all_medals_title",
+			"description" : "noblehud_set_show_all_medals_desc",
+			"callback" : "callback_noblehud_set_show_all_medals",
+			"value" : "show_all_medals"
+		},
+		{
+			"type" : "multiple_choice",
+			"id" : "id_noblehud_set_popup_style",
+			"title" : "noblehud_set_popup_style_title",
+			"description" : "noblehud_set_popup_style_desc",
+			"callback" : "callback_noblehud_set_popup_style",
+			"items" : [
+				"noblehud_popup_style_queue",
+				"noblehud_popup_style_athena",
+				"noblehud_popup_style_bluespider"
+			],
+			"value" : "popup_style"
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_popup_duration",
+			"title" : "noblehud_set_popup_duration_title",
+			"description" : "noblehud_set_popup_duration_desc",
+			"callback" : "callback_noblehud_set_popup_duration",
+			"value" : "popup_duration",
+			"default_value" : 3,
+			"min" : 0.01,
+			"max" : 10,
+			"step" : 1
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_popup_font_size",
+			"title" : "noblehud_set_popup_font_size_title",
+			"description" : "noblehud_set_popup_font_size_desc",
+			"callback" : "callback_noblehud_set_popup_font_size",
+			"value" : "popup_font_size",
+			"default_value" : 16,
+			"min" : 0,
+			"max" : 128,
+			"step" : 4
+		}
+	]
+}

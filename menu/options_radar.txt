@@ -1,0 +1,29 @@
+{
+	"menu_id" : "noblehud_radar_options",
+	"parent_menu_id" : "noblehud_options",
+	"title" : "noblehud_radar_options_title",
+	"description" : "noblehud_radar_options_desc",
+	"back_callback" : "noblehud_radar_options_close",
+	"items" : [
+		{
+			"type" : "toggle",
+			"id" : "id_noblehud_set_radar_enabled",
+			"title" : "noblehud_set_radar_enabled_title",
+			"description" : "noblehud_set_radar_enabled_desc",
+			"callback" : "callback_noblehud_set_radar_enabled",
+			"value" : "radar_enabled"
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_radar_distance",
+			"title" : "noblehud_set_radar_distance_title",
+			"description" : "noblehud_set_radar_distance_desc",
+			"callback" : "callback_noblehud_set_radar_distance",
+			"value" : "radar_distance",
+			"default_value" : 25,
+			"min" : 1,
+			"max" : 25,
+			"step" : 1
+		}
+	]
+}

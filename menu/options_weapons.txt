@@ -1,0 +1,17 @@
+{
+	"menu_id" : "noblehud_weapons_options",
+	"parent_menu_id" : "noblehud_options",
+	"title" : "noblehud_weapons_options_title",
+	"description" : "noblehud_weapons_options_desc",
+	"back_callback" : "noblehud_weapons_options_close",
+	"items" : [
+		{
+			"type" : "toggle",
+			"id" : "id_noblehud_set_floating_ammo_enabled",
+			"title" : "noblehud_set_floating_ammo_enabled_title",
+			"description" : "noblehud_set_floating_ammo_enabled_desc",
+			"callback" : "callback_noblehud_set_floating_ammo_enabled",
+			"value" : "floating_ammo_enabled"
+		}
+	]
+}

@@ -1,0 +1,57 @@
+{
+	"menu_id" : "noblehud_crosshair_options",
+	"parent_menu_id" : "noblehud_options",
+	"title" : "noblehud_crosshair_options_title",
+	"description" : "noblehud_crosshair_options_desc",
+	"back_callback" : "noblehud_crosshair_options_close",
+	"items" : [
+		{
+			"type" : "toggle",
+			"id" : "id_noblehud_set_crosshair_enabled",
+			"title" : "noblehud_set_crosshair_enabled_title",
+			"description" : "noblehud_set_crosshair_enabled_desc",
+			"callback" : "callback_noblehud_set_crosshair_enabled",
+			"value" : "crosshair_enabled"
+		},
+		{
+			"type" : "toggle",
+			"id" : "id_noblehud_set_crosshair_bloom_enabled",
+			"title" : "noblehud_set_crosshair_bloom_enabled_title",
+			"description" : "noblehud_set_crosshair_bloom_enabled_desc",
+			"callback" : "callback_noblehud_set_crosshair_bloom_enabled",
+			"value" : "crosshair_bloom"
+		},
+		{
+			"type" : "toggle",
+			"id" : "id_noblehud_set_crosshair_shake_enabled",
+			"title" : "noblehud_set_crosshair_shake_enabled_title",
+			"description" : "noblehud_set_crosshair_shake_enabled_desc",
+			"callback" : "callback_noblehud_set_crosshair_shake_enabled",
+			"value" : "crosshair_shake"
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_crosshair_stability",
+			"title" : "noblehud_set_crosshair_stability_title",
+			"description" : "noblehud_set_crosshair_stability_desc",
+			"callback" : "callback_noblehud_set_crosshair_stability",
+			"value" : "crosshair_stability",
+			"default_value" : 77,
+			"min" : 1,
+			"max" : 100,
+			"step" : 1
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_crosshair_alpha",
+			"title" : "noblehud_set_crosshair_alpha_title",
+			"description" : "noblehud_set_crosshair_alpha_desc",
+			"callback" : "callback_noblehud_set_crosshair_alpha",
+			"value" : "crosshair_alpha",
+			"default_value" : 0.7,
+			"min" : 0,
+			"max" : 1,
+			"step" : 0.1
+		}
+	]
+}

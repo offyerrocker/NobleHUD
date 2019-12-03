@@ -34,17 +34,18 @@ end)
 local orig_melee = CopDamage.damage_melee
 function CopDamage:damage_melee(attack_data,...)
 	
-	local from_behind,cool
 	
 	local result = {orig_melee(self,attack_data,...)} --catch result
-	if not (self._invulnerable or managers.enemy:is_civilian(self._unit)) and attack_data.attacker_unit == managers.player:player_unit() then 
-		mvector3.set(mvec_1, self._unit:position())
-		mvector3.subtract(mvec_1, attack_data.attacker_unit:position())
-		mvector3.normalize(mvec_1)
-		mvector3.set(mvec_2, self._unit:rotation():y())
-		from_behind = mvector3.dot(mvec_1, mvec_2) >= 0
-		cool = self._unit:movement():cool()
-		
+	if (attack_data.attacker_unit == managers.player:player_unit()) and not self._invulnerable then 
+		local from_behind,cool
+		if not managers.enemy:is_civilian(self._unit) then
+			mvector3.set(mvec_1, self._unit:position())
+			mvector3.subtract(mvec_1, attack_data.attacker_unit:position())
+			mvector3.normalize(mvec_1)
+			mvector3.set(mvec_2, self._unit:rotation():y())
+			from_behind = mvector3.dot(mvec_1, mvec_2) >= 0
+			cool = self._unit:movement():cool()
+		end
 		if type(result[1]) == "table" then 
 		--read if result valid
 			if result[1].type == "death" then 

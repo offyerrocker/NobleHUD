@@ -1,5 +1,60 @@
 {
+	"noblehud_options_title" : "Halo: Reach HUD Options",
+	"noblehud_toggle_safety_title" : "[Keybind] Toggle Safety",
+	"noblehud_toggle_safety_desc" : "While the Weapon Safety is enabled, firing is disabled,\nincluding from Tasers.",
+	
+	"noblehud_crosshair_options_title" : "Reticle",
+	"noblehud_crosshair_options_desc" : "Reticle Options",
+	"noblehud_set_crosshair_enabled_title" : "Reticle Enabled",
+	"noblehud_set_crosshair_enabled_desc" : "If false, Reticle is hidden.",
+	"noblehud_set_crosshair_bloom_enabled_title" : "Reticle Bloom (Cosmetic)",
+	"noblehud_set_crosshair_bloom_enabled_desc" : "If true, Reticle animates when firing.",
+	"noblehud_set_crosshair_shake_enabled_title" : "Reticle Shake (Cosmetic)",
+	"noblehud_set_crosshair_shake_enabled_desc" : "If true, Reticle follows true weapon position,\nand is affected by movement.",
+	"noblehud_set_crosshair_stability_title" : "Reticle Stability",
+	"noblehud_set_crosshair_stability_desc" : "The extent to which Reticle Shake affects the Reticle. A lower number means greater effect.",
+	"noblehud_set_crosshair_alpha_title" : "Reticle Alpha",
+	"noblehud_set_crosshair_alpha_desc" : "Transparency of the Reticle.",
+	
+	"noblehud_set_announcer_enabled_title" : "Enable Announcer VO",
+	"noblehud_set_announcer_enabled_desc" : "If true, the announcer from Halo: Reach will announce each medal as it appears.\nNote: Not all medals have voice lines.",
+	
+	
+	"noblehud_weapons_options_title" : "Weapons",
+	"noblehud_weapons_options_desc" : "Change Weapons Panel options",
+	"noblehud_set_floating_ammo_enabled_title" : "Enable Floating Ammo Counter",
+	"noblehud_set_floating_ammo_enabled_desc" : "Shows a floating magazine counter next to your weapon",
+	
+	
+	"noblehud_radar_options_title" : "Motion Tracker",
+	"noblehud_radar_options_desc" : "Change Motion Tracker options",
+	"noblehud_set_radar_enabled_title" : "Enable Motion Tracker",
+	"noblehud_set_radar_enabled_desc" : "If false, Motion Tracker is hidden.",
+	"noblehud_set_radar_distance_title" : "Effective Distance",
+	"noblehud_set_radar_distance_desc" : "Distance at which motion tracker functions",
+	
+	"noblehud_score_options_title" : "Score Options",
+	"noblehud_score_options_desc" : "Scoring and Popup Options",
+	"noblehud_set_popups_enabled_title" : "Enable Score Popups",
+	"noblehud_set_popups_enabled_desc" : "If true, enables popups when killing any unit worth score",
+	"noblehud_set_popup_style_title" : "Popup Style",
+	"noblehud_set_popup_style_desc" : "Change the way score popups animate.",
+	"noblehud_set_medals_enabled_title" : "Enable Medals",
+	"noblehud_set_medals_enabled_desc" : "If true, medals can be awarded and will show up on-screen.",
+	"noblehud_set_show_all_medals_title" : "Show All Medal Text",
+	"noblehud_set_show_all_medals_desc" : "Enables killfeed text for minor medals, such as Headshot",
+	"noblehud_popup_style_queue" : "Queue",
+	"noblehud_popup_style_athena" : "Athena",
+	"noblehud_popup_style_bluespider" : "Blue Spider",
+	"noblehud_set_popup_duration_title" : "Popup Duration",
+	"noblehud_set_popup_duration_desc" : "The number of seconds before a popup disappears.",
+	"noblehud_set_popup_font_size_title" : "Popup Font Size",
+	"noblehud_set_popup_font_size_desc" : "The size of the popup text.",
+	
+
 	"noblehud_radar_distance_label" : "$DISTANCEm",
+	"noblehud_safety_check" : "Your safety is on!",
+	
 	"noblehud_medal_first" : "First Strike",
 	"noblehud_medal_headshot" : "Headshot",
 	"noblehud_medal_assist" : "Assist",

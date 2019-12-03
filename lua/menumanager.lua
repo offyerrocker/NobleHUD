@@ -7,10 +7,10 @@ Notes:
 
 --
 		
+		fadeout bluespider without disassociating it from unit
+		slider setting for popup_fadeout_time
 
-		
-
-	&&& BEFORE RELEASE: &&&
+	&&& HIGH PRIORITY: &&&
 			
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER
 	
@@ -23,7 +23,6 @@ Notes:
 			- ADS should maintain mostly still reticle, unusable otherwise
 
 		%% FEATURES: %%
-			* Fix custody/hud creation system
 			
 			* Assault Banner
 				- Hostages panel
@@ -42,12 +41,8 @@ Notes:
 					- Blink on shields depleted?
 				- ammo?
 				- downs?
-			* Score panel
-				* Use basic; if JoyScore present, use this instead
-					* Update JoyScore to hooks system to allow better compatibility
 			* Tab menu
 			* Mod options
-				* Crosshair/reticle stuff
 				* Placement and Scaling
 				* Keybinds for Safety etc
 
@@ -60,7 +55,7 @@ Notes:
 		* Tab should refresh view_timer or call remind objective
 		* Weapon swap interrupts sprees? at least, it should for weapon-specific ones
 		* Auntie dot
-			* Subtitles: Auntie dot voice lines with associated queues
+			* Subtitles: Auntie dot voice lines with associated queues (requires vo assets/updated asset dump)
 			* background non-lit grid should probably be invisible, or flicker to invisible after flickering off
 			* should be layered over as the loading screen, and stretched to fit screen
 			* during loading screen, should be under text but above blackscreen;
@@ -93,13 +88,10 @@ Notes:
 			* Implement campaign-similar scoring system; medals should award score
 		* More Medals:
 			* Seek and Destroy (for bosses?)
-			* Bulltrue for Cloakers
 			* EMP Blast for stunned enemies?
 			* Hero or assist for reviving teammates?
-			* Firebird for midair (jumping/falling) kills
 			* Protector? hard to implement but not impossible
 			* Yoink?
-			* Pull for rappelling enemies?
 			* Headcase somehow?
 			* Reloading?
 
@@ -214,14 +206,21 @@ CODE:
 _G.NobleHUD = {}
 
 NobleHUD.settings = {
+	debug = false,
 	crosshair_enabled = true,
+	crosshair_bloom = true,
+	crosshair_shake = true,
 	crosshair_alpha = 0.5,
-	crosshair_shake_enabled = true,
 	crosshair_dynamic_color = true,
 	crosshair_stability = 100,
 	crosshair_static_color = {1,0,0},
 	radar_enabled = true,
+	medals_enabled = true,
+	popup_style = 1,
+	popups_enabled = true,
+	popup_font_size = 16,
 	radar_distance = 25,
+	popup_duration = 3,
 	show_all_medals = false,
 	announcer_enabled = true,
 	interact_style = 1
@@ -253,7 +252,8 @@ NobleHUD.special_chars = {
 }
 
 NobleHUD._mod_path = ModPath
-NobleHUD._settings_path = ModPath .. "noblehud_settings.txt"
+NobleHUD._options_path = ModPath .. "menu/"
+NobleHUD._settings_path = SavePath .. "noblehud_settings.txt"
 NobleHUD._localization_path = ModPath .. "localization/"
 NobleHUD._cartographer_path = ModPath .. "cartographer/"
 NobleHUD._announcer_path = ModPath .. "assets/snd/announcer/"
@@ -327,7 +327,7 @@ NobleHUD._bullet_textures = {
 	},
 	assault_rifle = {
 		texture = "guis/textures/bullet_tick" or "guis/textures/ammo_ar",
-		texture_rect = {
+		texture_rect_DISABLED = {
 			1,2,3,4
 		},
 		icon_w = 2,
@@ -335,7 +335,7 @@ NobleHUD._bullet_textures = {
 	},
 	pistol = {
 		texture = "guis/textures/bullet_tick" or "guis/textures/ammo_pis",
-		texture_rect = {
+		texture_rect_DISABLED = {
 			1,2,3,4
 		},
 		icon_w = 2,
@@ -343,7 +343,7 @@ NobleHUD._bullet_textures = {
 	},
 	lmg = {
 		texture = "guis/textures/bullet_tick" or "guis/textures/ammo_ar",
-		texture_rect = {
+		texture_rect_DISABLED = {
 			1,2,3,4
 		},
 		icon_w = 2,
@@ -351,7 +351,7 @@ NobleHUD._bullet_textures = {
 	},
 	snp = {
 		texture = "guis/textures/bullet_tick" or "guis/textures/ammo_ar",
-		texture_rect = {
+		texture_rect_DISABLED = {
 			1,2,3,4
 		},
 		icon_w = 2,
@@ -359,7 +359,7 @@ NobleHUD._bullet_textures = {
 	},
 	smg = {
 		texture = "guis/textures/bullet_tick" or "guis/textures/ammo_smg",
-		texture_rect = {
+		texture_rect_DISABLED = {
 			1,2,3,4
 		},
 		icon_w = 2,
@@ -368,25 +368,22 @@ NobleHUD._bullet_textures = {
 	flamethrower = {
 		use_bar = true,
 		texture = "guis/textures/ammo_flame",
-		texture_rect = {
+		texture_rect_DISABLED = {
 			1,2,3,4
 		},
 		icon_w = 100,
 		icon_h = 8
 	},
 	saw = {
-		use_bar = true,
-		texture = "guis/textures/bullet_tick" or "guis/textures/ammo_saw",
-		texture_rect = {
-			1,2,3,4
-		},
-		icon_w = 100,
-		icon_h = 8
+		use_radial = true,
+		texture = "guis/textures/ability_circle_fill" or "guis/textures/ammo_saw",
+		icon_w = 48,
+		icon_h = 48
 	},
 	minigun = {
 		use_bar = true,
 		texture = "guis/textures/bullet_tick" or "guis/textures/ammo_minigun",
-		texture_rect = {
+		texture_rect_DISABLED = {
 			1,2,3,4
 		},
 		icon_w = 100,
@@ -394,7 +391,7 @@ NobleHUD._bullet_textures = {
 	},
 	xbow = {
 		texture = "guis/textures/bullet_tick" or "guis/textures/ammo_xbow",
-		texture_rect = {
+		texture_rect_DISABLED = {
 			1,2,3,4
 		},
 		icon_w = 2,
@@ -402,7 +399,7 @@ NobleHUD._bullet_textures = {
 	},
 	bow = {
 		texture = "guis/textures/bullet_tick" or "guis/textures/ammo_bow",
-		texture_rect = {
+		texture_rect_DISABLED = {
 			1,2,3,4
 		},
 		icon_w = 2,
@@ -410,7 +407,7 @@ NobleHUD._bullet_textures = {
 	},
 	grenade_launcher = {
 		texture = "guis/textures/bullet_tick" or "guis/textures/ammo_gl",
-		texture_rect = {
+		texture_rect_DISABLED = {
 			1,2,3,4
 		},
 		icon_w = 2,
@@ -418,7 +415,7 @@ NobleHUD._bullet_textures = {
 	},
 	rocket_launcher = { --not technically a separate weapon category
 		texture = "guis/textures/bullet_tick" or "guis/textures/ammo_rpg",
-		texture_rect = {
+		texture_rect_DISABLED = {
 			1,2,3,4
 		},
 		icon_w = 2,
@@ -1279,6 +1276,8 @@ NobleHUD.killfeed = { --queue format, similar to khud's active buffs panel or jo
 }
 NobleHUD.killfeed_icons = {} --same format but only for icons
 
+
+--default hud starting values
 NobleHUD._killfeed_start_x = 100
 NobleHUD._killfeed_start_y = 420
 NobleHUD._killfeed_end_x = 100
@@ -1753,6 +1752,9 @@ NobleHUD._animate_targets = {
 --    UTILS
 local also_blt_log = false
 function NobleHUD:log(...)
+	if not self.settings.debug then 
+		return
+	end
 	if Console then 
 		Console:Log(...)
 	end
@@ -2113,7 +2115,11 @@ function NobleHUD:GetCrosshairAlpha()
 end
 
 function NobleHUD:UseCrosshairShake()
-	return self.settings.crosshair_shake_enabled
+	return self.settings.crosshair_shake
+end
+
+function NobleHUD:IsCrosshairBloomEnabled()
+	return self.settings.crosshair_bloom
 end
 
 function NobleHUD:GetCrosshairStability()
@@ -2179,9 +2185,42 @@ function NobleHUD:ShowAllMedalMessages()
 	return self.settings.show_all_medals
 end
 
-function NobleHUD:AnnouncerEnabled() 
+function NobleHUD:IsAnnouncerEnabled() 
 	return self.settings.announcer_enabled
 end
+
+function NobleHUD:IsScorePopupsEnabled()
+	return self.settings.popups_enabled
+end
+
+function NobleHUD:GetPopupFontSize()
+	return self.settings.popup_font_size
+end
+
+function NobleHUD:GetPopupDuration()
+	return self.settings.popup_duration
+end
+
+function NobleHUD:GetPopupStyle()
+	local setting = self.settings.popup_style
+	local styles = {
+		[1] = "animate_popup_queue",
+		[2] = "animate_popup_athena",
+		[3] = "animate_popup_bluespider"
+--		[4] = "animate_popup_stack",
+--		[5] = "animate_popup_nightfall"
+	}
+	return styles[setting] or "animate_popup_queue"
+end
+
+function NobleHUD:IsMedalsEnabled()
+	return self.settings.medals_enabled
+end
+
+function NobleHUD:IsStaminaEnabled()
+	return self.settings.stamina_enabled
+end
+
 
 		--SET SETTINGS
 function NobleHUD:SetCrosshairEnabled(enabled)
@@ -2222,14 +2261,28 @@ function NobleHUD:SetCrosshairStability(stability)
 end
 
 function NobleHUD:SetRadarEnabled(enabled)
-	self.settings.radar_enabled = enabled
+	if alive(self._radar_panel) then 
+		self._radar_panel:set_visible(enabled or false)
+	end
 end
 
 function NobleHUD:SetRadarDistance(distance)
 	if alive(self._radar_panel) then 
-		self:_set_radar_range(distance)
+		self:_set_radar_range(string.format("%i",distance))
 	end
-	self.settings.distance = distance
+end
+
+function NobleHUD:ClearKiller(peer_id)
+	if peer_id then 
+		self._cache.killer[peer_id] = nil
+	end
+end
+
+function NobleHUD:SetKiller(unit,peer_id)
+	if unit and alive(unit) and unit.character_damage and unit:character_damage() and not unit:character_damage():dead() then 
+		peer_id = peer_id or managers.network:session():local_peer():id() or 1
+		self._cache.killer[peer_id] = unit
+	end
 end
 
 
@@ -2243,7 +2296,7 @@ function NobleHUD:CreateHUD(orig)
 	local ws = self._ws
 	
 	local hud = ws:panel() --master panel
---	hud:set_visible(false)
+	hud:set_visible(false)
 	--armor and shields share the same master panel
 	self:_create_vitals(hud)
 	self:_create_weapons(hud)
@@ -2256,7 +2309,7 @@ function NobleHUD:CreateHUD(orig)
 	self:_create_radar(hud)
 	self:_create_cartographer(hud)
 	self:_create_buffs(hud)
-	self:_create_helper(hud)
+--	self:_create_helper(hud)
 	self:_create_carry(hud)
 	self:_create_equipment(hud)
 	self:_create_teammates(hud)
@@ -2267,7 +2320,7 @@ function NobleHUD:CreateHUD(orig)
 	self:_create_floating_ammo(hud)
 --	managers.hud:script("guis/mask_off_hud"):hide()
 end
-			
+		
 function NobleHUD:OnLoaded()
 	self:LoadXAudioSounds()
 
@@ -2276,6 +2329,9 @@ function NobleHUD:OnLoaded()
 	self:_set_deployable_equipment(2,true)
 	
 	self:SetTotalScoreMultiplierDisplay()
+	
+	self:SetRadarEnabled(self:IsRadarEnabled())
+	self._stamina_panel:set_visible(self:IsStaminaEnabled())
 	
 --	self:set_score_multiplier()
 	managers.hud:add_updator("NobleHUD_update",callback(NobleHUD,NobleHUD,"UpdateHUD"))
@@ -2286,7 +2342,9 @@ function NobleHUD:OnLoaded()
 		if not self:UseCrosshairDynamicColor() then 		
 			self:_set_crosshair_color(self:GetCrosshairStaticColor()) 
 			--todo switch crosshair to static color on weapon switch
-		end	
+		end
+	else
+		self._crosshair_panel:hide()
 	end
 	
 	local level_data = managers.job:current_level_data()
@@ -2296,7 +2354,7 @@ function NobleHUD:OnLoaded()
 			
 	managers.hud:script(PlayerBase.PLAYER_INFO_HUD_PD2).panel:child("teammates_panel"):hide()
 	
-	self:_set_radar_range(self:GetRadarDistance())
+	self:SetRadarDistance(self:GetRadarDistance())
 	
 	--[[
 	for id,data in pairs(managers.criminals._characters) do 
@@ -2589,7 +2647,7 @@ function NobleHUD:UpdateHUD(t,dt)
 			end
 		end
 -- ************** CROSSHAIR ************** 
-		if true then --crosshair enabled
+		if self:IsCrosshairEnabled() then --crosshair enabled
 			local fwd_ray = player:movement():current_state()._fwd_ray	
 			local focused_person = fwd_ray and fwd_ray.unit
 --			local crosshair = self._crosshair_panel:child("crosshair_subparts"):child("crosshair_1") --todo function to handle crosshair modifications
@@ -2632,15 +2690,13 @@ function NobleHUD:UpdateHUD(t,dt)
 --					end
 				
 				local c_p = self._ws:world_to_screen(viewport_cam,weapon_position + (weapon_direction * crosshair_stability))
-				local c_w = (c_p.x or 0) -- + (self._crosshair_panel:w() / 2)
-				local c_h = (c_p.y or 0) -- + (self._crosshair_panel:h() / 2)
-	--			Console:SetTrackerValue("trackerc",tostring(c_w))
-	--			Console:SetTrackerValue("trackerd",tostring(c_h))
+				local c_w = (c_p.x or 0)
+				local c_h = (c_p.y or 0)
 				self._crosshair_panel:set_center(c_w,c_h)	
 			end
 			
 			--bloom
-			if true then 
+			if self:IsCrosshairBloomEnabled() then 
 --					Console:SetTrackerValue("trackera",self.weapon_data.bloom)
 				local bloom_decay_mul = 1.5 -- 3
 				if self.weapon_data.bloom > 0 then 
@@ -2675,7 +2731,7 @@ function NobleHUD:UpdateHUD(t,dt)
 					--]]
 				end
 				
-				if true then --special crosshairs like grenade launcher altimeter
+				if true then --if special crosshairs enabled, like grenade launcher altimeter
 					self:_set_crosshair_altimeter(viewport_cam:rotation():pitch())
 				end
 				
@@ -2763,10 +2819,11 @@ function NobleHUD:UpdateHUD(t,dt)
 		self:SetTotalScoreMultiplierDisplay()
 		local popup_queues = 0
 
-		local function fadeout_popup(o,popup_death_momentum)
-			self:animate(o,"animate_fadeout",function (o) o:parent():remove(o) end,0.66,nil,popup_death_momentum)
+		local function fadeout_popup(o,fadeout_time,popup_death_momentum)
+			self:animate(o,"animate_fadeout",function (o) o:parent():remove(o) end,fadeout_time,nil,popup_death_momentum)
 		end
 		local popup_duration = self:GetPopupDuration()
+		local popup_height = self:GetPopupFontSize() + 2
 		for i,popup_data in ipairs(self._cache.score_popups) do 
 			local popup = popup_data.popup
 			local style = popup_data.style
@@ -2783,14 +2840,21 @@ function NobleHUD:UpdateHUD(t,dt)
 				end
 			else
 				if type(self[style]) == "function" then 
+					local popup_animate_result
+					local fadeout_time = 0.66
 					if style == "animate_popup_queue" then 
 						popup_queues = popup_queues + 1
+						popup_animate_result = self[style](self,popup,t,dt,popup_start_t,nil,popup_duration,self._popup_end_y + (popup_queues * popup_height),3)
+					elseif style == "animate_popup_bluespider" then
+						fadeout_time = 0.15
+						popup_animate_result = self[style](self,popup,t,dt,popup_start_t,nil,popup_duration,popup_unit)
+					elseif style == "animate_popup_athena" then
+						fadeout_time = 0.5
+						popup_animate_result = self[style](self,popup,t,dt,popup_start_t,nil,popup_duration,-30)
 					end
-					local popup_height = self:GetPopupFontSize() + 2
-					local popup_animate_result = self[style](self,popup,t,dt,popup_start_t,popup_duration,popup_unit,self._popup_end_y + (popup_queues * popup_height))
 					if popup_animate_result then
 						table.remove(self._cache.score_popups,i)
-						fadeout_popup(popup,popup_animate_result)
+						fadeout_popup(popup,-1)
 					else
 						--not done animating, so continue
 					end
@@ -2807,12 +2871,12 @@ function NobleHUD:UpdateHUD(t,dt)
 		
 --		self:_set_mission_timer(NobleHUD.format_seconds(managers.game_play_central:get_heist_timer()))
 
-		if t > self._helper_last_sequence_t then
+--		if t > self._helper_last_sequence_t then
 	--			self._helper_last_sequence_t = t + 3
 			--set new sequence
 	--			self._current_helper_pattern = self.choose({"dot","lotus","x"})
 	--			managers.hud:_set_helper_pattern()
-		end
+--		end
 		--[[
 		if t > self._dot_last_t then
 			self._dot_last_t = t + 3
@@ -2880,13 +2944,28 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 	local is_cop = CopDamage.is_cop(unit_type)
 	local unit_anim = unit.anim_data and unit:anim_data()
 
+	local player_guns = player:inventory():available_selections()
+	local primary_id = player_guns[1].unit:base():get_name_id()
+	local secondary_id = player_guns[2].unit:base():get_name_id()
+
+	
+	
+
+
 	local medal_multiplier = 1
 
-	if CopDamage.is_civilian(unit:base()._tweak_table) then
+	if CopDamage.is_civilian(unit:base()._tweak_table) or managers.enemy:is_civilian(unit) then
 		self:ClearKillsCache()
-		self:PlayAnnouncerSound("Betrayal")
+		self:PlayAnnouncerSound("betrayal")
 		--no +1 kills for you, you murderer >:(
 	else
+	
+		if player_weapon_id == primary_id then
+			self:_set_killcount(1,managers.statistics:session_killed_by_weapon(primary_id))
+		elseif player_weapon_id == secondary_id then 
+			self:_set_killcount(2,managers.statistics:session_killed_by_weapon(secondary_id))
+		end
+		
 		if player:character_damage():_max_armor() > 0 and player:character_damage():health_ratio() <= 0.5 and player:character_damage():get_real_armor() <= 0 then 
 			self:KillsCache("close_call",true,true)
 		end
@@ -3121,47 +3200,31 @@ end
 
 function NobleHUD:GetMedalMultiplier(category,current_tier)
 	local medal_data = self._medal_data and self._medal_data[category]
-	if medal_data then 
-		if medal_data.multiplier then 
-			return medal_data.multiplier
-		elseif not medal_data.name then 
-			local multiplier = 1
---			local current_tier = tier self._cache.kills[category]
-			if not current_tier then 
-				self:log("ERROR: Bad category to GetMedalMultiplier(" .. tostring(category) .. "," .. tostring(current_tier) .. ")")
-				return
-			end
-			for tier,tiered_data in pairs(medal_data) do 
-				if tier == current_tier then
-					return tiered_data.multiplier and math.max(tiered_data.multiplier,multiplier) or multiplier
-				elseif tier < current_tier then 
-					multiplier = tiered_data.multiplier and math.max(tiered_data.multiplier,multiplier) or multiplier
+	if self:IsMedalsEnabled() then 
+		if medal_data then 
+			if medal_data.multiplier then 
+				return medal_data.multiplier
+			elseif not medal_data.name then 
+				local multiplier = 1
+	--			local current_tier = tier self._cache.kills[category]
+				if not current_tier then 
+					self:log("ERROR: Bad category to GetMedalMultiplier(" .. tostring(category) .. "," .. tostring(current_tier) .. ")")
+					return
 				end
+				for tier,tiered_data in pairs(medal_data) do 
+					if tier == current_tier then
+						return tiered_data.multiplier and math.max(tiered_data.multiplier,multiplier) or multiplier
+					elseif tier < current_tier then 
+						multiplier = tiered_data.multiplier and math.max(tiered_data.multiplier,multiplier) or multiplier
+					end
+				end
+				return multiplier
 			end
-			return multiplier
+		else
+			self:log("ERROR: GetMedalMultiplier() Bad category!",{color = Color.red})
 		end
-	else
-		self:log("ERROR: GetMedalMultiplier() Bad category!",{color = Color.red})
 	end
 	return 1
-
---[[
-	category = category and tostring(category)
-	if category then
-		if self._cache.kills[category] then 
-			if reset then 
-				return self._cache.kills[category]
-			else
-				self._cache.kills[category] then 
-					
-				end
-			end
-		elseif category then 
-			self._cache.kills[category] = amount
-		end	
-		
-	end
-	--]]
 end
 
 function NobleHUD:ClearKillsCache()
@@ -3209,27 +3272,15 @@ end
 function NobleHUD:OnGameStateChanged(before_state,state)
 	self:log("Changed game state from " .. (before_state) .. " to " .. tostring(state),{color = Color.green})
 	if before_state == "ingame_waiting_for_players" then 
+		self._ws:panel():set_visible(true)
 		--show player hud
 	end
 	if state == "ingame_waiting_for_respawn" then 
 		--destroy weapon panel?
+	elseif before_state == "ingame_waiting_for_respawn" then 
+		self._ws:panel():set_visible(true)
 	end
 end
-
-
-function NobleHUD:ClearKiller(peer_id)
-	if peer_id then 
-		self._cache.killer[peer_id] = nil
-	end
-end
-
-function NobleHUD:SetKiller(unit,peer_id)
-	if unit and alive(unit) and unit.character_damage and unit:character_damage() and not unit:character_damage():dead() then 
-		peer_id = peer_id or managers.network:session():local_peer():id() or 1
-		self._cache.killer[peer_id] = unit
-	end
-end
-
 
 function NobleHUD:LoadXAudioSounds()
     if blt.xaudio then
@@ -3272,18 +3323,22 @@ function NobleHUD:LoadXAudioSounds()
 end
 
 function NobleHUD:PlayAnnouncerSound(name)
-		local snd = self._cache.sounds[name]
-		if snd then 
-			if self._efficient_audio_mode then 
-				XAudio.Source:new(XAudio.Buffer:new(snd))
-			else
-				if self._announcer_sound_source then 
-					self._cache.announcer_queue[#self._cache.announcer_queue + 1] = name
-				end
-			end
+	if not self:IsAnnouncerEnabled() then 
+		return
+	end
+
+	local snd = self._cache.sounds[name]
+	if snd then 
+		if self._efficient_audio_mode then 
+			XAudio.Source:new(XAudio.Buffer:new(snd))
 		else
-			self:log("PlayAnnouncerSound(): sound [" .. name .. "] not found",{color = Color.red})
+			if self._announcer_sound_source then 
+				self._cache.announcer_queue[#self._cache.announcer_queue + 1] = name
+			end
 		end
+	else
+		self:log("PlayAnnouncerSound(): sound [" .. name .. "] not found",{color = Color.red})
+	end
 end
 
 
@@ -4308,7 +4363,9 @@ function NobleHUD:_set_crosshair_bloom(bloom)
 end
 
 function NobleHUD:_add_weapon_bloom(amount)
-	self.weapon_data.bloom = math.clamp(self.weapon_data.bloom + amount,0,1)
+	if self:IsCrosshairBloomEnabled() then 
+		self.weapon_data.bloom = math.clamp(self.weapon_data.bloom + amount,0,1)
+	end
 end
 
 function NobleHUD:_add_weapon_bloom_by_type(type)
@@ -4775,8 +4832,10 @@ function NobleHUD:_create_stamina(hud)
 		w = icon_size,
 		h = icon_size,
 		alpha = 0,
-		x = 170,
-		y = 430
+		x = 0,
+		y = 330
+--		x = 170,
+--		y = 430
 	})
 	
 	local stamina_outline = stamina_panel:bitmap({
@@ -4825,6 +4884,9 @@ end
 function NobleHUD:SetStamina(current,total)
 	local player = managers.player:local_player()
 	local stamina_panel = self._stamina_panel
+	if not self:IsStaminaEnabled() then 
+		return
+	end
 	if current and alive(player) then 
 		local movement = player:movement()
 		local total = total or movement:_max_stamina()
@@ -5133,7 +5195,7 @@ function NobleHUD:TallyScore(data,unit,medal_multiplier)
 			score = score * medal_multiplier
 		end
 		score = score * total_multiplier
-		if self:GetScorePopupsEnabled() then 
+		if self:IsScorePopupsEnabled() then 
 			self:CreateScorePopup(localized_unitname,score,unit)
 		end
 		self:AddScore(score)
@@ -5205,16 +5267,8 @@ function NobleHUD:SetScoreLabel(text)
 	self._score_panel:child("score_label"):set_text(text)
 end
 
-function NobleHUD:GetScorePopupsEnabled()
-	return true
-end
-
 function NobleHUD:AddScore(score)
 	self._cache.score_session = self._cache.score_session + (tonumber(score) or 0)
-end
-
-function NobleHUD:GetPopupFontSize()
-	return 16
 end
 
 function NobleHUD:CreateScorePopup(name,score,unit)
@@ -5256,40 +5310,27 @@ function NobleHUD:CreateScorePopup(name,score,unit)
 		unit = unit,
 		start_t = Application:time()
 	})
-	--[[
-	self._cache.score_popups[self._cache.score_popups_count] = {
-		popup = popup,
-		style = style,
-		unit = unit,
-		start_t = Application:time()
-	}
-	--]]
-	
 	if style == "animate_popup_athena" or style == "animate_popup_bluespider" then 
-		popup:set_align("center")
+--		popup:set_align("center")
+		
+		local unit_pos
+		if unit and alive(unit) then 
+			local movement = unit.movement and unit:movement()
+			unit_pos = movement and movement:m_head_pos()
+		
+			local viewport_cam = managers.viewport:get_current_camera()
+			if unit_pos then 
+				local screen_pos = self._ws:world_to_screen(viewport_cam,unit_pos)
+--				popup:set_center(screen_pos.x,screen_pos.y)
+				popup:set_x(screen_pos.x)
+				popup:set_y(screen_pos.y)
+				
+			end
+		end
 	end
 	
 --	self:animate(popup,animate_style,nil)
 	
-end
-
-function NobleHUD:GetPopupDuration()
-	return 3
-end
-
-function NobleHUD:GetPopupStyle()
-	--[[
-	local setting = self.settings.popup_style
-	local styles = {
-		[1] = "animate_popup_bluespider",
-		[2] = "animate_popup_athena",
-		[3] = "animate_popup_stack",
-		[4] = "animate_popup_queue",
-		[5] = "animate_popup_nightfall"
-	}
-	return styles[setting] or "animate_bluespider"
-	--]]
-	return "animate_popup_queue"
 end
 
 function NobleHUD:ScorePopupShowsUnitName()
@@ -5325,34 +5366,38 @@ function NobleHUD:_set_killcount(slot,kills)
 	end
 end
 
-function NobleHUD:animate_popup_bluespider(o,t,dt,start_t,duration,unit)
+function NobleHUD:animate_popup_bluespider(o,t,dt,start_t,cb,duration,unit) 
+	o:set_alpha(o:alpha() + (dt * duration * 2))
 	if alive(unit) then 
-		local viewport = managers.viewport:get_current_camera()
-		local unit_pos = NobleHUD._ws:world_to_screen(viewport_cam,unit:position())
-		if unit_pos then 
-			o:set_center(unit_pos.x,unit_pos.y)
+		if t - start_t > duration then 
+			return true
 		end
+		local viewport_cam = managers.viewport:get_current_camera()
+		local head_pos = unit:movement() and unit:movement():m_head_pos()
+		local unit_pos = head_pos and NobleHUD._ws:world_to_screen(viewport_cam,head_pos)
+		if unit_pos then 
+			o:set_x(unit_pos.x)
+			o:set_y(unit_pos.y)
+--			o:set_center(unit_pos.x,unit_pos.y)
+		end
+	else
+		return true
 	end
-	return true
 end
-function NobleHUD:animate_popup_athena(o,t,dt,start_t,duration,unit)
-	return true
+function NobleHUD:animate_popup_athena(o,t,dt,start_t,cb,duration,rate)
+	o:set_alpha(o:alpha() + (dt * duration * 2))
+	if t - start_t > duration then 
+		return true
+	end
+	o:set_y(o:y() + (rate * dt)) --distance is per second
 end
-function NobleHUD:animate_popup_stack(o,t,dt,start_t,duration)
-	return true
-end
-
-function NobleHUD:animate_popup_queue(o,t,dt,start_t,duration,unit,dest_y,rate)
-	rate = rate or 3
+function NobleHUD:animate_popup_queue(o,t,dt,start_t,cb,duration,dest_y,rate)
 	local oy = o:y()
-	o:set_alpha(o:alpha() + (dt * 3)) --will always become fully visible in 1/3 seconds
+	o:set_alpha(o:alpha() + (dt * rate)) --will always become fully visible in 1/rate seconds
 	if t - start_t > duration then 
 		return math.sign(dest_y - oy)
 	end
 	o:set_y(oy + (10 * dt * (dest_y - oy) / rate))
-end
-function NobleHUD:animate_popup_bluespider(o,t,dt,start_t,duration)
-	return true
 end
 
 --below this line, score functions are deprecated
@@ -5418,7 +5463,6 @@ function NobleHUD:_tally_score(data)
 	end	
 	self:log("ERROR: _tally_score(" .. concat(data,",") .. ")")
 end
-
 
 function NobleHUD:_add_score(score)
 	self.score_session = self.score_session + (tonumber(score or 0) or 0)
@@ -5494,10 +5538,6 @@ function NobleHUD:animate_score_popup_track(o) --unused; should be moved to hudm
 	o:set_x(pos.x)
 	o:set_y(pos.y)
 end
-
-Hooks:Add("JoyScoreCounter_SetScore","noblehud_joyscore_integration",function(total,new)
-	NobleHUD._score_panel:child("score_label"):set_text(NobleHUD.make_nice_number(total))
-end)
 
 
 --		OBJECTIVES
@@ -6847,6 +6887,7 @@ function NobleHUD:_create_interact(hud)
 		h = 32,
 		x = 50,
 		y = 50,
+		visible = false, --disabled
 		layer = 1,
 		alpha = 1,
 		color = Color(0,0.3,0.9)
@@ -7079,6 +7120,14 @@ function NobleHUD:AddMedalFromData(data,category) --direct reference to table pa
 --		self:log("Did not add medal " .. tostring(category) .. " (disabled)")
 		return
 	end
+		
+	if data.sfx then 
+		self:PlayAnnouncerSound(data.sfx)
+	end
+	
+	if not self:IsMedalsEnabled() then 
+		return
+	end
 	
 	self.num_medals = self.num_medals + 1
 	local texture,texture_rect = self:GetMedalIcon(unpack(data.icon_xy))
@@ -7120,10 +7169,7 @@ function NobleHUD:AddMedalFromData(data,category) --direct reference to table pa
 	self:animate(icon,"animate_killfeed_icon_twirl",function(o) o:set_rotation(0); NobleHUD:animate(o,"animate_killfeed_icon_pulse",add_bitmap_to_killfeed,0.3,icon_size,1.5) end,0.25,180,start_x,start_y)
 	
 	local name = data.name and managers.localization:text("noblehud_medal_" .. data.name)
-	
-	if data.sfx and self:AnnouncerEnabled() then 
-		self:PlayAnnouncerSound(data.sfx)
-	end
+
 	
 	
 	if data.show_text or self:ShowAllMedalMessages() then 
@@ -7345,67 +7391,152 @@ Hooks:Add("LocalizationManagerPostInit", "noblehud_addlocalization", function( l
 	end
 	loc:load_localization_file(path .. "english.txt")
 end)
---[[
+
+function NobleHUD:LoadSettings()
+	local file = io.open(self._settings_path, "r")
+	if (file) then
+		for k, v in pairs(json.decode(file:read("*all"))) do
+			self.settings[k] = v
+		end
+	else
+		self:SaveSettings()
+	end
+end
+
+function NobleHUD:SaveSettings()
+	local file = io.open(self._settings_path,"w+")
+	if file then
+		file:write(json.encode(self.settings))
+		file:close()
+	end
+end
 
 Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
-	MenuCallbackHandler.commandprompt_tagunit = function(self)
-		local unit = Console:GetFwdRay("unit")
-		Console:SetFwdRayUnit(unit)
+	
+	
+--SCORE
+	
+	MenuCallbackHandler.callback_noblehud_set_popups_enabled = function(self,item)
+		NobleHUD.settings.popups_enabled = item:value() == "on"
+		NobleHUD:SaveSettings()
 	end
-	MenuCallbackHandler.commandprompt_tagposition_aim = function(self)
-		Console:TagPosition("aim")
-	end
-	MenuCallbackHandler.commandprompt_resetsettings = function(self) --button
-		Console:ResetSettings() --todo confirm prompt
+	
+	MenuCallbackHandler.callback_noblehud_set_announcer_enabled = function(self,item)
+		NobleHUD.settings.announcer_enabled = item:value() == "on"
+		NobleHUD:SaveSettings()
 	end
 
-	MenuCallbackHandler.commandprompt_keybind_debughud = function(self)
-		Console.show_debug_hud = not Console.show_debug_hud
+	MenuCallbackHandler.callback_noblehud_set_medals_enabled = function(self,item)
+		NobleHUD.settings.medals_enabled = item:value() == "on"
+		NobleHUD:SaveSettings()
 	end
 	
-	MenuCallbackHandler.commandprompt_setescbehavior = function(self,item) --multiplechoice
-		Console.settings.esc_behavior = item:value()
+	MenuCallbackHandler.callback_noblehud_set_show_all_medals = function(self,item)
+		NobleHUD.settings.show_all_medals = item:value() == "on"
+		NobleHUD:SaveSettings()
 	end
-	MenuCallbackHandler.commandprompt_toggle_1 = function(self,item) --slider
-		--save?
-	end
-	MenuCallbackHandler.commandprompt_setfontsize = function(self,item) --slider
-		Console.settings.font_size = tonumber(item:value())
-		--save?
+
+	MenuCallbackHandler.noblehud_score_options_close = function(self)
+		--NobleHUD:SaveSettings()
 	end
 	
-	MenuCallbackHandler.commandprompt_setkeyboardregion = function(self,item)
-		Console.settings.keyboard_region = tonumber(item:value())
-		Console._console_charlist = nil --to require regenerating the charlist again next input
+	MenuCallbackHandler.callback_noblehud_set_popup_style = function(self,item)
+		NobleHUD.settings.popup_style = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+
+	MenuCallbackHandler.callback_noblehud_set_popup_duration = function(self,item)
+		NobleHUD.settings.popup_duration = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+
+	MenuCallbackHandler.callback_noblehud_set_popup_font_size = function(self,item)
+		NobleHUD.settings.popup_font_size = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+
+
+
+	
+--MISC	
+	MenuCallbackHandler.callback_noblehud_set_stamina_enabled = function(self,item)
+		NobleHUD.settings.stamina_enabled = item:value() == "on"
+		NobleHUD:SaveSettings()
 	end
 	
-	MenuCallbackHandler.commandprompt_setprintbehavior = function(self,item)
-		Console.settings.print_behavior = tonumber(item:value())
-	end
 	
-	MenuCallbackHandler.commandprompt_setprintbehavior = function(self,item)
-		Console.settings.print_behavior = tonumber(item:value())
+--RADAR
+	MenuCallbackHandler.callback_noblehud_set_radar_enabled = function(self,item)
+		NobleHUD.settings.radar_enabled = item:value() == "on"
+		NobleHUD:SetRadarEnabled(NobleHUD.settings.radar_enabled)
+		NobleHUD:SaveSettings()
 	end
-	
-	MenuCallbackHandler.commandprompt_toggle = function(self) --keybind
-		if (Input and Input:keyboard() and not Console:_shift()) then 
-			Console:ToggleConsoleFocus()
-		end
+
+	MenuCallbackHandler.callback_noblehud_set_radar_distance = function(self,item)
+		NobleHUD.settings.radar_distance = tonumber(item:value())
+		NobleHUD:SetRadarDistance(NobleHUD.settings.radar_distance)
+		NobleHUD:SaveSettings()
 	end	
-	MenuCallbackHandler.callback_dcc_close = function(self)
-		Console:Save()
+
+
+--WEAPONS
+	MenuCallbackHandler.callback_noblehud_set_floating_ammo_enabled = function(self,item)
+		NobleHUD.settings.floating_ammo_enabled = item:value() == "on"
+		NobleHUD:SaveSettings()
+	end
+	
+	
+
+--CROSSHAIR	
+	MenuCallbackHandler.callback_noblehud_set_crosshair_enabled = function(self,item)
+		NobleHUD.settings.crosshair_enabled = item:value() == "on"
+		if alive(NobleHUD._crosshair_panel) then 
+			NobleHUD._crosshair_panel:set_visible(NobleHUD.settings.crosshair_enabled)
+		end
+		NobleHUD:SaveSettings()
 	end
 
---	Console:Load()
-	Console:LoadKeybinds()
-	MenuHelper:LoadFromJsonFile(Console.options_path, Console, Console.settings) --no settings, just the two keybinds
+	MenuCallbackHandler.callback_noblehud_set_crosshair_bloom_enabled = function(self,item)
+		NobleHUD.settings.crosshair_bloom = item:value() == "on"
+		NobleHUD:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_noblehud_set_crosshair_shake_enabled = function(self,item)
+		NobleHUD.settings.crosshair_shake = item:value() == "on"
+		NobleHUD:SaveSettings()
+	end
+
+	MenuCallbackHandler.callback_noblehud_set_crosshair_stability = function(self,item)
+		NobleHUD.settings.crosshair_stability = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_noblehud_set_crosshair_alpha = function(self,item)
+		NobleHUD.settings.crosshair_alpha = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+
+	MenuCallbackHandler.noblehud_crosshair_options_close = function(self)
+		--NobleHUD:SaveSettings()
+	end
+	
+	
+	
+	MenuCallbackHandler.callback_noblehud_close = function(self)
+		--NobleHUD:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_noblehud_toggle_safety = function(self)		
+	end
+	
+	NobleHUD:LoadSettings()
+	MenuHelper:LoadFromJsonFile(NobleHUD._options_path .. "options.txt", NobleHUD, NobleHUD.settings)
+	MenuHelper:LoadFromJsonFile(NobleHUD._options_path .. "options_score.txt", NobleHUD, NobleHUD.settings)
+	MenuHelper:LoadFromJsonFile(NobleHUD._options_path .. "options_crosshair.txt", NobleHUD, NobleHUD.settings)
+	MenuHelper:LoadFromJsonFile(NobleHUD._options_path .. "options_radar.txt", NobleHUD, NobleHUD.settings)
+--	MenuHelper:LoadFromJsonFile(NobleHUD._options_path .. "options_a.txt", NobleHUD, NobleHUD.settings)
 end)
 
-
-
-
-
---]]
 
 
 
