@@ -1,4 +1,5 @@
-Hooks:PostHook(StatisticsManager,"akilled","noblehud_statistics_killed",function(self,data)
+--[[ disabled cause i found a better function to hook onto 
+Hooks:PostHook(StatisticsManager,"killed","noblehud_statistics_killed",function(self,data)
 	local stat, err = pcall(function ()
 		NobleHUD:OnEnemyKilled(data)
 	end)
@@ -6,3 +7,4 @@ Hooks:PostHook(StatisticsManager,"akilled","noblehud_statistics_killed",function
 		NobleHUD:log("Prevented StatisticsManager crash:" .. tostring(stat),{color = Color.red})
 	end
 end)
+--]]

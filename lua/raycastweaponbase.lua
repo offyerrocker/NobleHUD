@@ -1,4 +1,4 @@
-
+--this allows reticle bloom to activate
 local orig_fire = RaycastWeaponBase.fire
 function RaycastWeaponBase:fire(...)
 	local result = {orig_fire(self,...)}

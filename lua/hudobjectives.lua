@@ -4,19 +4,6 @@ Hooks:PostHook(HUDObjectives,"init","noblehud_objectiveinit",function(self,hud)
 	objectives_panel:hide()
 end)
 
---[[
-function HUDObjectives:_animate_show_text(objective_text, amount_text)
-end
-function HUDObjectives:_animate_complete_objective(objectives_panel)
-end
-function HUDObjectives:_animate_activate_objective(objectives_panel)
-end
-function HUDObjectives:_animate_icon_objectivebox(icon_objectivebox)
-end
-function HUDObjectives:open_right_done(uses_amount)
-end
---]]
-
 --overridden
 function HUDObjectives:activate_objective(data)
 	self._active_objective_id = data.id

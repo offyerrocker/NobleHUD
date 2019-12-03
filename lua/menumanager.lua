@@ -5,10 +5,6 @@
 ***** TODO: *****
 Notes:
 
-CHANGE COPDAMAGE CHECKING to use
-	CopDamage:_check_damage_achievements()
-instead of posthooking everything
-
 --
 		
 
@@ -57,6 +53,7 @@ instead of posthooking everything
 
 			
 	&& LOW PRIORITY FEATURES: &&
+		* Wait until multikill timer expires to say voicelines for sprees/multikills, and only say the highest multikill 
 		* Organize color data
 			- Ability circle needs a baked-blue asset
 		* Queue objective activities rather than stopping current
@@ -454,17 +451,13 @@ NobleHUD.weapon_data = {
 }
 
 NobleHUD._crosshair_override_data = {
-	m308 = {"dmr"},
+--	m308 = {"dmr"},
 	rpg7 = {"rocket"},
 	ray = {"rocket"}
 }
 
 NobleHUD._crosshair_textures = { --organized by reach crosshairs
 	assault_rifle = { --four circle subquadrants; four oblong aiming ticks
-		blacklisted = {
-			m308 = true,
-			cavity = true
-		},
 		bloom_func = function(index,bitmap,data)
 			local bloom = data.bloom * 1.5
 			local crosshair_data = data.crosshair_data and data.crosshair_data.parts[index] or {}
@@ -536,7 +529,6 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 		}
 	},
 	dmr = { --circle; four circle subquadrants
-		blacklisted = {},
 		bloom_func = function(index,bitmap,data)
 			local bloom = data.bloom
 			local max_distance = 32
@@ -547,8 +539,6 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 				bitmap:set_rotation(bloom * 90)
 			end
 			bitmap:set_center(NobleHUD._crosshair_panel:w()/2,NobleHUD._crosshair_panel:h()/2)
---			Log("Performing bloom for index " .. tostring(index) .. ":" .. tostring(bitmap) .. tostring(bitmap:visible()))
---			Console:SetTrackerValue("trackerb",bloom)
 		end,
 		parts = {
 			{
@@ -566,7 +556,6 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 		}
 	},
 	pistol = { --similar to dmr
-		blacklisted = {},
 		bloom_func = function(index,bitmap,data)
 			local bloom = data.bloom * 1.5
 			local crosshair_data = data.crosshair_data and data.crosshair_data.parts[index] or {}
@@ -622,7 +611,6 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 		}
 	},
 	shotgun = { --big circle
-		blacklisted = {},
 		bloom_func = function(index,bitmap,data)
 		--[[ by popular demand, shotgun bloom is disabled
 			local bloom = data.bloom
@@ -640,7 +628,6 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 		}
 	},
 	sniper = { --small dot
-		blacklisted = {},
 		bloom_func = function(index,bitmap,data)
 			local bloom = data.bloom
 			if index == 1 then 
@@ -666,7 +653,6 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 		}
 	},
 	grenade_launcher = { -- circle with distance markers
-		blacklisted = {},
 		special_crosshair = "altimeter", --used for special altitude display for grenade launcher specifically
 		parts = {
 			{
@@ -684,7 +670,6 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 		}
 	},
 	rocket = { --circle with distance markers
-		blacklisted = {},
 		parts = {
 			{
 				is_center = true,
@@ -695,7 +680,6 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 		}
 	},
 	minigun = {
-		blacklisted = {},
 		parts = {
 			{
 				is_center = true,
@@ -706,7 +690,6 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 		}
 	},
 	flamethrower = { --starburst ring of oblongs
-		blacklisted = {},
 		parts = {
 			{
 				is_center = true,
@@ -717,8 +700,6 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 		}
 	},
 	plasma_pistol = { --tri arrow
-		blacklisted = {
-		},
 		parts = {
 			{
 				texture = "guis/textures/bullet_tick",
@@ -747,7 +728,6 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 		}
 	},
 	plasma_rifle = { --quad arrow
-		blacklisted = {},
 		parts = {
 			{
 				texture = "guis/textures/bullet_tick",
@@ -1357,13 +1337,13 @@ NobleHUD._medal_data = {
 	},
 	close_call = {
 		name = "close_call",
-		show_text = false,
+		show_text = true,
 		sfx = false,
 		icon_xy = {1,5}
 	},
 	revenge = {
 		name = "revenge",
-		show_text = false,
+		show_text = true,
 		sfx = "revenge",
 		icon_xy = {1,6}
 	},
@@ -1375,7 +1355,7 @@ NobleHUD._medal_data = {
 	},
 	grave = {
 		name = "grave",
-		show_text = false,
+		show_text = true,
 		sfx = false,
 		icon_xy = {1,8}
 	},
@@ -1395,13 +1375,13 @@ NobleHUD._medal_data = {
 	firebird = {
 		name = "firebird",
 		sfx = false,
-		show_text = false,
+		show_text = true,
 		icon_xy = {5,0}
 	},
 	bulltrue = {
 		name = "bulltrue",
 		sfx = false,
-		show_text = false,
+		show_text = true,
 		icon_xy = {5,1}
 	},
 	headcase = { --not implemented
@@ -1410,25 +1390,25 @@ NobleHUD._medal_data = {
 		show_text = false,
 		icon_xy = {5,2}
 	},
-	pull = { --not implemented
+	pull = {
 		name = "pull",
 		sfx = false,
-		show_text = false,
+		show_text = true,
 		icon_xy = {5,3}
 	},
 	hero = { --not implemented
 		name = "hero",
 		sfx = false,
-		show_text = false,
+		show_text = true,
 		icon_xy = {5,4}
 	},
 	protector = { --not implemented
 		name = "protector",
 		sfx = false,
-		show_text = false,
+		show_text = true,
 		icon_xy = {5,5}
 	},
-	showstopper = { --not implemented
+	showstopper = {
 		name = "showstopper",
 		sfx = false,
 		show_text = false,
@@ -2030,11 +2010,6 @@ function NobleHUD:RemoveDelayedCallback(id)
 end
 
 function NobleHUD:animate(object,func,done_cb,...) --i'll make my own animate function, with blackjack, and hookers
-	if NobleHUD._animate_targets[tostring(object)] then 
---		Log("Replaced existing animate target " .. tostring(object))
-	else
---		Log("Added new animate target " .. tostring(object))
-	end
 	NobleHUD._animate_targets[tostring(object)] = {
 		object = object,
 		start_t = Application:time(),
@@ -2328,9 +2303,9 @@ function NobleHUD:OnLoaded()
 		if data.taken then 
 --			local peer_id = 
 --			if data.data.ai then 
---				Log(i .. " is bot",{Color = tweak_data.chat_colors[peer_id]})
+--				self:log(i .. " is bot",{Color = tweak_data.chat_colors[peer_id]})
 --			end
-			Log("Found taken: " .. tostring(data.name) .. ",id = " .. tostring(id) .. ",peer_id = " .. tostring(data.peer_id) .. ",bot = " .. tostring(data.data and data.data.ai))
+			self:log("Found taken: " .. tostring(data.name) .. ",id = " .. tostring(id) .. ",peer_id = " .. tostring(data.peer_id) .. ",bot = " .. tostring(data.data and data.data.ai))
 			local mask_name = tweak_data.blackmarket.masks.character_locked[data.name]
 
 			local guis_catalog = "guis/"
@@ -2345,7 +2320,7 @@ function NobleHUD:OnLoaded()
 			character_string = managers.localization:text("menu_" .. character)
 			
 		else 
-			Log(tostring(id) .. " Nobody here!")
+			self:log(tostring(id) .. " Nobody here!")
 		end
 	end--]]
 	
@@ -2360,15 +2335,15 @@ function NobleHUD:OnLoaded()
 end
 
 function NobleHUD:UpdateHUD(t,dt)
---[[
+
 	if game_state_machine then 
 		local game_state = game_state_machine:current_state_name()		
 		if self._cache.game_state ~= game_state then 
-			Hooks:Call("OnGameStateChange",t,self._cache.game_state,game_state)
+			NobleHUD:OnGameStateChanged(self._cache.game_state,game_state)
+			--Hooks:Call("OnGameStateChange",t,self._cache.game_state,game_state)
 			self._cache.game_state = game_state
 		end
 	end	
-	--]]
 
 	local announcer = self._announcer_sound_source
 	if announcer and self._cache.announcer_queue[1] then 
@@ -2378,21 +2353,7 @@ function NobleHUD:UpdateHUD(t,dt)
 			table.remove(self._cache.announcer_queue,1)
 		end
 	end
---[[	
-	for i,item in ipairs(self._cache.announcer_queue) do 
-		if item and self._announcer_sound_source then 
-			local sound_state = self._announcer_sound_source:get_state() 
-			if sound_state ~= 1 then
-				self._announcer_sound_source:set_buffer(self._cache.sounds[item])
-				self._announcer_sound_source:play()
-				table.remove(self._cache.announcer_queue,i)
-				break
-			end
-		else
-			table.remove(self._cache.announcer_queue,i)
-		end
-	end
---]]	
+	
 	local player = managers.player:local_player()
 	if player then 
 
@@ -2403,10 +2364,7 @@ function NobleHUD:UpdateHUD(t,dt)
 			self:AddMedal("close_call")
 		end
 	
-		
 	
---		Console:SetTrackerValue("trackera",self:KillsCache("last_kill_t"))
---		Console:SetTrackerValue("trackerb",t)
 		--animate function stuff
 		for object_id,data in pairs(self._animate_targets) do 
 			local result
@@ -2505,11 +2463,7 @@ function NobleHUD:UpdateHUD(t,dt)
 			end
 		end			
 			
-		
-		
-		--self:get_fire_weapon_position(), self:get_fire_weapon_direction()
-	--return managers.player:local_player():movement():current_state():get_fire_weapon_direction()
-	--:rotation():yaw()
+
 		local viewport_cam = managers.viewport:get_current_camera()
 		if not viewport_cam then 
 			--doesn't typically happen, usually for only a brief moment when all four players go into custody
@@ -2803,12 +2757,12 @@ function NobleHUD:UpdateHUD(t,dt)
 		
 		
 		
-		
--- ************** SCORE ************** 
-	self:UpdateScoreTimerMultiplier(t) --set multiplier based on heist timer
-	self:SetTotalScoreMultiplierDisplay()
-	local popup_queues = 0
-	if true then  --check is debug only
+			
+	-- ************** SCORE ************** 
+		self:UpdateScoreTimerMultiplier(t) --set multiplier based on heist timer
+		self:SetTotalScoreMultiplierDisplay()
+		local popup_queues = 0
+
 		local function fadeout_popup(o,popup_death_momentum)
 			self:animate(o,"animate_fadeout",function (o) o:parent():remove(o) end,0.66,nil,popup_death_momentum)
 		end
@@ -2823,7 +2777,7 @@ function NobleHUD:UpdateHUD(t,dt)
 			
 			if not (popup_start_t and popup and style and alive(popup)) then 
 				table.remove(self._cache.score_popups,i)
---				self._cache.score_popups[i] = nil
+	--				self._cache.score_popups[i] = nil
 				if popup and alive(popup) then 
 					self:animate(popup,"animate_fadeout",function(o) o:parent():remove(o) end,1)
 				end
@@ -2837,53 +2791,27 @@ function NobleHUD:UpdateHUD(t,dt)
 					if popup_animate_result then
 						table.remove(self._cache.score_popups,i)
 						fadeout_popup(popup,popup_animate_result)
---						self._cache.score_popups[i] = nil
---						popup:parent():remove(popup)
 					else
 						--not done animating, so continue
 					end
 				else
 					self:log("Popup " .. popup:name() .. " [ #" .. tostring(i) .. " ] " .. " has invalid style [" .. style .. "]; Removing...",{color = Color.red})					
---					self._cache.score_popups[i] = nil
+	--					self._cache.score_popups[i] = nil
 					table.remove(self._cache.score_popups,i)
 					fadeout_popup(popup)
---					self:animate(popup,"animate_fadeout",function(o) o:parent():remove(o) end,1)				
+	--					self:animate(popup,"animate_fadeout",function(o) o:parent():remove(o) end,1)				
 				end
 			end
 		end	
-	end
+			
 		
-	
-		if false then 
-		--starting positions for score popups
-			for i,popup_data in pairs(score_popups) do 
-				local popup_start_x = popup_data.x
-				local popup_start_y = popup_data.y
-				local popup_unit = popup_data.unit
-				if popup_data.expire_t < t then 
-					popup_data.element:remove()
-				else
-					if style == "nightfall" then --the classic emerge casually from center, rise upward
-					
-					elseif style == "bob" then --the classic spawn downward, float upward
-					
-					elseif style == "bluespider" then --stick to killed units' heads
-					
-					elseif style == "athena" then --spawn at killed units' heads
-					
-					end
-				end
-			end
-		end
-		
-		
-		self:_set_mission_timer(NobleHUD.format_seconds(managers.game_play_central:get_heist_timer()))
+--		self:_set_mission_timer(NobleHUD.format_seconds(managers.game_play_central:get_heist_timer()))
 
 		if t > self._helper_last_sequence_t then
---			self._helper_last_sequence_t = t + 3
+	--			self._helper_last_sequence_t = t + 3
 			--set new sequence
---			self._current_helper_pattern = self.choose({"dot","lotus","x"})
---			managers.hud:_set_helper_pattern()
+	--			self._current_helper_pattern = self.choose({"dot","lotus","x"})
+	--			managers.hud:_set_helper_pattern()
 		end
 		--[[
 		if t > self._dot_last_t then
@@ -2922,25 +2850,12 @@ function NobleHUD:UpdateHUD(t,dt)
 			end
 		else
 			NobleHUD._delayed_callbacks[i] = nil
---			table.remove(NobleHUD._delayed_callbacks,i)
 		end
 	end
-	--[[
-	for k,v in pairs(NobleHUD._bgboxes) do
-		if v:parent() and v:parent():name() == "objectives_panel" then	
-			Console:SetTrackerValue("trackerb",tostring(v:visible()))
-			Console:SetTrackerValue("trackerc",tostring(v:parent():visible()))
-			Console:SetTrackerValue("trackerd",tostring(v:parent():parent():visible()))
-		end
-	end
-	--]]
-	--Console:SetTrackerValue("trackerb",tostring(managers.hud._hud_objectives._bg_box:visible()))
-	--Console:SetTrackerValue("trackerb",tostring(managers.hud._hud_temp._bg_box:visible()))
 	
 end
 
 function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
---	logall(attack_data)
 	local t = Application:time()
 	local player = attack_data.attacker_unit
 	if not alive(player) then
@@ -3051,20 +2966,18 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 			self:AddMedal("pummel")
 				
 			if attack_data.cool then 
-				NobleHUD:AddMedal("assassination")
+				self:AddMedal("assassination")
 				medal_multiplier = medal_multiplier * self:GetMedalMultiplier("assassination")
 			end
 			if attack_data.from_behind then
-				NobleHUD:AddMedal("beatdown")
+				self:AddMedal("beatdown")
 			end
-			Log("Was melee")
 		elseif variant == "graze" then 
 			--nothing special
 		end
+--		self:log(tostring(action_type))
 		
-		
-		if action_type == "reload" then 
-			Log("Is reloading")
+		if action_type == "reload" then  --this is not correct, idk how to measure is reloading state yet
 			--self:AddMedal("reload_this") --haven't added assets for it yet lol
 		end
 		
@@ -3087,7 +3000,7 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 end
 
 function NobleHUD:OnEnemyKilledOld(data)
-	--temp disabled
+	--migrating to new version
 	if not data then 
 		self:log("No kill data found!")
 		return
@@ -3109,7 +3022,7 @@ function NobleHUD:OnEnemyKilledOld(data)
 	local primary_id = primary:get_name_id()
 	local secondary_id = secondary:get_name_id()
 --	local melee = inventory._melee_weapon_unit
-	Log("Killed " .. tostring(data.type) .. " with " .. tostring(weapon_id) .. "/" .. tostring(data.variant))
+	self:log("Killed " .. tostring(data.type) .. " with " .. tostring(weapon_id) .. "/" .. tostring(data.variant))
 	if data.type and data.type == "neutral" or data.type == "civilians" then 
 		self:ClearKillsCache()
 		self:PlayAnnouncerSound("Betrayal")
@@ -3143,7 +3056,7 @@ function NobleHUD:OnEnemyKilledOld(data)
 				self:AddMedal("spree_grenade",self:KillsCache("grenade",1))
 			end
 		else
-			self:log("Killed " .. tostring(unit_name) .. " with misc weapon " .. tostring(weapon_id or weapon_unit))
+--			self:log("Killed " .. tostring(unit_name) .. " with misc weapon " .. tostring(weapon_id or weapon_unit))
 		end
 		
 		if from_weapon then 
@@ -3189,9 +3102,7 @@ function NobleHUD:OnEnemyKilledOld(data)
 		end
 
 	end
---	self:log(data.type or "nope") --team
 	self:TallyScore(data)
---	self:_tally_score(data)
 end
 
 function NobleHUD:KillsCache(category,amount,set)
@@ -3202,7 +3113,7 @@ function NobleHUD:KillsCache(category,amount,set)
 			self._cache.kills[category] = self._cache.kills[category] + (tonumber(amount or 0) or 0)
 		end
 	elseif set ~= nil then
-		--self:log("Error: No killcount category found for " .. tostring(category),{color = Color.red})
+		self:log("Error: No killcount category found for " .. tostring(category),{color = Color.red})
 	end
 	
 	return self._cache.kills[category]
@@ -3217,7 +3128,7 @@ function NobleHUD:GetMedalMultiplier(category,current_tier)
 			local multiplier = 1
 --			local current_tier = tier self._cache.kills[category]
 			if not current_tier then 
-				Log("ERROR: Bad category " .. tostring(category))
+				self:log("ERROR: Bad category to GetMedalMultiplier(" .. tostring(category) .. "," .. tostring(current_tier) .. ")")
 				return
 			end
 			for tier,tiered_data in pairs(medal_data) do 
@@ -3288,6 +3199,7 @@ function NobleHUD:OnPlayerStateChanged(state)
 		bipod = "ingame_standard",
 		tased = "ingame_electrified"
 	--]]
+	self:log("Changed player state to " .. tostring(state),{color = Color(0,1,1)})
 	if state == "fatal" or state == "bleed_out" or state == "arrested" or state == "incapacitated" then 
 		self:ClearKillsCache()
 	end
@@ -3295,8 +3207,12 @@ function NobleHUD:OnPlayerStateChanged(state)
 end
 
 function NobleHUD:OnGameStateChanged(before_state,state)
+	self:log("Changed game state from " .. (before_state) .. " to " .. tostring(state),{color = Color.green})
 	if before_state == "ingame_waiting_for_players" then 
 		--show player hud
+	end
+	if state == "ingame_waiting_for_respawn" then 
+		--destroy weapon panel?
 	end
 end
 
@@ -3363,12 +3279,10 @@ function NobleHUD:PlayAnnouncerSound(name)
 			else
 				if self._announcer_sound_source then 
 					self._cache.announcer_queue[#self._cache.announcer_queue + 1] = name
---					self._announcer_sound_source:set_buffer(snd)
---					self._announcer_sound_source:play()
 				end
 			end
 		else
-			Log("PlayAnnouncerSound(): sound [" .. name .. "] not found",{color = Color.red})
+			self:log("PlayAnnouncerSound(): sound [" .. name .. "] not found",{color = Color.red})
 		end
 end
 
@@ -3376,6 +3290,8 @@ end
 --		WEAPONS
 
 function NobleHUD:_create_weapons(hud)
+	
+
 	local master_w = 150
 	local margin_w = 16
 	local weapons_master = hud:panel({
@@ -3446,6 +3362,7 @@ function NobleHUD:_create_weapons(hud)
 		--
 		local mag_label = panel:text({ --mag count for current weapon
 			name = "mag_label",
+			visible = false, --! temp disabled! /!\
 			text = "60",
 --			align = "right",
 --			vertical = "bottom",
@@ -3706,8 +3623,7 @@ end
 function NobleHUD:_set_weapon_label(slot,id)
 	local weapon_panel = self._master_weapon_panel
 	local weapon_name = "The Gun That Can Kill The Past"
-	id = id or 
-	self:log(tostring(slot) .. ":" .. tostring(id))
+	if not id then return end
 	local custom_name = true
 	
 	if custom_name then 
@@ -3760,14 +3676,12 @@ function NobleHUD:_switch_weapons(id)
 			self:_set_weapon_label(id,base:get_name_id()) --only one shared weapon label, used by master weapon panel
 		else
 			self:SetFloatingAmmo(base:get_ammo_remaining_in_clip(),base:get_ammo_max_per_clip())
---			Log(Application:time() .. ":" .. "Set" .. base:get_ammo_remaining_in_clip() .. " /" .. base:get_ammo_max_per_clip())
 		end
 		self:_set_weapon_icon(i,base:get_name_id())
 		self:_set_weapon_mag(i,base:get_ammo_remaining_in_clip())
 		self:_set_weapon_reserve(i,base:get_ammo_total() - base:get_ammo_remaining_in_clip())
 	end
 	
---	self:_set_weapon_label(id,weapons[id].unit:base():get_name_id()) --only one shared weapon label, used by master weapon panel
 	self:_set_crosshair_in_slot_visible(id)
 	self._master_weapon_panel:animate(callback(self,self,"animate_flash_weapon_name"))
 	if not self:UseCrosshairDynamicColor() then 
@@ -3809,7 +3723,6 @@ function NobleHUD:animate_switch_weapon_out(o)
 		y_p = math.min(math.pow(t/duration,y_r),1)
 		o:set_x(x1 + (x3 * x_p))
 		o:set_y(y1 + (y3 * y_p))
---		self:log(tostring(progress) .. "/" .. tostring(t))
 	end
 
 end
@@ -3834,7 +3747,6 @@ function NobleHUD:animate_switch_weapon_in(o)
 		y_p = math.min(math.pow(t/duration,y_r),1)
 		o:set_x(x1 + (x3 * x_p))
 		o:set_y(y1 + (y3 * y_p))
---		self:log(tostring(progress) .. "/" .. tostring(t))
 	end
 
 
@@ -3906,7 +3818,6 @@ function NobleHUD:_set_firemode(slot,firemode,in_burst_mode)
 	self:_get_crosshair_by_info(slot,"single"):set_visible(false)
 	self:_get_crosshair_by_info(slot,"auto"):set_visible(false)
 	self:_get_crosshair_by_info(slot,"underbarrel"):set_visible(false)
---	OffyLib:c_log("Toggled firemode" .. tostring(slot) .. tostring(firemode))
 	self:_get_crosshair_by_info(slot,firemode):set_visible(true)
 
 	local panel = slot == 1 and self._primary_weapon_panel or self._secondary_weapon_panel
@@ -3947,8 +3858,10 @@ end
 
 --		CROSSHAIR
 
-function NobleHUD:_create_crosshair(hud)	
-
+function NobleHUD:_create_crosshair(hud)
+	if alive(hud:child("crosshair_panel")) then 
+		hud:remove(hud:child("crosshair_panel"))
+	end
 	--master panel
 	local crosshair_panel = hud:panel({
 		name = "crosshair_panel",
@@ -4080,50 +3993,62 @@ function NobleHUD:_get_crosshair_type_from_weapon_base(base,fire_mode)
 		return
 	end
 	local tweakdata = base:weapon_tweak_data()
-	local categories = self._crosshair_override_data[weapon_id] or base:categories()
+	
+	local override = self._crosshair_override_data[weapon_id]
+	local override_result = override and crosshair_from_category(override,fire_mode)
+	if override_result then 
+		return override_result
+	end
+	
+	local categories = base:categories()
+	local function crosshair_from_category(cat,mode)
+		if cat == "assault_rifle" then 
+			if (mode == "single") then
+		
+--				if ((base:fire_mode() == "single") and (base:can_toggle_firemode()) and not base._locked_firemode) or (tweakdata.stats.spread > 15) then
+			
+			--(tweakdata.single or tweakdata.auto or (tweakdata.fire_mode_data and tweakdata.fire_mode_data.fire_rate)) then 
+				return "dmr"
+			else
+				return "assault_rifle"
+			end
+		elseif cat == "smg" then 
+			return "assault_rifle"
+		elseif cat == "shotgun" then 
+			return "shotgun"
+		elseif cat == "lmg" then 
+			return "plasma_pistol"
+		elseif cat == "snp" then 
+			return "sniper"
+		elseif cat == "rocket" then
+			return "rocket"
+		elseif cat == "minigun" then
+			return "dmr"
+		elseif cat == "flamethrower" then 
+			return "flamethrower"
+		elseif cat == "saw" then 
+			return "needler"
+		elseif cat == "grenade_launcher" then 
+			return "grenade_launcher"
+		elseif cat == "pistol" then -- or cat == "revolver" then 
+			return "pistol"
+		elseif cat == "bow" then 
+			return "sniper"
+		elseif cat == "xbow" then 
+			return "plasma_launcher"
+		end		
+	end
 
 	if base:gadget_overrides_weapon_functions() then 
 		
 		--get weapon type from gadget
 	else
-
 		--todo get user settings for weapon categories to crosshair types
 		
-		for _,cat in pairs(categories) do 
-			if cat == "assault_rifle" then 
-				if (fire_mode == "single") then
-			
---				if ((base:fire_mode() == "single") and (base:can_toggle_firemode()) and not base._locked_firemode) or (tweakdata.stats.spread > 15) then
-				
-				--(tweakdata.single or tweakdata.auto or (tweakdata.fire_mode_data and tweakdata.fire_mode_data.fire_rate)) then 
-					return "dmr"
-				else
-					return "assault_rifle"
-				end
-			elseif cat == "smg" then 
-				return "assault_rifle"
-			elseif cat == "shotgun" then 
-				return "shotgun"
-			elseif cat == "lmg" then 
-				return "plasma_pistol"
-			elseif cat == "snp" then 
-				return "sniper"
-			elseif cat == "rocket" then
-				return "rocket"
-			elseif cat == "minigun" then
-				return "dmr"
-			elseif cat == "flamethrower" then 
-				return "flamethrower"
-			elseif cat == "saw" then 
-				return "needler"
-			elseif cat == "grenade_launcher" then 
-				return "grenade_launcher"
-			elseif cat == "pistol" then -- or cat == "revolver" then 
-				return "pistol"
-			elseif cat == "bow" then 
-				return "sniper"
-			elseif cat == "xbow" then 
-				return "plasma_launcher"
+		for _,category in pairs(categories) do 
+			local crosshair_result = crosshair_from_category(category,fire_mode)
+			if crosshair_result then 
+				return crosshair_result
 			end
 		end
 	end
@@ -4169,6 +4094,9 @@ function NobleHUD:_create_custom_crosshairs(slot,base)
 		if data.distance and angle then 
 			x = x + math.sin(angle) * data.distance
 			y = y + -math.cos(angle) * data.distance
+		end
+		if alive(panel:child(tostring(index))) then 
+			panel:remove(panel:child(tostring(index)))
 		end
 		local bitmap = panel:bitmap({
 			name = tostring(index),
@@ -4222,7 +4150,6 @@ function NobleHUD:_create_custom_crosshairs(slot,base)
 	
 	if alive(slotpanel:child(firemode_current)) then 
 		slotpanel:child(firemode_current):set_visible(true)
---		self:log("modepanel for " .. firemode_current .. " is alive, pretended to set visible(true) [is currently " .. tostring(slotpanel:child(firemode_current):visible()) .. "]")
 	end
 end
 
@@ -4354,17 +4281,13 @@ function NobleHUD:_set_crosshair_in_slot_visible(slot,visible)
 		local crosshair = self._crosshair_panel:child("crosshair_slot" .. tostring(slot))
 		if alive(crosshair) then 
 			crosshair:set_visible(visible)
---!			self:log("Setting crosshair in slot " .. tostring(slot) .. " to " .. (visisble and "visible" or "hidden"))
 		else
---!			self:log("ERROR: _set_crosshair_in_slot_visible(" .. concat({slot,visible},",") .. "): Bad slot")
 			return
 		end
 	else
 		for i,j in pairs(managers.player:local_player():inventory():available_selections()) do 
 			local slotpanel = self._crosshair_panel:child("crosshair_slot" .. tostring(i))
 			if alive(slotpanel) then 
---				self:log("Setting crosshair in slot " .. tostring(slot) .. " to i: " .. tostring(i) .. "," .. tostring(i == slot))
---!				self:log("Setting crosshair in slot " .. tostring(slot) .. " to " .. (i == slot and "visible" or "hidden"))
 				slotpanel:set_visible(i == slot)
 			end
 		end
@@ -4379,8 +4302,8 @@ function NobleHUD:_set_crosshair_bloom(bloom)
 	local weapon_type = weapon_data and weapon_data.weapon_type
 	local crosshair_data = self._crosshair_textures[weapon_type] or {}
 	local data = {bloom = bloom,crosshair_data = crosshair_data}
-	local a = crosshair_data.bloom_func -- or function(index,bitmap,data) end
---	Log(tostring(a) .. tostring(Application:time() .. tostring(bloom)))
+	local a = crosshair_data.bloom_func
+	
 	self:get_current_crosshair_parts(a,data or {})
 end
 
@@ -4419,9 +4342,6 @@ end
 
 function NobleHUD:get_slot_and_firemode()
 
---	Console:SetTrackerValue("trackerc","")
---	Console:SetTrackerValue("trackerd","")
-	
 	local player = managers.player:local_player()
 	local inventory = player and player:inventory()
 	if not inventory then 
@@ -4440,9 +4360,6 @@ function NobleHUD:get_slot_and_firemode()
 	if base:gadget_overrides_weapon_functions() then 
 		firemode = "underbarrel"
 	end
---	Log(tostring(slot) .. tostring(firemode))
---	Console:SetTrackerValue("trackerc",slot)
---	Console:SetTrackerValue("trackerd",firemode)
 	
 	return slot,firemode
 end
@@ -4591,10 +4508,6 @@ function NobleHUD:_set_grenade_cooldown(data)
 	local end_time = data and data.end_time
 	local duration = data and data.duration
 	
---	NobleHUD:log("GRENADES DATA")
---	NobleHUD:log("grenades end_time: " .. end_time)
---	NobleHUD:log("grenades duration: " .. duration)
-	
 	if not end_time or not duration then
 		grenades_outline:stop()
 		grenades_outline:set_color(Color(0.5, 0, 1, 1))
@@ -4602,7 +4515,6 @@ function NobleHUD:_set_grenade_cooldown(data)
 		return
 	end
 
---	NobleHUD:log("GRENADES DATA END")
 	local function animate_radial(o)
 		repeat
 			local now = managers.game_play_central:get_heist_timer()
@@ -4613,32 +4525,14 @@ function NobleHUD:_set_grenade_cooldown(data)
 			coroutine.yield()
 		until time_left <= 0
 
---		o:set_color(Color(0.5, 0, 1, 1))
 	end
 
 	grenades_outline:stop()
 	grenades_outline:animate(animate_radial)
 
-	--[[
-
-	local current = data.current
-	local total = data.total
-	local ratio = current / total
-	self:log("GRENADES DATA")
-	self:log("grenades current: " .. current)
-	self:log("grenades total: " .. total)
-	self:log("grenades ratio: " .. ratio)
-
-	grenades_outline:set_visible(current ~= total)
-	grenades_outline:set_color(ratio,total,0)
---]]
 end
 
 function NobleHUD:_activate_ability_radial(time_left,time_total)
-
---	self:log("grenades time_left: " .. time_left)
---	self:log("grenades time_total: " .. time_total)
-
 	local grenades_panel = self._grenades_panel:child("primary_grenade_panel")
 	local grenades_outline = grenades_panel:child("grenade_outline")
 	grenades_outline:set_visible(true)
@@ -4757,7 +4651,6 @@ function NobleHUD:animate_switch_eq_out(o)
 		o:set_alpha(1 - (0.6 * y_p))
 		o:set_x(x1 + (x3 * x_p))
 		o:set_y(y1 + (y3 * y_p))
---		self:log(tostring(progress) .. "/" .. tostring(t))
 	end
 
 end
@@ -4784,7 +4677,6 @@ function NobleHUD:animate_switch_eq_in(o)
 		o:set_alpha(0.4 + (0.6 * x_p))
 		o:set_x(x1 + (x3 * x_p))
 		o:set_y(y1 + (y3 * y_p))
---		self:log(tostring(progress) .. "/" .. tostring(t))
 	end
 
 
@@ -5451,19 +5343,6 @@ function NobleHUD:animate_popup_stack(o,t,dt,start_t,duration)
 end
 
 function NobleHUD:animate_popup_queue(o,t,dt,start_t,duration,unit,dest_y,rate)
---[[
-	Log(type(o))
-	Log(tostring(o))
-	Log(type(t))
-	Log(tostring(t))
-	Log(type(dt))
-	Log(tostring(dt))
-	Log(type(start_t))
-	Log(tostring(start_t))
-	Log(type(duration))
-	Log(tostring(duration))
-	--]]
---	if true then return 1 end
 	rate = rate or 3
 	local oy = o:y()
 	o:set_alpha(o:alpha() + (dt * 3)) --will always become fully visible in 1/3 seconds
@@ -5753,8 +5632,6 @@ function NobleHUD:AnimateShowObjective() --not an animate() function, but calls 
 	local duration = 0.2
 	blink_label:set_size(label_w,label_h)
 	blink_title:set_size(title_w,title_h)
---	Log(title_w,{color=Color.red})
---	Log(label_w,{color=Color.blue})
 	objectives_title:set_font_size(0)
 	objectives_title:set_kern(kern)
 	objectives_title:set_alpha(1)
@@ -6451,7 +6328,7 @@ function NobleHUD:LoadCartographerData(map_id)
 		end
 		return self._cartographer_data
 	else
-		NobleHUD:log("No cartographer file for map [" .. map_id .. "]",{color = Color(1,0.5,0)})
+		self:log("No cartographer file for map [" .. map_id .. "] (" .. managers.localization:text(map_id or "nil") .. ")",{color = Color(1,0.5,0)})
 	end
 end
 
@@ -6472,17 +6349,8 @@ function NobleHUD:ConsultCartographer(pos,map)
 				if (pos_y < v.y_upper) and (pos_y > v.y_lower) then
 					if (pos_z < v.z_upper) and (pos_z > v.z_lower) then
 						return v.location
-					else
---						KineticHUD:c_log("Z",k)
---						KineticHUD:c_log(v.z_upper,v.z_lower)
 					end
-				else
---					KineticHUD:c_log("Y",k)
---					KineticHUD:c_log(v.y_lower,v.y_upper)
 				end
-			else
---				KineticHUD:c_log("X",k)
---				KineticHUD:c_log(v.x_lower,v.x_upper)
 			end
 		end
 	end
@@ -6830,7 +6698,6 @@ function NobleHUD:layout_equipments(special_equipments,new)
 --	local amount = #special_equipments
 	for i,panel in pairs(special_equipments) do
 		local x = self._equipment_panel:w() - (panel:w() * i) + -margin
---		Log(panel:name() .. "," .. tostring(new))
 		if panel:name() == new then 
 			NobleHUD:animate(panel,"animate_add_equipment",function (o)
 				NobleHUD:animate(o:child("bitmap"),"animate_killfeed_icon_pulse",nil,0.2,panel:w(),1.5,x,panel:y())
@@ -7193,7 +7060,7 @@ end
 
 function NobleHUD:AddMedal(category,rank) --from name
 	local medal_data = self._medal_data[category]
-	self:log("Doing NobleHUD:AddMedal(" .. tostring(category) .. "," .. tostring(rank) .. ")",{color = Color.yellow})
+--	self:log("Doing NobleHUD:AddMedal(" .. tostring(category) .. "," .. tostring(rank) .. ")",{color = Color.yellow})
 	if rank and medal_data and medal_data[rank] then 
 		return NobleHUD:AddMedalFromData(medal_data[rank],category)
 	elseif medal_data and not rank then 
@@ -7206,13 +7073,13 @@ end
 function NobleHUD:AddMedalFromData(data,category) --direct reference to table passed here
 	local killfeed = self._killfeed_panel
 	if not (data and data.icon_xy) then 
-		self:log("ERROR: bad data to AddMedalFromData(" .. tostring(data) .. ")")
+--		self:log("ERROR: bad data to AddMedalFromData(" .. tostring(data) .. ")")
 		return
 	elseif data.disabled then 
-		self:log("Did not add medal " .. tostring(category) .. " (disabled)")
+--		self:log("Did not add medal " .. tostring(category) .. " (disabled)")
 		return
 	end
-	--local x = 1; local y = 3; NobleHUD._medal_data.bulltrue.icon_xy = {x,y}; NobleHUD:AddMedal("bulltrue")
+	
 	self.num_medals = self.num_medals + 1
 	local texture,texture_rect = self:GetMedalIcon(unpack(data.icon_xy))
 	local icon_size = 32
@@ -7274,14 +7141,7 @@ function NobleHUD:animate_killfeed_text_in(o,t,dt,start_t,duration,font_size,col
 	o:set_font_size((1 + sine) * font_size)
 	o:set_color(self.interp_colors(color_1,color_2,sine))
 	if start_t + duration < t then
---		Log("Completed animation 1 ".. tostring(start_t+duration) .. " < " .. tostring(t))
 		return true
-	else
---		Log(math.floor(ratio * 100) .. ": " .. sine,{color = Color(0,1,1)})
---		Log(math.max(0,math.sin(math.pi * (t - start_t) * (1/duration))) * font_size)
---		Log((t - start_t )/duration,{color = Color.blue})
---		Log(math.sin(math.pi * (t - start_t) * (1/duration)),{color = Color.green})
---		Log(tostring(start_t+duration) .. " < " .. tostring(t))
 	end
 end
 

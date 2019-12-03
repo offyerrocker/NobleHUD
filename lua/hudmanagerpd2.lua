@@ -1,14 +1,4 @@
 
-Hooks:PostHook(HUDManager,"add_teammate_panel","noblehud_hudmanager_addteammatepanel",function(self,character_name, player_name, ai, peer_id)
---[[
-	for i, data in ipairs(self._hud.teammate_panels_data) do
-		if HUDManager.PLAYER_PANEL ~= i then 
-			NobleHUD:_set_teammate_name(i,player_name)
-		end
-	end
-	--]]
-end)
-
 Hooks:PostHook(HUDManager,"_setup_player_info_hud_pd2","noblehud_create_ws",function(self,hud)
 	if _G.NobleHUD then 
 		NobleHUD:CreateHUD(self)
@@ -19,35 +9,7 @@ Hooks:PostHook(HUDManager,"_setup_player_info_hud_pd2","noblehud_create_ws",func
 	end
 end)
 
-
---[[
-Hooks:PostHook(HUDManager,"update","noblehud_update",function(self,t,dt) --no longer needed; currently using managers.hud:add_updator()
---	NobleHUD:UpdateHUD(t,dt)
-
-
-	if t > Console._dot_last_t then
-		Console._dot_last_t = t + 3
-		local function random_index (tbl) --i hate everything about this
-			local length = 0
-			for k,v in pairs(tbl) do 
-				length = length + 1
-			end
-			local chosen = math.ceil(math.random(length))
-			local n = 0
-			for j,w in pairs(tbl) do 
-				n = n + 1
-				if n == chosen then 
-					return j
-				end
-			end
-		end
-		local p = random_index(Console._patterns)
-		if p then 
-			self:_set_helper_pattern(p)
-		end
-	end
-end)
-	--]]
+--pretty much everything below is for Auntie Dot
 
 function HUDManager:_set_helper_pattern(pattern_name)
 	local pattern = NobleHUD._helper_patterns_even[pattern_name or NobleHUD._current_helper_pattern or "dot"]

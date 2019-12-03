@@ -20,8 +20,6 @@ function PlayerDamage:_update_armor_hud(t, dt) --overridden
 			total = self:_max_armor()
 		})
 	elseif math.abs(self._current_armor_fill - real_armor) > 0.01 then
-	-->:( ovk why would you pretend there's a little nugget of armor left, that's so annoying
-	--there are better ways to help performance, like having a 64 bit game
 		managers.hud:set_player_armor({
 			current = current_armor,
 			total = self:_max_armor()
@@ -57,12 +55,3 @@ function PlayerDamage:damage_bullet(attack_data,...)
 	end
 	return unpack(result)
 end
---[[
-Hooks:PostHook(PlayerDamage,"damage_melee","noblehud_damage_melee",function(self,attack_data,...)
-end)
-
-Hooks:PostHook(PlayerDamage,"damage_bullet","noblehud_damage_bullet",function(self,attack_data,...)
-end)
-Hooks:PostHook(PlayerDamage,"damage_simple","noblehud_damage_simple",function(self,attack_data,...)
-end)
---]]

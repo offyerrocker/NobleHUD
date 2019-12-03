@@ -7,15 +7,6 @@ Hooks:PostHook(HUDTeammate,"init","noblehud_addteammate",function(self,i, teamma
 	NobleHUD:_init_teammate(i,panel,is_player,width)
 end)
 
-Hooks:PostHook(HUDTeammate,"add_panel","noblehud_addteammatepanel",function(self)
-	local teammate_panel = self._panel
-
-	if not self._wait_panel:visible() then
---		teammate_panel:set_visible(true)
-	end
-end)
-
-
 Hooks:PostHook(HUDTeammate,"set_callsign","noblehud_setteammatecallsign",function(self,id)
 	if HUDManager.PLAYER_PANEL ~= self._id then 
 		NobleHUD:_set_teammate_callsign(self._id,id)
@@ -26,11 +17,6 @@ Hooks:PostHook(HUDTeammate,"set_name","noblehud_setteammatename",function(self,p
 		NobleHUD:_set_teammate_name(self._id,player_name)
 	end
 end)
---[[
-
-Hooks:PostHook(HUDTeammate,"remove_panel","noblehud_removeteammatepanel",function(self,weapons_panel)
-end)
---]]
 
 Hooks:PostHook(HUDTeammate,"set_health","noblehud_set_health",function(self,data)
 	if not self._main_player then 
@@ -193,11 +179,9 @@ Hooks:PostHook(HUDTeammate,"set_ammo_amount_by_type","noblehud_set_ammo",functio
 		return
 	end
 	local slot = (type == "primary" and 2) or (type == "secondary" and 1)
---	NobleHUD:log(table.concat({type,max_clip,current_clip,current_left,max,weapon_panel},","))
 	NobleHUD:_set_weapon_reserve(slot,math.max(current_left - current_clip,current_left))
 	NobleHUD:_set_weapon_mag(slot,current_clip,max_clip)
 --	NobleHUD:SetFloatingAmmo(current_clip,max_clip)
---	Log(Application:time() .. ":" .. "Set" .. current_clip .. " /" .. max_clip)
 
 end)
 
@@ -214,8 +198,6 @@ Hooks:PostHook(HUDTeammate,"set_deployable_equipment_amount","noblehud_set_deplo
 		return
 	end
 	NobleHUD:_set_deployable_amount(index)
---	self:set_khud_deployable_equipment_amount(managers.player._equipment.selected_index,data)
-	--ignore passed index value for reasons detailed below
 end)
 
 Hooks:PostHook(HUDTeammate,"set_deployable_equipment_from_string","noblehud_set_deployable_from_string",function(self,data)
@@ -224,16 +206,6 @@ Hooks:PostHook(HUDTeammate,"set_deployable_equipment_from_string","noblehud_set_
 	end
 	NobleHUD:log("set_deployable_equipment_from_string(" .. table.concat(data,",") .. ")")
 	NobleHUD:_set_deployable_equipment(data.index)
---[[
-	local index = data.index or managers.player._equipment.selected_index or 1
---		KineticHUD:c_log("set_deployable_equipment_from_string",KineticHUD:concat(data))
-	local icon, texture_rect = tweak_data.hud_icons:get_icon_data(data.icon)
-	local deployable_equipment_panel = self._khud_deployables_panel:child(index == 2 and "secondary_deployable" or "primary_deployable")
-	local equipment = deployable_equipment_panel:child("icon")--deployable_equipment_panel:child("equipment")
-
-	equipment:set_visible(true)
-	equipment:set_image(icon, unpack(texture_rect))
-	--]]
 end)
 
 Hooks:PostHook(HUDTeammate,"set_deployable_equipment_amount_from_string","noblehud_set_deployable_amount_from_string",function(self,index,data)
@@ -241,7 +213,6 @@ Hooks:PostHook(HUDTeammate,"set_deployable_equipment_amount_from_string","nobleh
 		return
 	end
 	NobleHUD:_set_deployable_amount(index)
---	self:set_khud_deployable_equipment_amount_secondary(managers.player._equipment.selected_index,data)
 end)
 
 Hooks:PostHook(HUDTeammate,"set_grenades","noblehud_set_grenades",function(self,data)
@@ -453,7 +424,6 @@ function HUDTeammate:add_special_equipment(data,...)
 	amount_bg:set_visible(data.amount and (data.amount > 1) or false)
 	amount:set_center(amount_bg:center())
 	amount:set_visible(data.amount and (data.amount > 1) or false)
-	--return logall(managers.hud._teammate_panels[1]._special_equipment)
 	table.insert(self._special_equipment, equipment_panel)
 	NobleHUD:layout_equipments(self._special_equipment,data.id)
 end
@@ -492,7 +462,8 @@ Hooks:PostHook(HUDTeammate,"clear_special_equipment","noblehud_clearequipment",f
 	NobleHUD:_create_equipment_panel()
 end)
 
---]]
+
+--caution! under construction! 
 if true then return end 
 
 

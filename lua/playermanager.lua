@@ -38,17 +38,21 @@ local function set_hud_item_amount(index, amount)
 end
 
 Hooks:PostHook(PlayerManager,"set_player_state","noblehud_on_player_state_changed",function(self,state)
-	NobleHUD:OnPlayerStateChanged(state)
+	if NobleHUD then 
+		NobleHUD:OnPlayerStateChanged(state)
+	end
 end)
 
+--[[
 Hooks:PreHook(PlayerManager,"_change_player_state","noblehud_on_game_state_changed",function(self)
-	if not game_state_machine then
+	if not (NobleHUD and game_state_machine) then
 		return 
 	end
 	local previous_state = game_state_machine:last_queued_state_name()
 	local state = self._player_states[self._current_state]
 	NobleHUD:OnGameStateChanged(previous_state,state)
 end)
+--]]
 
 Hooks:PostHook(PlayerManager,"_internal_load","noblehud_on_internal_load",function(self)
 	if not NobleHUD then 
