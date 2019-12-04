@@ -46,6 +46,15 @@ function HUDManager:_set_helper_pattern(pattern_name)
 	end
 end
 
+Hooks:PostHook(HUDManager,"set_disabled","noblehud_hidehud",function(self)
+	NobleHUD._ws:panel():hide()
+end)
+
+Hooks:PostHook(HUDManager,"set_enabled","noblehud_showhud",function(self)
+	NobleHUD._ws:panel():show()
+end)
+
+
 function HUDManager:_set_helper_sequence()
 	NobleHUD._helper_last_sequence = math.max(1,(1 + NobleHUD._helper_last_sequence) % #NobleHUD._helper_sequences)
 	local pattern_name = NobleHUD._helper_last_sequence

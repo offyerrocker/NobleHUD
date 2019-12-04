@@ -5275,7 +5275,7 @@ function NobleHUD:CreateScorePopup(name,score,unit)
 	local text
 	local color 
 	if score < 0 then 
-		text = "-" .. tostring(score) 
+		text = tostring(score) 
 		color = Color.red
 	else
 		text = "+" .. tostring(score)
