@@ -1,3 +1,12 @@
+local orig_show_hint = HUDManager.show_hint
+function HUDManager:show_hint(data,...)
+	if data.text then 
+		NobleHUD:AddKillfeedMessage(data.text,NobleHUD._hint_params)
+	else
+		return orig_show_hint(self,data,...)
+	end
+end
+
 
 Hooks:PostHook(HUDManager,"_setup_player_info_hud_pd2","noblehud_create_ws",function(self,hud)
 	if _G.NobleHUD then 

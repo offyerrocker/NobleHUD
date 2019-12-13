@@ -4,8 +4,7 @@
 
 ***** TODO: *****
 Notes:
-
---
+	
 		
 		fadeout bluespider without disassociating it from unit
 		slider setting for popup_fadeout_time
@@ -48,7 +47,6 @@ Notes:
 
 			
 	&& LOW PRIORITY FEATURES: &&
-		* Wait until multikill timer expires to say voicelines for sprees/multikills, and only say the highest multikill 
 		* Organize color data
 			- Ability circle needs a baked-blue asset
 		* Queue objective activities rather than stopping current
@@ -223,8 +221,12 @@ NobleHUD.settings = {
 	popup_duration = 3,
 	show_all_medals = false,
 	announcer_enabled = true,
-	interact_style = 1
+	stamina_enabled = true,
+	interact_style = 1,
+	weapon_ammo_tick_full_alpha = 0.8,
+	weapon_ammo_tick_empty_alpha = 0.15
 }
+
 NobleHUD._bgboxes = {}
 NobleHUD.color_data = {
 	hud_vitalsoutline_blue = Color(121/255,197/255,255/255), --vitals outline color
@@ -239,9 +241,13 @@ NobleHUD.color_data = {
 	hud_text_flash = Color(254/255,239/255,239/255),
 	hud_killfeed_lightyellow = Color(253/255,255/255,217/255),
 	hud_killfeed_yellow = Color(255/255,231/255,0),
+	hud_helper_bluefill = Color(218/255,238/255,255/255),
+	hud_helper_blueglow = Color(0,0.3,0.9),
 	hud_lightblue = Color("a1f0ff"), --powder blue; unused
 	hud_bluefill = Color("66cfff"), --sky blue; unused
 	hud_blueoutline = Color("3173bb"),
+	hud_hint_orange = Color("FFB432"),
+	hud_hint_lightorange = Color("FFE5B8"),
 --	hud_blueoutline = Color(168/255,203/255,255/255), --shield/hp outline color; unused
 	hud_text = Color.white,
 	hud_compass = Color("2EA1FF")
@@ -273,6 +279,13 @@ NobleHUD._presenter_desc_params = {
 	font_size = 16,
 	color_1 = NobleHUD.color_data.hud_killfeed_yellow,
 	color_2 = NobleHUD.color_data.hud_killfeed_lightyellow
+}
+NobleHUD._hint_params = {
+	duration = 0.25,
+	lifetime = 5,
+	font_size = 16,
+	color_1 = NobleHUD.color_data.hud_hint_orange,
+	color_2 = NobleHUD.color_data.hud_hint_lightorange
 }
 
 NobleHUD._efficient_audio_mode = false --voice lines, if procced simultaneously, will overlap if true, rather than queue
@@ -1177,6 +1190,7 @@ NobleHUD.score_unit_points = {
 	tank_hw = 12, --headless dozer
 	tank_medic = 12,
 	tank_mini = 12,
+	swat_turret = 16,
 	security_undominatable = -1000, --garrett
 	mute_security_undominatable = -1000, --also garrett i guess
 	security = 1,
@@ -1204,6 +1218,7 @@ NobleHUD.score_unit_points = {
 	bolivian_indoors = 1,
 	drug_lord_boss = 100, --sosa
 	drug_lord_boss_stealth = 100, --also sosa
+	
 	deathvox_guard = 1,
 	deathvox_gman = 1,
 	deathvox_lightar = 1,
@@ -1228,7 +1243,29 @@ NobleHUD.score_unit_points = {
 	deathvox_cop_shotgun = 1,
 	deathvox_fbi_rookie = 1,
 	deathvox_fbi_hrt = 1,
-	deathvox_fbi_veteran = 1
+	deathvox_fbi_veteran = 1,
+	
+	--RESTORATION MOD VALUES
+	tank_green = 12,
+	tank_black = 12,
+	tank_skull = 12,
+	tank_biker = 12,
+	boom = 6,
+	boom_summers = 12,
+	taser_summers = 12,
+	medic_summers = 12,
+	rboom = 12,
+	heavy_swat_sniper = 3,
+	weekend_dmr = 2,
+	tank_titan = 24,
+	tank_titan_assault = 24,
+	spring = 50,
+	summers = 50,
+	omnia_lpf = 3,
+	phalanx_minion_assault = 5,
+	spooc_titan = 12,
+	taser_titan = 12,
+	autumn = 50
 }
 
 NobleHUD.score_multipliers = {
@@ -1475,6 +1512,7 @@ NobleHUD._medal_data = {
 			multiplier = 1.2,
 			sfx = "multikill_2",
 			show_text = true,
+			hold_sfx = true,
 			icon_xy = {0,0}
 		},
 		[3] = {
@@ -1482,6 +1520,7 @@ NobleHUD._medal_data = {
 			multiplier = 1.3,
 			sfx = "multikill_3",
 			show_text = true,
+			hold_sfx = true,
 			icon_xy = {0,1}
 		},
 		[4] = {
@@ -1489,6 +1528,7 @@ NobleHUD._medal_data = {
 			multiplier = 1.4,
 			sfx = "multikill_4",
 			show_text = true,
+			hold_sfx = true,
 			icon_xy = {0,2}
 		},
 		[5] = {
@@ -1496,6 +1536,7 @@ NobleHUD._medal_data = {
 			multiplier = 1.5,
 			sfx = "multikill_5",
 			show_text = true,
+			hold_sfx = true,
 			icon_xy = {0,3}
 		},
 		[6] = {
@@ -1503,6 +1544,7 @@ NobleHUD._medal_data = {
 			multiplier = 1.6,
 			sfx = "multikill_6",
 			show_text = true,
+			hold_sfx = true,
 			icon_xy = {0,4}
 		},
 		[7] = {
@@ -1510,6 +1552,7 @@ NobleHUD._medal_data = {
 			multiplier = 1.7,
 			sfx = "multikill_7",
 			show_text = true,
+			hold_sfx = true,
 			icon_xy = {0,5}
 		},
 		[8] = {
@@ -1517,6 +1560,7 @@ NobleHUD._medal_data = {
 			multiplier = 1.8,
 			sfx = "multikill_8",
 			show_text = true,
+			hold_sfx = true,
 			icon_xy = {0,6}
 		},
 		[9] = {
@@ -1524,6 +1568,7 @@ NobleHUD._medal_data = {
 			multiplier = 1.9,
 			sfx = "multikill_9",
 			show_text = true,
+			hold_sfx = true,
 			icon_xy = {0,7}
 		},
 		[10] = {	
@@ -1531,107 +1576,122 @@ NobleHUD._medal_data = {
 			multiplier = 2.0,
 			sfx = "multikill_10",
 			show_text = true,
+			hold_sfx = true,
 			icon_xy = {0,8}
 		}
 	},
 	spree_all = {		
 		[10] = {
 			name = "spree_all_1",
-			multiplier = 1.1,
 			sfx = "spree_all_1",
 			show_text = true,
+			hold_sfx = true,
+			multiplier = 1.1,
 			icon_xy = {2,0}
 		},
 		[20] = {
 			name = "spree_all_2",
-			multiplier = 1.2,
 			sfx = "spree_all_2",
 			show_text = true,
+			hold_sfx = true,
+			multiplier = 1.2,
 			icon_xy = {2,1}
 		},
 		[30] = {
 			name = "spree_all_3",
-			multiplier = 1.25,
 			sfx = "spree_all_3",
 			show_text = true,
+			hold_sfx = true,
+			multiplier = 1.25,
 			icon_xy = {2,2}
 		},
 		[40] = {
 			name = "spree_all_4",
-			multiplier = 1.3,
 			sfx = "spree_all_4",
 			show_text = true,
+			hold_sfx = true,
+			multiplier = 1.3,
 			icon_xy = {2,3}
 		},
 		[50] = {
 			name = "spree_all_5",
-			multiplier = 1.35,
 			sfx = "spree_all_5",
 			show_text = true,
+			hold_sfx = true,
+			multiplier = 1.35,
 			icon_xy = {2,4}
 		},
 		[100] = {
 			name = "spree_all_6",
-			multiplier = 1.4,
 			sfx = "spree_all_6",
 			show_text = true,
+			hold_sfx = true,
+			multiplier = 1.4,
 			icon_xy = {2,5}
 		},
 		[500] = {
 			name = "spree_all_7",
-			multiplier = 1.45,
 			sfx = "spree_all_7",
 			show_text = true,
+			hold_sfx = true,
+			multiplier = 1.45,
 			icon_xy = {2,6}
 		},
 		[1000] = {				
-			multiplier = 1.5,
 			name = "spree_all_8",
 			sfx = "spree_all_8",
 			show_text = true,
+			hold_sfx = true,
+			multiplier = 1.5,
 			icon_xy = {2,7}
 		}
 	},
 	spree_assist = { --not implemented
 		[5] = {	
 			name = "spre_assist_1",
-			multiplier = 1.1,
 			sfx = "spree_assist_1",
 			show_text = true,
+			hold_sfx = true,
+			multiplier = 1.1,
 			icon_xy = {3,1}
 		},
 		[10] = {
 			name = "spre_assist_2",
-			multiplier = 1.15,
 			sfx = "spree_assist_2",
 			show_text = true,
+			hold_sfx = true,
+			multiplier = 1.15,
 			icon_xy = {3,2}
 		},
 		[15] = {
 			name = "spre_assist_3",
-			multiplier = 1.2,
 			sfx = "spree_assist_3",
 			show_text = true,
+			hold_sfx = true,
+			multiplier = 1.2,
 			icon_xy = {3,3}
 		}
 	},
 	spree_sword = { --not implemented
 		[5] = {
-			multiplier = 1.25,
 			name = "spree_sword_1",
 			sfx = "spree_sword_1",
+			hold_sfx = true,
+			multiplier = 1.25,
 			icon_xy = {3,4}
 		},
 		[10] = {
 			name = "spree_sword_2",
-			multiplier = 1.5,
 			sfx = "spree_sword_2",
+			hold_sfx = true,
+			multiplier = 1.5,
 			icon_xy = {3,5}
 		},
 		[15] = {
 			name = "spree_sword_3",
-			multiplier = 1.75,
 			sfx = "spree_sword_3",
+			hold_sfx = true,
+			multiplier = 1.75,
 			icon_xy = {3,6}
 		}
 	},
@@ -1639,16 +1699,19 @@ NobleHUD._medal_data = {
 		[5] = {
 			name = "spree_grenade_1",
 			sfx = "spree_grenade_1",
+			hold_sfx = true,
 			icon_xy = {3,7}
 		},
 		[10] = {
 			name = "spree_grenade_2",
 			sfx = "spree_grenade_2",
+			hold_sfx = true,
 			icon_xy = {3,8}
 		},
 		[15] = {
 			name = "spree_grenade_3",
 			sfx = "spree_grenade_3",
+			hold_sfx = true,
 			icon_xy = {3,9}
 		}
 	},
@@ -1656,16 +1719,19 @@ NobleHUD._medal_data = {
 		[5] = {
 			name = "spree_sniper_1",
 			sfx = "spree_sniper_1",
+			hold_sfx = true,
 			icon_xy = {4,1}
 		},
 		[10] = {
 			name = "spree_sniper_2",
 			sfx = "spree_sniper_2",
+			hold_sfx = true,
 			icon_xy = {4,2}
 		},
 		[15] = {
 			name = "spree_sniper_3",
 			sfx = "spree_sniper_3",
+			hold_sfx = true,
 			icon_xy = {4,3}
 		}
 	},
@@ -1673,16 +1739,19 @@ NobleHUD._medal_data = {
 		[5] = {
 			name = "spree_shotgun_1",
 			sfx = "spree_shotgun_1",
+			hold_sfx = true,
 			icon_xy = {4,4}
 		},
 		[10] = {
 			name = "spree_shotgun_2",
 			sfx = "spree_shotgun_2",
+			hold_sfx = true,
 			icon_xy = {4,5}
 		},
 		[15] = {
 			name = "spree_shotgun_3",
 			sfx = "spree_shotgun_3",
+			hold_sfx = true,
 			icon_xy = {4,6}
 		}
 	},
@@ -1690,16 +1759,19 @@ NobleHUD._medal_data = {
 		[5] = {
 			name = "spree_splatter_1",
 			sfx = "spree_splatter_1",
+			hold_sfx = true,
 			icon_xy = {4,7}
 		},
 		[10] = {
 			name = "spree_splatter_2",
 			sfx = "spree_splatter_2",
+			hold_sfx = true,
 			icon_xy = {4,8}
 		},
 		[15] = {
 			name = "spree_splatter_3",
 			sfx = "spree_splatter_3",
+			hold_sfx = true,
 			icon_xy = {4,9}
 		}
 	},
@@ -1708,6 +1780,7 @@ NobleHUD._medal_data = {
 			name = "wheelman",
 			disabled = true,
 			show_text = false,
+			hold_sfx = true,
 			sfx = false,
 			icon_xy = {1,9}
 		},
@@ -1715,6 +1788,7 @@ NobleHUD._medal_data = {
 			name = "spree_wheelman_1",
 			show_text = false,
 			disabled = true,
+			hold_sfx = true,
 			sfx = "spree_wheelman_1",
 			icon_xy = {1,9}
 		},
@@ -1722,6 +1796,7 @@ NobleHUD._medal_data = {
 			name = "spree_wheelman_2",
 			disabled = true,
 			show_text = false,
+			hold_sfx = true,
 			sfx = "spree_wheelman_2",
 			icon_xy = {1,9}
 		},
@@ -1729,6 +1804,7 @@ NobleHUD._medal_data = {
 			name = "spree_wheelman_3",
 			disabled = true,
 			show_text = false,
+			hold_sfx = true,
 			sfx = "spree_wheelman_3",
 			icon_xy = {1,9}
 		}
@@ -2221,6 +2297,13 @@ function NobleHUD:IsStaminaEnabled()
 	return self.settings.stamina_enabled
 end
 
+function NobleHUD:GetEmptyAmmoTickAlpha()
+	return self.settings.weapon_ammo_tick_empty_alpha
+end
+
+function NobleHUD:GetFullAmmoTickAlpha()
+	return self.settings.weapon_ammo_tick_full_alpha
+end
 
 		--SET SETTINGS
 function NobleHUD:SetCrosshairEnabled(enabled)
@@ -3271,14 +3354,15 @@ end
 
 function NobleHUD:OnGameStateChanged(before_state,state)
 	self:log("Changed game state from " .. (before_state) .. " to " .. tostring(state),{color = Color.green})
-	if before_state == "ingame_waiting_for_players" then 
-		self._ws:panel():set_visible(true)
-		--show player hud
-	end
-	if state == "ingame_waiting_for_respawn" then 
-		--destroy weapon panel?
-	elseif before_state == "ingame_waiting_for_respawn" then 
-		self._ws:panel():set_visible(true)
+	local hud = self._ws:panel()
+--	if state == "ingame_waiting_for_respawn" or before_state == "ingame_waiting_for_players" then 
+--		hud:set_visible(true)
+	if state == "ingame_waiting_for_respawn" or state == "victoryscreen" or state == "gameoverscreen" or state == "server_left" then 
+		hud:set_visible(false)
+	elseif before_state == "ingame_waiting_for_respawn" or before_state == "ingame_waiting_for_players" then 
+		hud:set_visible(true)
+	else 
+		--hud:set_visible(false)
 	end
 end
 
@@ -3648,6 +3732,8 @@ function NobleHUD:_set_weapon_mag(slot,amount,max_amount)
 	if max_amount ~= 0 then 
 		ratio = amount/max_amount
 	end
+	local empty_alpha = self:GetEmptyAmmoTickAlpha()
+	local full_alpha = self:GetFullAmmoTickAlpha()
 	if alive(ammo_bar) then 
 		--if type minigun or flamethrower, which use bars instead of ammo ticks
 		--because otherwise that's a lot of bullet icons to iterate through
@@ -3665,9 +3751,9 @@ function NobleHUD:_set_weapon_mag(slot,amount,max_amount)
 			local ammo_icon = weapon_panel:child("weapon_ammo_ticks"):child("ammo_icon_" .. i)
 			if alive(ammo_icon) then 
 				if i > amount then 
-					ammo_icon:set_alpha(0.3)
+					ammo_icon:set_alpha(empty_alpha)
 				else 
-					ammo_icon:set_alpha(0.8)
+					ammo_icon:set_alpha(full_alpha)
 				end
 				
 			end
@@ -7042,6 +7128,7 @@ function NobleHUD:animate_interact_done(o,t,dt,start_t,duration,start_w)
 	o:set_w(start_w * (1 - math.pow(ratio,2)))
 end
 
+
 -- 		KILLFEED
 
 function NobleHUD:_create_killfeed(hud)
@@ -7122,7 +7209,17 @@ function NobleHUD:AddMedalFromData(data,category) --direct reference to table pa
 	end
 		
 	if data.sfx then 
-		self:PlayAnnouncerSound(data.sfx)
+		if data.hold_sfx then 
+			self:AddDelayedCallback(function()
+				self:PlayAnnouncerSound(data.sfx)
+			end,
+			nil,
+			self:GetMultikillTime(),
+			"medal_sfx_" .. tostring(category or "medalname")
+			)
+		else		
+			self:PlayAnnouncerSound(data.sfx)
+		end
 	end
 	
 	if not self:IsMedalsEnabled() then 
@@ -7169,8 +7266,6 @@ function NobleHUD:AddMedalFromData(data,category) --direct reference to table pa
 	self:animate(icon,"animate_killfeed_icon_twirl",function(o) o:set_rotation(0); NobleHUD:animate(o,"animate_killfeed_icon_pulse",add_bitmap_to_killfeed,0.3,icon_size,1.5) end,0.25,180,start_x,start_y)
 	
 	local name = data.name and managers.localization:text("noblehud_medal_" .. data.name)
-
-	
 	
 	if data.show_text or self:ShowAllMedalMessages() then 
 		self:AddKillfeedMessage(name .. "!",{font_size = 16})
@@ -7241,6 +7336,7 @@ function NobleHUD:AddBuff(id,params)
 
 end
 
+
 --		HELPER
 
 function NobleHUD:_create_helper(hud) --auntie dot avatar and subtitles
@@ -7251,7 +7347,7 @@ function NobleHUD:_create_helper(hud) --auntie dot avatar and subtitles
 		h = 400,
 		x = hud:right() - 400,
 		y = hud:bottom() - 400,
-		visible = false --set visible on relevant event 
+		visible = true --set visible on relevant event 
 	})
 	NobleHUD._helper_tubes = {}
 	NobleHUD._helper_panel = helper_panel
@@ -7284,39 +7380,40 @@ function NobleHUD:_create_helper(hud) --auntie dot avatar and subtitles
 		local column = 1 + (num % (COLUMNS))
 		local even_c = NobleHUD.even(column)
 		local even_r = NobleHUD.even(row)
-		if even_c then 
-			if even_r then 
-				angle = -135
-			else
-				angle = 135
-			end
-		else
-			if even_r then 
-				angle = -45
-			else
-				angle = 45
-			end			
+		if not even_c then 
+			angle = angle - 90
 		end
-		
-		local texture = false and tweak_data.hud_icons.wp_arrow.texture or "guis/textures/test_blur_df"
-		local texture_rect = tweak_data.hud_icons.wp_arrow.texture_rect
+		if even_r then 
+			angle = angle + (90 * math.sign(angle))
+		end
 		
 		local h_space = 20
 		local w_space = 20
 		
 		local new_tube = helper_panel:bitmap({
 			name = "tube_" .. row .. "_" .. column,
-			texture = texture,
---			texture_rect = texture_rect,
-			w = 16,
-			h = 4,
+			texture = "guis/textures/helper_tube",
+			w = 8,
+			h = 17,
 			x = w_space * column,
 			y = h_space * row,
-			layer = 1,
+			layer = 2,
 			alpha = 1,
 			rotation = angle,
+			color = self.color_data.hud_helper_bluefill
+		})
+		local new_tube_glow = helper_panel:bitmap({
+			name = "tube_" .. row .. "_" .. column .. "_glow",
+			texture = "guis/textures/helper_tube_glow",
+			w = 8,
+			h = 17,
+			x = (w_space * column),
+			y = h_space * row,
+			layer = 1,
+			alpha = 0.7,
+			rotation = angle,
 			blend_mode = "add",
-			color = Color(0,0.3,0.9)
+			color = self.color_data.hud_helper_blueglow
 		})
 		local debug_tube = helper_panel:text({
 			name = "debug_text_" .. num,
@@ -7485,6 +7582,19 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		NobleHUD:SaveSettings()
 	end
 	
+	MenuCallbackHandler.noblehud_weapons_options_close = function(self)
+		--NobleHUD:SaveSettings()
+	end
+	
+--PLAYER
+	MenuCallbackHandler.callback_noblehud_set_stamina_enabled = function(self,item)
+		NobleHUD.settings.stamina_enabled = item:value() == "on"
+		NobleHUD:SaveSettings()
+	end
+	
+	MenuCallbackHandler.noblehud_player_options_close = function(self)
+		--NobleHUD:SaveSettings()
+	end
 	
 
 --CROSSHAIR	
@@ -7534,11 +7644,6 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	MenuHelper:LoadFromJsonFile(NobleHUD._options_path .. "options_score.txt", NobleHUD, NobleHUD.settings)
 	MenuHelper:LoadFromJsonFile(NobleHUD._options_path .. "options_crosshair.txt", NobleHUD, NobleHUD.settings)
 	MenuHelper:LoadFromJsonFile(NobleHUD._options_path .. "options_radar.txt", NobleHUD, NobleHUD.settings)
---	MenuHelper:LoadFromJsonFile(NobleHUD._options_path .. "options_a.txt", NobleHUD, NobleHUD.settings)
+	MenuHelper:LoadFromJsonFile(NobleHUD._options_path .. "options_weapons.txt", NobleHUD, NobleHUD.settings)
+	MenuHelper:LoadFromJsonFile(NobleHUD._options_path .. "options_player.txt", NobleHUD, NobleHUD.settings)
 end)
-
-
-
-
-
-

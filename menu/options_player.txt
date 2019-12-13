@@ -1,0 +1,17 @@
+{
+	"menu_id" : "noblehud_player_options",
+	"parent_menu_id" : "noblehud_options",
+	"title" : "noblehud_player_options_title",
+	"description" : "noblehud_player_options_desc",
+	"back_callback" : "noblehud_player_options_close",
+	"items" : [
+		{
+			"type" : "toggle",
+			"id" : "id_noblehud_set_stamina_enabled",
+			"title" : "noblehud_set_stamina_enabled_title",
+			"description" : "noblehud_set_stamina_enabled_desc",
+			"callback" : "callback_noblehud_set_stamina_enabled",
+			"value" : "stamina_enabled"
+		}
+	]
+}

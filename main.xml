@@ -1,6 +1,8 @@
 <mod name="Noble HUD" global_key="Noble HUD" color="Color(0.6,0.9,1)">
 	<AddFiles directory="assets">
 		<texture path="guis/textures/medal_atlas"/>
+		<texture path="guis/textures/helper_tube"/>
+		<texture path="guis/textures/helper_tube_glow"/>
 		<texture path="guis/textures/shield_outline"/>
 		<texture path="guis/textures/shield_fill"/>
 		<texture path="guis/textures/shield_glow"/>

@@ -25,6 +25,11 @@
 	"noblehud_set_floating_ammo_enabled_title" : "Enable Floating Ammo Counter",
 	"noblehud_set_floating_ammo_enabled_desc" : "Shows a floating magazine counter next to your weapon",
 	
+	"noblehud_player_options_title" : "Player Panel",
+	"noblehud_player_options_desc" : "Change Player Panel options",
+	"noblehud_set_stamina_enabled_title" : "Enable Stamina Display",
+	"noblehud_set_stamina_enabled_desc" : "Shows a circular stamina indicator next to your motion tracker.",
+	
 	
 	"noblehud_radar_options_title" : "Motion Tracker",
 	"noblehud_radar_options_desc" : "Change Motion Tracker options",
@@ -188,5 +193,34 @@
 	"noblehud_unitname_deathvox_cop_shotgun" : "Cop",
 	"noblehud_unitname_deathvox_fbi_rookie" : "FBI Rookie",
 	"noblehud_unitname_deathvox_fbi_hrt" : "FBI HRT",
-	"noblehud_unitname_deathvox_fbi_veteran" : "FBI Veteran"
+	"noblehud_unitname_deathvox_fbi_veteran" : "FBI Veteran",
+	
+	"noblehud_unitname_tank_green" : "Green Bulldozer",
+	"noblehud_unitname_tank_black" : "Black Bulldozer",
+	"noblehud_unitname_tank_skull" : "Skulldozer",
+	"noblehud_unitname_tank_biker" : "Biker Dozer",
+	"noblehud_unitname_boom" : "Grenadier",
+	"noblehud_unitname_boom_summers" : "Summers Grenadier",
+	"noblehud_unitname_taser_summers" : "Summers Taser",
+	"noblehud_unitname_medic_summers" : "Summers Medic",
+	"noblehud_unitname_rboom" : "R Grenadier",
+	"noblehud_unitname_heavy_swat_sniper" : "Heavy SWAT Sniper",
+	"noblehud_unitname_weekend_dmr" : "DMR",
+	"noblehud_unitname_tank_titan" : "Titan Dozer",
+	"noblehud_unitname_tank_titan_assault" : "Assault Titan Dozer",
+	"noblehud_unitname_spring" : "Captain Spring",
+	"noblehud_unitname_summers" : "Captain Summers",
+	"noblehud_unitname_omnia_lpf" : "OMNIA LPF",
+	"noblehud_unitname_phalanx_minion_assault" : "Assault Phalanx",
+	"noblehud_unitname_spooc_titan" : "Titan Cloaker",
+	"noblehud_unitname_taser_titan" : "Titan Taser",
+	"noblehud_unitname_autumn" : "Captain Autumn"
+	
+	
+	
+	
+	
+	
+	
+	
 }
