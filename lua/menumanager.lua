@@ -3,18 +3,25 @@
 
 
 ***** TODO: *****
-Notes:
 	
 		
-		fadeout bluespider without disassociating it from unit
+	Notes:
+		
+		fadeout bluespider and athena without disassociating it from unit
 		slider setting for popup_fadeout_time
+		menu item for weapon opacity
+		check for mag count above max --> bar
+		weapon overheat meter? 
+
 
 	&&& HIGH PRIORITY: &&&
 			
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER
-	
+			* Objectives
 	
 		%% BUGS:
+			- abnormal gametypes like Safe House Raid, holdout/skirmish (unconfirmed), and crimespree have different objective styles
+			
 			- hide radar when in camera
 			- Rocket reticle will not proc???
 			- CROSSHAIR DETECTION SHOULD BE FROM PLAYER, NOT CAMERA
@@ -5361,10 +5368,10 @@ function NobleHUD:CreateScorePopup(name,score,unit)
 	local text
 	local color 
 	if score < 0 then 
-		text = tostring(score) 
+		text = string.format("%i",score)
 		color = Color.red
 	else
-		text = "+" .. tostring(score)
+		text = "+" .. string.format("%i",score)
 		color = Color.white
 	end
 	if self:ScorePopupShowsUnitName() then 
