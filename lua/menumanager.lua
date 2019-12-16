@@ -250,6 +250,9 @@ NobleHUD.color_data = {
 	hud_killfeed_yellow = Color(255/255,231/255,0),
 	hud_helper_bluefill = Color(218/255,238/255,255/255),
 	hud_helper_blueglow = Color(0,0.3,0.9),
+	hud_overshield_fill = Color("00ffd3"), --teal; for maniac
+	hud_storedhealth_fill = Color("ff00c7"), --magenta-red; for ex-presidents
+	hud_delayeddamage_fill = Color("ff9e00"), --orange; for stoic 
 	hud_lightblue = Color("a1f0ff"), --powder blue; unused
 	hud_bluefill = Color("66cfff"), --sky blue; unused
 	hud_blueoutline = Color("3173bb"),
@@ -5479,7 +5482,7 @@ function NobleHUD:SetAssaultPhase(text)
 	local assault_phase_label = self._score_panel:child("assault_phase_label")
 	if text and text ~= assault_phase_label:text() then 
 		assault_phase_label:set_text(text)
-		self:animate(assault_phase_label,"animate_killfeed_text_in",nil,0.3,16,self.color_data.hud_vitalsoutline_blue,self.color_data.hud_text_flash)
+		self:animate(assault_phase_label,"animate_killfeed_text_in",nil,0.3,24,self.color_data.hud_vitalsoutline_blue,self.color_data.hud_text_flash)
 	end
 end
 
@@ -5488,54 +5491,6 @@ function NobleHUD:SetRevives(text)
 		self._revives_panel:child("revives_label"):set_text(tostring(text))
 	end
 end
-
---[[
-function NobleHUD:create_revives()
-	local player = managers.player:local_player()
-	local dmg = player and player:character_damage()
-	local revives = dmg and Application:digest_value(dmg._revives,false)
-	self:_create_revives(revives)
-end
---]]
---[[
-function NobleHUD:_create_revives() --called on internal load
-	amount = amount and tonumber(amount) or 3
-	self._MAX_REVIVES = amount
-	--todo dot size based on revives
-	
-	local vitals_panel = self._vitals_panel
-	local margin = (vitals_panel:h() / amount) / 3
-	for i = 1,amount do 
-		local revive_dot = vitals_panel:bitmap({
-			name = "revive_dot_" .. i,
-			texture = "guis/textures/ability_circle_fill",
-			w = 8,
-			h = 8,
-			layer = 2,
-			color = self.color_data.hud_vitalsfill_blue,
-			alpha = 0.5,
-			x = vitals_panel:w() - 8,
-			y = i * (margin + amount)
-		})
-	end
-end
-	--]]
---[[
-	if revives and self._MAX_REVIVES then 
-		for j = 1,self._MAX_REVIVES do
-			local revive_dot = vitals_panel:child("revive_dot_" .. j)
-			if revive_dot and alive(revive_dot) then 
-				if j > revives then 
-					revive_dot:set_color(NobleHUD.color_data.hud_vitalsfill_red)
-				else
-					revive_dot:set_color(NobleHUD.color_data.hud_vitalsfill_blue)
-				end
-			end
-		end
-	end
-	--]]
-	
-
 
 function NobleHUD:TallyScore(data,unit,medal_multiplier)
 	local name = tostring(data.name)
@@ -6751,6 +6706,7 @@ function NobleHUD:ConsultCartographer(pos,map)
 	end
 end
 
+
 --		VITALS
 
 function NobleHUD:_create_vitals(hud)
@@ -6777,7 +6733,30 @@ function NobleHUD:_create_vitals(hud)
 		texture = "guis/textures/shield_fill",
 		layer = 2,
 		color = self.color_data.hud_vitalsfill_blue,
-		alpha = 0.3,
+		alpha = 0.5,
+		x = 0,
+		y = 0
+	})
+	
+	local delayed_damage_shield_fill = vitals_panel:bitmap({
+		name = "delayed_damage_shield_fill",
+		texture = "guis/textures/shield_fill",
+		layer = 4,
+		color = self.color_data.hud_delayeddamage_fill,
+		alpha = 0.5,
+		w = 0,
+		x = 0,
+		y = 0
+	})
+	
+	local absorption_shield_fill = vitals_panel:bitmap({
+		name = "absorption_fill",
+		texture = "guis/textures/shield_fill",
+		layer = 3,
+		blend_mode = "add",
+		color = self.color_data.hud_overshield_fill,
+		alpha = 0.5,
+		w = 0,
 		x = 0,
 		y = 0
 	})
@@ -6815,6 +6794,7 @@ function NobleHUD:_create_vitals(hud)
 	for i = 1, HEALTH_TICKS do 
 		local left_x = ((vitals_panel:w() - CENTER_W)/ 2) + - (i * MARGIN)
 		local right_x = ((vitals_panel:w() + CENTER_W)/ 2) + (i * MARGIN) - TICK_W
+		
 		local tick_left_fill = vitals_panel:bitmap({
 			name = "health_tick_left_fill_" .. i,
 			texture = "guis/textures/health_left_fill",
@@ -6822,7 +6802,7 @@ function NobleHUD:_create_vitals(hud)
 			h = TICK_H,
 			layer = 2,
 			color = self.color_data.hud_vitalsfill_blue,
-			alpha = 0.3,
+			alpha = 0.5,
 			x = left_x,
 			y = TICK_Y
 		})
@@ -6833,17 +6813,16 @@ function NobleHUD:_create_vitals(hud)
 			h = TICK_H,
 			layer = 2,
 			color = self.color_data.hud_vitalsfill_blue,
-			alpha = 0.3,
+			alpha = 0.5,
 			x = right_x,
 			y = TICK_Y
-		})	
+		})
 		local tick_left_outline = vitals_panel:bitmap({
 			name = "health_tick_left_outline_" .. i,
 			texture = "guis/textures/health_left_outline",
 			w = TICK_W,
 			h = TICK_H,
 			layer = 3,
---			blend_mode = "add",
 			color = self.color_data.hud_vitalsoutline_blue,
 			alpha = 0.5,
 			x = left_x,
@@ -6855,13 +6834,42 @@ function NobleHUD:_create_vitals(hud)
 			w = TICK_W,
 			h = TICK_H,
 			layer = 3,
---			blend_mode = "add",
 			color = self.color_data.hud_vitalsoutline_blue,
 			alpha = 0.5,
 			x = right_x,
 			y = TICK_Y
-		})		
+		})
+	
+	--ex pres
+
+		local stored_tick_left_outline = vitals_panel:bitmap({
+			name = "stored_health_tick_left_outline_" .. i,
+			texture = "guis/textures/health_left_outline",
+			w = TICK_W,
+			h = TICK_H,
+			layer = 4,
+			blend_mode = "add",
+			color = self.color_data.hud_storedhealth_fill,
+			alpha = 0.7,
+			visible = false,
+			x = left_x,
+			y = TICK_Y
+		})
+		local stored_tick_right_outline = vitals_panel:bitmap({
+			name = "stored_health_tick_right_outline_" .. i,
+			texture = "guis/textures/health_right_outline",
+			w = TICK_W,
+			h = TICK_H,
+			layer = 4,
+			blend_mode = "add",
+			color = self.color_data.hud_storedhealth_fill,
+			alpha = 0.7,
+			visible = false,
+			x = right_x,
+			y = TICK_Y
+		})
 	end
+	
 	local tick_center_fill = vitals_panel:bitmap({
 		name = "health_tick_center_fill",
 		texture = "guis/textures/health_center_fill",
@@ -6879,9 +6887,22 @@ function NobleHUD:_create_vitals(hud)
 		w = CENTER_W,
 		h = TICK_H,
 		layer = 3,
---		blend_mode = "add",
 		color = self.color_data.hud_vitalsoutline_blue,
 		alpha = 0.5,
+		x = (vitals_panel:w() - CENTER_W) / 2,
+		y = TICK_Y
+	})
+	
+	local stored_tick_center_outline = vitals_panel:bitmap({
+		name = "stored_health_tick_center_outline",
+		texture = "guis/textures/health_center_outline",
+		w = CENTER_W,
+		h = TICK_H,
+		layer = 4,
+		blend_mode = "add",
+		color = self.color_data.hud_storedhealth_fill,
+		alpha = 0.7,
+		visible = false,
 		x = (vitals_panel:w() - CENTER_W) / 2,
 		y = TICK_Y
 	})

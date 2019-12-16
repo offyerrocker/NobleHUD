@@ -78,8 +78,6 @@ Hooks:PostHook(HUDTeammate,"set_health","noblehud_set_health",function(self,data
 	--todo set hp/shield numbers
 end)
 
-
---todo damage chunking
 Hooks:PostHook(HUDTeammate,"set_armor","noblehud_set_armor",function(self,data)
 	if not self._main_player then 
 		return
@@ -90,12 +88,10 @@ Hooks:PostHook(HUDTeammate,"set_armor","noblehud_set_armor",function(self,data)
 	
 	local vitals_panel = NobleHUD._vitals_panel
 	if vitals_panel then 
-		if (current == 0) and (total == 0) then
-			--vitals_panel:animate_empty_shields()
+		if (total == 0) then
 		else
-			--vitals_panel:stop()
 			
---			vitals_panel:child("shield_fill"):set_texture_rect(0,0,512 * ratio,64) --classic
+--			vitals_panel:child("shield_fill"):set_texture_rect(0,0,512 * ratio,64) --classic, one-way depletion
 
 
 			vitals_panel:child("shield_fill"):set_texture_rect((1 - ratio) * 256,0,(ratio * 512),64)
@@ -119,8 +115,109 @@ Hooks:PostHook(HUDTeammate,"set_armor","noblehud_set_armor",function(self,data)
 		end
 		
 	end
-	--todo hide armor if total zero
-	--todo set shield numbers
+	--todo set arm/hp numbers numbers
+end)
+
+Hooks:PostHook(HUDTeammate,"update_delayed_damage","noblehud_update_stoic_bar",function(self)
+	if self._main_player then 
+		local damage = self._delayed_damage or 0
+		
+		local armor_max = self._armor_data.total
+		local armor_current = self._armor_data.current
+		
+		local health_max = self._health_data.total
+		local health_current = self._health_data.current
+
+		local armor_damage = math.clamp(damage - armor_current,0,armor_current)
+		local health_damage = math.clamp(damage - armor_damage,0,health_current)
+		
+		local vitals_panel = NobleHUD._vitals_panel
+		
+		if armor_max > 0 then 
+			local delayed_damage_armor_ratio = armor_damage / armor_current
+			local delayed_damage_shield = vitals_panel:child("delayed_damage_shield_fill")
+			delayed_damage_shield:set_texture_rect((1 - delayed_damage_armor_ratio) * 256,0,(delayed_damage_armor_ratio * 512),64)
+			delayed_damage_shield:set_w(512 * delayed_damage_armor_ratio)
+			delayed_damage_shield:set_x((1 - delayed_damage_armor_ratio) * 256)	
+		end
+		if health_max > 0 then 
+			local delayed_damage_health_ratio = health_damage / health_current
+			local stoic_left = "guis/textures/health_left_fill"
+			local stoic_right = "guis/textures/health_right_fill"
+			local normal_left = "guis/textures/health_left_fill"
+			local normal_right = "guis/textures/health_right_fill"
+			local blink = math.sin(300 * Application:time() * math.pi) * 0.85
+			for i = NobleHUD._HUD_HEALTH_TICKS,1,-1 do
+				local shown = delayed_damage_health_ratio > (NobleHUD._HUD_HEALTH_TICKS - i) / NobleHUD._HUD_HEALTH_TICKS
+				local left_tick = vitals_panel:child("health_tick_left_fill_" .. i)
+				local right_tick = vitals_panel:child("health_tick_right_fill_" .. i)
+				if shown then 
+					left_tick:set_image(stoic_left)
+					right_tick:set_image(stoic_right)
+					left_tick:set_alpha(0.15 + blink)
+					right_tick:set_alpha(0.15 + blink)
+				else
+					right_tick:set_alpha(0.5)
+					left_tick:set_alpha(0.5)
+					left_tick:set_image(normal_left)
+					right_tick:set_image(normal_right)
+				end
+			end
+			if delayed_damage_health_ratio > (NobleHUD._HUD_HEALTH_TICKS - 1) / NobleHUD._HUD_HEALTH_TICKS then 
+				vitals_panel:child("health_tick_center_fill"):set_image("guis/textures/health_center_fill")
+				vitals_panel:child("health_tick_center_fill"):set_image("guis/textures/health_center_fill")
+				vitals_panel:child("health_tick_center_fill"):set_alpha(0.15 + blink)
+			else
+				vitals_panel:child("health_tick_center_fill"):set_alpha(0.5)
+				vitals_panel:child("health_tick_center_fill"):set_image("guis/textures/health_center_fill")
+			end
+		end
+	end
+end)
+
+Hooks:PostHook(HUDTeammate,"set_stored_health_max","noblehud_set_stored_health_max",function(self,stored_health_ratio)
+	if self._main_player then 
+		NobleHUD._cache._max_stored_hp = stored_health_ratio
+	end
+end)
+
+Hooks:PostHook(HUDTeammate,"set_stored_health","noblehud_set_stored_health",function(self,stored_health_ratio)
+	local vitals_panel = NobleHUD._vitals_panel
+	local max_stored = NobleHUD._cache._max_stored_hp or 1
+	local ratio = math.clamp(stored_health_ratio / max_stored,0,1)
+	
+	for i = NobleHUD._HUD_HEALTH_TICKS,1,-1 do
+		local shown = ratio >= (i/NobleHUD._HUD_HEALTH_TICKS)
+		local left_tick = vitals_panel:child("stored_health_tick_left_outline_" .. i)
+		local right_tick = vitals_panel:child("stored_health_tick_right_outline_" .. i)
+		left_tick:set_visible(shown)
+		right_tick:set_visible(shown)
+	end
+	vitals_panel:child("stored_health_tick_center_outline"):set_visible(ratio > (1/NobleHUD._HUD_HEALTH_TICKS))
+end)
+--
+Hooks:PostHook(HUDTeammate,"set_absorb_active","noblehud_set_absorb",function(self,absorb_amount)
+	if not self._main_player then 
+		return
+	end
+
+	local ratio = 100 * absorb_amount / tweak_data.upgrades.max_cocaine_stacks_per_tick
+	local vitals_panel = NobleHUD._vitals_panel
+	
+	if vitals_panel then 
+		local absorption_fill = vitals_panel:child("absorption_fill")
+		absorption_fill:set_texture_rect((1 - ratio) * 256,0,(ratio * 512),64)
+		absorption_fill:set_w(512 * ratio)
+		absorption_fill:set_x((1 - ratio) * 256)
+	end
+--[[
+		--add to buff instead?
+	if absorb_amount > 0 then
+		managers.player:add_buff("hysteria",{value = math.floor(absorb_amount * 100)})
+	else 
+		managers.player:remove_buff("hysteria")
+	end
+	--]]
 end)
 
 Hooks:PostHook(HUDTeammate,"set_grenades","noblehud_set_grenades",function(self,data)
@@ -161,9 +258,9 @@ Hooks:PostHook(HUDTeammate,"set_teammate_weapon_firemode","noblehud_set_teammate
 end)
 
 --burstfire mod support
-function HUDTeammate:set_weapon_firemode_burst(slot,firemode,burst_fire)
+--function HUDTeammate:set_weapon_firemode_burst(slot,firemode,burst_fire)
 --	NobleHUD:_set_firemode(slot,firemode,burst_fire)
-end
+--end
 
 Hooks:PostHook(HUDTeammate,"set_ammo_amount_by_type","noblehud_set_ammo",function(self,type,max_clip,current_clip,current_left,max,weapon_panel)
 	if not self._main_player then 
