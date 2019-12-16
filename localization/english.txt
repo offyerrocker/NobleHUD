@@ -59,6 +59,12 @@
 
 	"noblehud_radar_distance_label" : "$DISTANCEm",
 	"noblehud_safety_check" : "Your safety is on!",
+	"noblehud_assault_phase_anticipation" : "Anticipation",
+	"noblehud_assault_phase_build" : "Build",
+	"noblehud_assault_phase_sustain" : "Sustain",
+	"noblehud_assault_phase_fade" : "Fade",
+	"noblehud_assault_phase_control" : "Control",
+	"noblehud_assault_phase_standby" : "Standby",
 	
 	"noblehud_medal_first" : "First Strike",
 	"noblehud_medal_headshot" : "Headshot",

@@ -7,6 +7,17 @@ Hooks:PostHook(HUDAssaultCorner,"init","noblehud_assaultcorner_init",function(se
 	self._hud_panel:child("hostages_panel"):set_alpha(0)
 end)
 
+Hooks:PostHook(HUDAssaultCorner,"_end_assault","noblehud_assault_end",function(self)
+--	NobleHUD:SetAssaultPhase(managers.localization:text("noblehud_assault_phase_control"))
+NobleHUD:log("hudassault: ending assault")
+end)
+
+Hooks:PostHook(HUDAssaultCorner,"set_control_info","noblehud_set_control_info",function(self,data)
+	NobleHUD:SetHostages(data.nr_hostages)
+end)
+
+
+
 function HUDAssaultCorner:_show_hostages()
 	if not self._point_of_no_return then
 --		self._hud_panel:child("hostages_panel"):show()
@@ -22,6 +33,9 @@ function HUDAssaultCorner:set_buff_enabled(buff_name, enabled) --winters dmg res
 end
 
 function HUDAssaultCorner:sync_set_assault_mode(mode) --from host
+	NobleHUD:log("sync_set_assault_mode(" .. mode .. ")")
+--	NobleHUD:SetAssaultPhase(mode)
+	
 	--[[
 	if self._assault_mode == mode then
 		return

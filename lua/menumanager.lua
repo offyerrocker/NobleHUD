@@ -271,31 +271,40 @@ NobleHUD._localization_path = ModPath .. "localization/"
 NobleHUD._cartographer_path = ModPath .. "cartographer/"
 NobleHUD._announcer_path = ModPath .. "assets/snd/announcer/"
 
+NobleHUD._assault_phases = {
+	anticipation = "noblehud_assault_phase_anticipation",
+	build = "noblehud_assault_phase_build",
+	sustain = "noblehud_assault_phase_sustain",
+	fade = "noblehud_assault_phase_fade",
+	control = "noblehud_assault_phase_control"
+}
+
 NobleHUD._cartographer_data = {}
 
-NobleHUD._presenter_title_params = {
-	duration = 0.25,
-	lifetime = 6,
-	font_size = 16,
-	color_1 = NobleHUD.color_data.hud_killfeed_yellow,
-	color_2 = NobleHUD.color_data.hud_killfeed_lightyellow
-}
-NobleHUD._presenter_desc_params = {
-	duration = 0.25,
-	lifetime = 7,
-	font_size = 16,
-	color_1 = NobleHUD.color_data.hud_killfeed_yellow,
-	color_2 = NobleHUD.color_data.hud_killfeed_lightyellow
-}
-NobleHUD._hint_params = {
-	duration = 0.25,
-	lifetime = 5,
-	font_size = 16,
-	color_1 = NobleHUD.color_data.hud_hint_orange,
-	color_2 = NobleHUD.color_data.hud_hint_lightorange
+NobleHUD._killfeed_presets = {
+	presenter_title = {
+		duration = 0.25,
+		lifetime = 6,
+		font_size = 16,
+		color_1 = NobleHUD.color_data.hud_killfeed_yellow,
+		color_2 = NobleHUD.color_data.hud_killfeed_lightyellow
+	},
+	presenter_desc = {
+		duration = 0.25,
+		lifetime = 7,
+		font_size = 16,
+		color_1 = NobleHUD.color_data.hud_killfeed_yellow,
+		color_2 = NobleHUD.color_data.hud_killfeed_lightyellow
+	},
+	hint = {
+		duration = 0.25,
+		lifetime = 5,
+		font_size = 16,
+		color_1 = NobleHUD.color_data.hud_hint_orange,
+		color_2 = NobleHUD.color_data.hud_hint_lightorange
+	}
 }
 
-NobleHUD._efficient_audio_mode = false --voice lines, if procced simultaneously, will overlap if true, rather than queue
 NobleHUD._HUD_HEALTH_TICKS = 8
 NobleHUD._RADAR_REFRESH_INTERVAL = 0.5
 NobleHUD._radar_refresh_t = 0
@@ -468,7 +477,6 @@ NobleHUD.weapon_data = {
 }
 
 NobleHUD._crosshair_override_data = {
---	m308 = {"dmr"},
 	rpg7 = {"rocket"},
 	ray = {"rocket"}
 }
@@ -1923,6 +1931,16 @@ function NobleHUD.vec2_distance(a,b,c,d)
 end
 
 function NobleHUD.format_seconds(raw)
+--[[
+	local e = os.time()
+	local seconds = os.date("%S")
+	local minutes = os.date("%M")
+	local hours = os.date("%H")
+	local days = os.date("%d")
+	local fulltime = os.date("%X")
+	return os.date(e)
+	os.clock()
+--]]
 	return string.format("%02i:%02i",math.floor(raw / 60),math.floor(raw % 60))
 end
 
@@ -2008,6 +2026,18 @@ function NobleHUD.make_compact_number(num,scale,places)
 	str = string.format(formatter(places) .. suffix,num / e(powers[suffix]))
 	
 	return str or string.format("%." .. scale .. "f",num)
+end
+
+function NobleHUD.to_camelcase(s)
+	if s == nil then 
+		return s
+	end
+	if string.len(s) <= 1 then 
+		return s
+	else
+		s = tostring(s)
+		return utf8.to_upper(string.sub(s,1,1)) .. string.sub(s,2)
+	end
 end
 
 function NobleHUD.choose(tbl)
@@ -2415,7 +2445,11 @@ function NobleHUD:OnLoaded()
 	self:LoadXAudioSounds()
 
 	self:set_weapon_info()
-	self:create_revives()
+	
+	local player = managers.player:local_player()
+	local dmg = player and player:character_damage()
+	local revives = dmg and Application:digest_value(dmg._revives,false) 
+	self:SetRevives(revives)
 	self:_set_deployable_equipment(2,true)
 	
 	self:SetTotalScoreMultiplierDisplay()
@@ -2425,7 +2459,7 @@ function NobleHUD:OnLoaded()
 	
 --	self:set_score_multiplier()
 	managers.hud:add_updator("NobleHUD_update",callback(NobleHUD,NobleHUD,"UpdateHUD"))
-	self:_switch_weapons(managers.player:local_player():inventory():equipped_selection())
+	self:_switch_weapons(player:inventory():equipped_selection())
 	if self:IsCrosshairEnabled() then 
 		self._crosshair_panel:set_alpha(self:GetCrosshairAlpha())
 		
@@ -2502,10 +2536,20 @@ function NobleHUD:UpdateHUD(t,dt)
 		end
 	end
 	
-	local player = managers.player:local_player()
-	if player then 
-
+	local assaultstate = managers.groupai:state()
+	local assaulttasks = assaultstate and assaultstate._task_data
+	local assaultdata = assaulttasks and assaulttasks.assault
+	local phase = assaultdata and assaultdata.phase
+	local phasename = self._assault_phases[phase]
+	if phase and not (phasename or assaultstate:whisper_mode()) then 
+		self:log("Did not find phasename for " .. tostring(phase),{color = Color.red})
+	elseif phasename then
+		self:SetAssaultPhase(managers.localization:text(phasename))
+	end
 	
+	
+	local player = managers.player:local_player()
+	if player then 		
 		--medal stuff
 		if self:KillsCache("close_call") and player:character_damage():armor_ratio() >= 1 then 
 			self:KillsCache("close_call",false,true)
@@ -3336,22 +3380,6 @@ function NobleHUD:ClearKillsCache()
 end
 
 function NobleHUD:OnPlayerStateChanged(state)
-	--[[ state can be:
-		jerry1 = "ingame_freefall",
-		carry = "ingame_standard",
-		civilian = "ingame_civilian",
-		jerry2 = "ingame_parachuting",
-		driving = "ingame_driving",
-		bleed_out = "ingame_bleed_out",
-		incapacitated = "ingame_incapacitated",
-		mask_off = "ingame_mask_off",
-		arrested = "ingame_arrested",
-		clean = "ingame_clean",
-		fatal = "ingame_fatal",
-		standard = "ingame_standard",
-		bipod = "ingame_standard",
-		tased = "ingame_electrified"
-	--]]
 	self:log("Changed player state to " .. tostring(state),{color = Color(0,1,1)})
 	if state == "fatal" or state == "bleed_out" or state == "arrested" or state == "incapacitated" then 
 		self:ClearKillsCache()
@@ -3360,16 +3388,21 @@ function NobleHUD:OnPlayerStateChanged(state)
 end
 
 function NobleHUD:OnGameStateChanged(before_state,state)
+
+
 	self:log("Changed game state from " .. (before_state) .. " to " .. tostring(state),{color = Color.green})
-	local hud = self._ws:panel()
---	if state == "ingame_waiting_for_respawn" or before_state == "ingame_waiting_for_players" then 
---		hud:set_visible(true)
-	if state == "ingame_waiting_for_respawn" or state == "victoryscreen" or state == "gameoverscreen" or state == "server_left" then 
-		hud:set_visible(false)
-	elseif before_state == "ingame_waiting_for_respawn" or before_state == "ingame_waiting_for_players" then 
-		hud:set_visible(true)
-	else 
-		--hud:set_visible(false)
+	local hud = self._ws and self._ws:panel()
+	if not (hud and alive(hud)) then 
+		return
+	end
+	if GameStateFilters.any_end_game[state] or GameStateFilters.player_slot[state] or GameStateFilters.lobby[state] then
+		hud:hide()
+	elseif GameStateFilters.waiting_for_players[state] or GameStateFilters.waiting_for_respawn[state] or GameStateFilters.waiting_for_spawn_allowed[state] then 
+		hud:hide()
+--	elseif GameStateFilters.arrested[state] then
+--	elseif GameStateFilters.ingame_fatal[state] then
+	elseif GameStateFilters.any_ingame[state] then 
+		hud:show()
 	end
 end
 
@@ -3379,19 +3412,11 @@ function NobleHUD:LoadXAudioSounds()
 		
 		local function loadsound(snd)
 			local path = NobleHUD._announcer_path .. snd .. ".ogg"
-			if self._efficient_audio_mode then 
---				self:log("Loading sound to _cache: " .. tostring(snd))
-				self._cache.sounds[snd] = path
-			else
---				self:log("Loading sound to buffer and _cache: [" .. tostring(snd)..".ogg]")
-				self._cache.sounds[snd] = XAudio.Buffer:new(path)
-			end
+			self._cache.sounds[snd] = XAudio.Buffer:new(path)
 		end
 		
 		-- Announcer (Downes/Chief)
-		if not self._efficient_audio_mode then 
-			self._announcer_sound_source = self._announcer_sound_source or XAudio.Source:new()
-		end
+		self._announcer_sound_source = self._announcer_sound_source or XAudio.Source:new()
 		for medal_name,medal in pairs(self._medal_data) do 
 			if medal.sfx and medal.sfx ~= "" and not medal.disabled then 
 				loadsound(medal.sfx)
@@ -3420,12 +3445,9 @@ function NobleHUD:PlayAnnouncerSound(name)
 
 	local snd = self._cache.sounds[name]
 	if snd then 
-		if self._efficient_audio_mode then 
-			XAudio.Source:new(XAudio.Buffer:new(snd))
-		else
-			if self._announcer_sound_source then 
-				self._cache.announcer_queue[#self._cache.announcer_queue + 1] = name
-			end
+--		XAudio.Source:new(XAudio.Buffer:new(snd))
+		if self._announcer_sound_source then 
+			self._cache.announcer_queue[#self._cache.announcer_queue + 1] = name
 		end
 	else
 		self:log("PlayAnnouncerSound(): sound [" .. name .. "] not found",{color = Color.red})
@@ -5175,105 +5197,345 @@ end
 --		SCORE COUNTER
 
 function NobleHUD:_create_score(hud)
-self._popups_panel = hud:panel({
-	name = "popups_panel"
-})
-
-	local margin_w = 4
-	local margin_h = 12
-	local banner_h = 24
-	
-	local panel_h = 2 * (margin_h + banner_h)
+	self._popups_panel = hud:panel({
+		name = "popups_panel"
+	})
+	local margin_l = 24
+	local margin_m = 8
+	local panel_h = 128
 	local panel_w = 300
 	local score_panel = hud:panel({
 		name = "score_panel",
 		w = panel_w,
 		h = panel_h,
-		x = hud:w() - panel_w,
-		y = hud:h() - panel_h
+		x = hud:w() - (panel_w + margin_l),
+		y = hud:h() - (panel_h + margin_m)
 	})
+	self._score_panel = score_panel
+
 	local score_debug = score_panel:rect({
 		name = "score_debug",
 		visible = false,
 		color = Color.yellow,
 		alpha = 0.1
 	})
-
 	
-	local banner_w = score_panel:w() - (margin_w + banner_h)
-	local score_banner_small = score_panel:bitmap({
-		name = "score_banner_large",
-		texture = "guis/textures/test_blur_df",
-		layer = 1,
-		color = Color(0.6,0.6,0.6), --light grey
-		y = margin_h,
-		w = banner_h,
-		h = banner_h,
---		y = score_panel:h() - banner_h,
-		alpha = 0.5
-	})
-
+	local banner_l_w = 256
+	local banner_l_h = 24
+	local font_size = 24
+	local banner_l_x = panel_w - banner_l_w
 	local score_banner_large = score_panel:bitmap({
 		name = "score_banner_large",
 		texture = "guis/textures/test_blur_df",
 		layer = 1,
 		color = self.color_data.hud_vitalsfill_blue,--tweak_data.chat_colors[2], --managers.network:session():local_peer():id()], --should be refreshed on load for accuracy
-		x = banner_h + margin_w,
-		y = margin_h,
-		w = banner_w - (banner_h),
-		h = banner_h,
---		y = score_panel:h() - banner_h,
+		x = banner_l_x, --right
+		y = panel_h - banner_l_h, --bottom
+		w = banner_l_w,
+		h = banner_l_h,
 		alpha = 0.5
 	})
 	
-	local score_label = score_panel:text({
-		name = "score_label",
-		text = "0",
-		align = "right",
-		color = Color.white,
-		x = -(banner_h + margin_w),
-		y = score_banner_large:y(),
-		font = "fonts/font_eurostile_ext",
-		font_size = banner_h,
-		layer = 5
-	})
-	local score_multiplier_label = score_panel:text({
-		name = "score_multiplier_label",
-		text = "2.00x",
-		align = "right",
-		x = -(margin_w + banner_h),
-		color = self.color_data.hud_vitalsoutline_blue,
-		font = "fonts/font_eurostile_ext",
-		font_size = margin_h,
-		layer = 4
+	local banner_s_size = 24
+	local margin_small = 4
+	local banner_s_x = banner_l_x - (banner_s_size + margin_small)
+	local banner_s_y = panel_h - banner_s_size -- bottom
+	local score_banner_small = score_panel:bitmap({
+		name = "score_banner_large",
+		texture = "guis/textures/test_blur_df",
+		layer = 1,
+		color = Color(0.6,0.6,0.6), --light grey
+		x = banner_s_x,
+		y = banner_s_y,
+		w = banner_s_size,
+		h = banner_s_size,
+		alpha = 0.5
 	})
 	
-	local mission_timer = score_panel:text({
-		name = "mission_timer",
-		text = "04:20",
-		align = "left",
-		layer = 3,
-		x = score_banner_large:x(),
-		color = self.color_data.hud_vitalsoutline_blue,
-		font = "fonts/font_eurostile_ext",
-		font_size = margin_h,
-		alpha = 0.9
-	})		
+	local subpanel_w = 24
+	local subpanel_h = subpanel_w + font_size + margin_small
+	local subpanel_y = score_banner_small:y() - (subpanel_h + margin_m)
+	
+	local text_row_y_2 = panel_h - ((2 * font_size) + margin_small)
 	
 	local score_icon = score_panel:bitmap({
 		name = "score_banner_large",
 		texture = "guis/textures/radar_blip_near",
 		layer = 3,
 		color = Color.white,
-		w = banner_h,
-		h = banner_h,
+		x = banner_l_x - (banner_s_size + margin_small),
+		y = panel_h - banner_s_size,
+		w = banner_s_size,
+		h = banner_s_size,
 		alpha = 0.5
 	})
-	score_icon:set_center(score_banner_large:h()/2,score_banner_large:y() + margin_h)
-
+	score_icon:set_center(score_banner_small:x() + (banner_s_size / 2),score_banner_small:y() + (banner_s_size / 2))
 	
-	self._score_panel = score_panel
+	local score_label = score_panel:text({
+		name = "score_label",
+		text = "0",
+		align = "right",
+		color = Color.white,
+		x = -0,
+		y = score_banner_large:y(),
+		font = "fonts/font_eurostile_ext",
+		font_size = font_size,
+		layer = 5
+	})
+	
+	
+	
+	-- subpanels
+	
+	local revives_panel = score_panel:panel({
+		name = "revives_panel",
+		w = subpanel_w,
+		h = subpanel_h,
+		x = score_banner_large:x() - (banner_s_size + margin_small),
+		y = subpanel_y
+	})
+	self._revives_panel = revives_panel
+	
+	local revives_debug = revives_panel:rect({
+		name = "revives_debug",
+		alpha = 0.5,
+		visible = false,
+		color = Color(1,0,1)
+	})
+	
+	local divider_w = 1
+	local divider_revives = revives_panel:rect({
+		name = "divider_revives",
+		w = divider_w,
+		h = subpanel_h,
+		x = subpanel_w - divider_w,
+		y = 0,
+		color = self.color_data.hud_vitalsoutline_blue
+	})
+	
+	local revives_label = revives_panel:text({
+		name = "revives_label",
+		text = "3",
+		align = "center",
+		vertical = "bottom",
+		y = margin_small,
+		color = self.color_data.hud_vitalsoutline_blue,
+		font = "fonts/font_eurostile_ext",
+		font_size = font_size,
+		layer = 4
+	})
+	
+	local revives_icon = revives_panel:bitmap({
+		name = "revives_icon",
+		texture = "guis/textures/pd2/skilltree/icons_atlas",
+		texture_rect = { --bandaid icon
+			5 * 64, --or 4,9 for inspire 
+			7 * 64,
+			64,
+			64
+		},
+		color = self.color_data.hud_vitalsoutline_blue,
+		w = subpanel_w,
+		h = subpanel_w,
+		x = 0,
+		y = 0
+	})
+	
+	local ties_panel = score_panel:panel({
+		name = "ties_panel",
+		w = subpanel_w,
+		h = subpanel_h,
+		x = revives_panel:x() + subpanel_w,
+		y = subpanel_y
+	})
+	self._ties_panel = ties_panel
+	
+	local ties_texture,ties_rect = tweak_data.hud_icons:get_icon_data("equipment_cable_ties")
+	local ties_icon = ties_panel:bitmap({
+		name = "ties_icon",
+		texture = ties_texture,
+		texture_rect = ties_rect,
+		color = self.color_data.hud_vitalsoutline_blue,
+		w = subpanel_w,
+		h = subpanel_w,
+		x = 0,
+		y = 0
+	})
+	
+	local ties_label = ties_panel:text({
+		name = "ties_label",
+		text = "2",
+		align = "center",
+		vertical = "bottom",
+		y = margin_small,
+		color = self.color_data.hud_vitalsoutline_blue,
+		font = "fonts/font_eurostile_ext",
+		font_size = font_size,
+		layer = 4
+	})
+		
+	local divider_ties = ties_panel:rect({
+		name = "divider_ties",
+		w = divider_w,
+		h = subpanel_h,
+		x = subpanel_w - divider_w,
+		y = 0,
+		color = self.color_data.hud_vitalsoutline_blue
+	})
+	
+	
+	local hostages_panel = score_panel:panel({
+		name = "hostages_panel",
+		w = subpanel_w,
+		h = subpanel_h,
+		x = ties_panel:x() + subpanel_w,
+		y = subpanel_y
+	})
+	self._hostages_panel = hostages_panel
+	
+	local hostages_texture,hostages_rect = tweak_data.hud_icons:get_icon_data("wp_hostage")
+	local hostages_icon = hostages_panel:bitmap({
+		name = "hostages_icon",
+		texture = "guis/textures/pd2/hud_icon_hostage",
+		color = self.color_data.hud_vitalsoutline_blue,
+		w = subpanel_w,
+		h = subpanel_w,
+		x = 0,
+		y = 0
+	})
+	
+	local hostages_label = hostages_panel:text({
+		name = "hostages_label",
+		text = "0",
+		align = "center",
+		vertical = "bottom",
+		y = margin_small,
+		color = self.color_data.hud_vitalsoutline_blue,
+		font = "fonts/font_eurostile_ext",
+		font_size = font_size,
+		layer = 4
+	})
+	local divider_hostages = hostages_panel:rect({
+		name = "divider_hostages",
+		w = divider_w,
+		h = subpanel_h,
+		x = subpanel_w - divider_w,
+		y = 0,
+		color = self.color_data.hud_vitalsoutline_blue
+	})
+	
+	
+	local score_multiplier_label = score_panel:text({
+		name = "score_multiplier_label",
+		text = "2.00x",
+		align = "left",
+		x = margin_m + hostages_panel:right(),
+		y = text_row_y_2,
+		color = self.color_data.hud_vitalsoutline_blue,
+		font = "fonts/font_eurostile_ext",
+		font_size = font_size,
+		layer = 4
+	})
+		
+	local mission_timer = score_panel:text({
+		name = "mission_timer",
+		text = "04:20",
+		align = "right",
+		layer = 3,
+		x = -margin_m,
+		y = subpanel_y,
+		color = self.color_data.hud_vitalsoutline_blue,
+		font = "fonts/font_eurostile_ext",
+		font_size = font_size,
+		alpha = 0.9
+	})
+	
+	local assault_phase_label = score_panel:text({
+		name = "assault_phase_label",
+		text = managers.localization:text("noblehud_assault_phase_standby"),
+		align = "right",
+		x = -margin_m,
+		y = text_row_y_2,
+		color = self.color_data.hud_vitalsoutline_blue,
+		font = "fonts/font_eurostile_ext",
+		font_size = font_size,
+		layer = 4
+	})
 end
+
+function NobleHUD:SetHostages(text)
+	if text then
+		self._hostages_panel:child("hostages_label"):set_text(text)
+	end
+end
+
+function NobleHUD:SetCableTies(text)
+	if text then
+		self._ties_panel:child("ties_label"):set_text(text)
+	end
+end
+
+function NobleHUD:SetAssaultPhase(text)
+	local assault_phase_label = self._score_panel:child("assault_phase_label")
+	if text and text ~= assault_phase_label:text() then 
+		assault_phase_label:set_text(text)
+		self:animate(assault_phase_label,"animate_killfeed_text_in",nil,0.3,16,self.color_data.hud_vitalsoutline_blue,self.color_data.hud_text_flash)
+	end
+end
+
+function NobleHUD:SetRevives(text)
+	if text then
+		self._revives_panel:child("revives_label"):set_text(tostring(text))
+	end
+end
+
+--[[
+function NobleHUD:create_revives()
+	local player = managers.player:local_player()
+	local dmg = player and player:character_damage()
+	local revives = dmg and Application:digest_value(dmg._revives,false)
+	self:_create_revives(revives)
+end
+--]]
+--[[
+function NobleHUD:_create_revives() --called on internal load
+	amount = amount and tonumber(amount) or 3
+	self._MAX_REVIVES = amount
+	--todo dot size based on revives
+	
+	local vitals_panel = self._vitals_panel
+	local margin = (vitals_panel:h() / amount) / 3
+	for i = 1,amount do 
+		local revive_dot = vitals_panel:bitmap({
+			name = "revive_dot_" .. i,
+			texture = "guis/textures/ability_circle_fill",
+			w = 8,
+			h = 8,
+			layer = 2,
+			color = self.color_data.hud_vitalsfill_blue,
+			alpha = 0.5,
+			x = vitals_panel:w() - 8,
+			y = i * (margin + amount)
+		})
+	end
+end
+	--]]
+--[[
+	if revives and self._MAX_REVIVES then 
+		for j = 1,self._MAX_REVIVES do
+			local revive_dot = vitals_panel:child("revive_dot_" .. j)
+			if revive_dot and alive(revive_dot) then 
+				if j > revives then 
+					revive_dot:set_color(NobleHUD.color_data.hud_vitalsfill_red)
+				else
+					revive_dot:set_color(NobleHUD.color_data.hud_vitalsfill_blue)
+				end
+			end
+		end
+	end
+	--]]
+	
+
 
 function NobleHUD:TallyScore(data,unit,medal_multiplier)
 	local name = tostring(data.name)
@@ -5367,7 +5629,7 @@ end
 function NobleHUD:CreateScorePopup(name,score,unit)
 	local text
 	local color 
-	if score < 0 then 
+	if score <= 0 then 
 		text = string.format("%i",score)
 		color = Color.red
 	else
@@ -6632,36 +6894,6 @@ function NobleHUD:_create_vitals(hud)
 	})
 end
 
-function NobleHUD:create_revives()
-	local player = managers.player:local_player()
-	local dmg = player and player:character_damage()
-	local revives = dmg and Application:digest_value(dmg._revives,false)
-	self:_create_revives(revives)
-end
-
-function NobleHUD:_create_revives(amount) --called on internal load
-	amount = amount and tonumber(amount) or 3
-	self._MAX_REVIVES = amount
-	--todo dot size based on revives
-	
-	local vitals_panel = self._vitals_panel
-	local margin = (vitals_panel:h() / amount) / 3
-	for i = 1,amount do 
-		local revive_dot = vitals_panel:bitmap({
-			name = "revive_dot_" .. i,
-			texture = "guis/textures/ability_circle_fill",
-			w = 8,
-			h = 8,
-			layer = 2,
-			color = self.color_data.hud_vitalsfill_blue,
-			alpha = 0.5,
-			x = vitals_panel:w() - 8,
-			y = i * (margin + amount)
-		})
-	end
-	
-end
-
 
 --		CARRY
 
@@ -7216,7 +7448,7 @@ function NobleHUD:AddMedalFromData(data,category) --direct reference to table pa
 	end
 		
 	if data.sfx then 
-		if data.hold_sfx then 
+		if data.hold_sfx then --for tiered medals, in order to not list every medal tier up to the current spree/multikill 
 			self:AddDelayedCallback(function()
 				self:PlayAnnouncerSound(data.sfx)
 			end,

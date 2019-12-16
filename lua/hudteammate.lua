@@ -18,32 +18,23 @@ Hooks:PostHook(HUDTeammate,"set_name","noblehud_setteammatename",function(self,p
 	end
 end)
 
+Hooks:PostHook(HUDTeammate,"set_cable_ties_amount","noblehud_setcabletiesamount",function(self,amount)
+	NobleHUD:SetCableTies(amount)
+end)
+
 Hooks:PostHook(HUDTeammate,"set_health","noblehud_set_health",function(self,data)
 	if not self._main_player then 
 		return
 	end
 	local hp_r = tonumber(tostring(data.current / data.total))
-	local revives = data.revives
+	NobleHUD:SetRevives(data.revives)
 	
 	local num_ticks = NobleHUD._HUD_HEALTH_TICKS
 	local YELLOW_THRESHOLD = 0.75
 	local RED_THRESHOLD = 0.25
 	
 	local vitals_panel = NobleHUD._vitals_panel
-	
-	if revives and NobleHUD._MAX_REVIVES then 
-		for j = 1,NobleHUD._MAX_REVIVES do
-			local revive_dot = vitals_panel:child("revive_dot_" .. j)
-			if revive_dot and alive(revive_dot) then 
-				if j > revives then 
-					revive_dot:set_color(NobleHUD.color_data.hud_vitalsfill_red)
-				else
-					revive_dot:set_color(NobleHUD.color_data.hud_vitalsfill_blue)
-				end
-			end
-		end
-	end
-	
+		
 	for i = num_ticks,1,-1 do 
 		local outline_left = vitals_panel:child("health_tick_left_outline_" .. i)
 		local outline_right = vitals_panel:child("health_tick_right_outline_" .. i)
