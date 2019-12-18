@@ -1,0 +1,103 @@
+{
+	"menu_id" : "noblehud_chat_options",
+	"parent_menu_id" : "noblehud_options",
+	"title" : "noblehud_chat_options_title",
+	"description" : "noblehud_chat_options_desc",
+	"back_callback" : "noblehud_chat_options_close",
+	"items" : [
+		{
+			"type" : "multiple_choice",
+			"id" : "id_noblehud_set_chat_notification_mode",
+			"title" : "noblehud_set_chat_notification_mode_title",
+			"description" : "noblehud_set_chat_notification_mode_desc",
+			"callback" : "callback_noblehud_set_chat_notification_mode",
+			"items" : [
+				"noblehud_chat_notification_mode_icon",
+				"noblehud_chat_notification_mode_sound",
+				"noblehud_chat_notification_mode_both",
+				"noblehud_chat_notification_mode_none"
+			],
+			"value" : "chat_notification_mode"
+		},
+		{
+			"type" : "multiple_choice",
+			"id" : "id_noblehud_set_chat_notification_sfx",
+			"title" : "noblehud_set_chat_notification_sfx_title",
+			"description" : "noblehud_set_chat_notification_sfx_desc",
+			"callback" : "callback_noblehud_set_chat_notification_sfx",
+			"items" : [
+				"noblehud_chat_notification_sfx_1",
+				"noblehud_chat_notification_sfx_2",
+				"noblehud_chat_notification_sfx_3",
+				"noblehud_chat_notification_sfx_4",
+				"noblehud_chat_notification_sfx_5",
+				"noblehud_chat_notification_sfx_6"
+			],
+			"value" : "chat_notification_sfx"
+		},
+		{
+			"type" : "button",
+			"id" : "id_noblehud_test_chat_notification_sfx",
+			"title" : "noblehud_test_chat_notification_sfx_title",
+			"description" : "noblehud_test_chat_notification_sfx_desc",
+			"callback" : "callback_noblehud_test_chat_notification_sfx"
+		},
+		{
+			"type" : "divider",
+			"size" : 16
+		},
+		{
+			"type" : "multiple_choice",
+			"id" : "id_noblehud_set_chat_autohide_mode",
+			"title" : "noblehud_set_chat_autohide_mode_title",
+			"description" : "noblehud_set_chat_autohide_mode_desc",
+			"callback" : "callback_noblehud_set_chat_autohide_mode",
+			"items" : [
+				"noblehud_chat_autohide_mode_onmessage",
+				"noblehud_chat_autohide_mode_never"
+			],
+			"value" : "chat_autohide_mode"
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_chat_autohide_timer",
+			"title" : "noblehud_set_chat_autohide_timer_title",
+			"description" : "noblehud_set_chat_autohide_timer_desc",
+			"callback" : "callback_noblehud_set_chat_autohide_timer",
+			"value" : "chat_autohide_timer",
+			"default_value" : 10,
+			"min" : 0,
+			"max" : 60,
+			"step" : 1
+		},
+		{
+			"type" : "divider",
+			"size" : 16
+			
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_chat_panel_x",
+			"title" : "noblehud_set_chat_panel_x_title",
+			"description" : "noblehud_set_chat_panel_x_desc",
+			"callback" : "callback_noblehud_set_chat_panel_x",
+			"value" : "chat_panel_x",
+			"default_value" : 0,
+			"min" : 0,
+			"max" : 1024,
+			"step" : 1
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_chat_panel_y",
+			"title" : "noblehud_set_chat_panel_y_title",
+			"description" : "noblehud_set_chat_panel_y_desc",
+			"callback" : "callback_noblehud_set_chat_panel_y",
+			"value" : "chat_panel_y",
+			"default_value" : 0,
+			"min" : 0,
+			"may" : 1024,
+			"step" : 1
+		}
+	]
+}

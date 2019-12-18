@@ -2,7 +2,6 @@ if not NobleHUD then
 	return
 end
 
-
 Hooks:PostHook(HUDTeammate,"init","noblehud_addteammate",function(self,i, teammates_panel, is_player, width)
 	NobleHUD:_init_teammate(i,panel,is_player,width)
 end)
@@ -12,6 +11,7 @@ Hooks:PostHook(HUDTeammate,"set_callsign","noblehud_setteammatecallsign",functio
 		NobleHUD:_set_teammate_callsign(self._id,id)
 	end
 end)
+
 Hooks:PostHook(HUDTeammate,"set_name","noblehud_setteammatename",function(self,player_name)
 	if HUDManager.PLAYER_PANEL ~= self._id then 
 		NobleHUD:_set_teammate_name(self._id,player_name)
@@ -252,7 +252,6 @@ Hooks:PostHook(HUDTeammate,"set_weapon_selected","noblehud_set_weapon_selected",
 	NobleHUD:_switch_weapons(id)
 end)
 
-
 Hooks:PostHook(HUDTeammate,"set_teammate_weapon_firemode","noblehud_set_teammate_firemode",function(self,slot,firemode)
 --
 end)
@@ -280,7 +279,6 @@ Hooks:PostHook(HUDTeammate,"set_deployable_equipment","noblehud_set_deployable_e
 	NobleHUD:_set_deployable_equipment(data.index)
 end)
 
-
 Hooks:PostHook(HUDTeammate,"set_deployable_equipment_amount","noblehud_set_deployable_equipment_amount",function(self,index,data)
 	if not self._main_player then 
 		return
@@ -303,6 +301,95 @@ Hooks:PostHook(HUDTeammate,"set_deployable_equipment_amount_from_string","nobleh
 	NobleHUD:_set_deployable_amount(index)
 end)
 
+function HUDTeammate:add_special_equipment(data,...)
+	local panel_size = 32
+	local equipment_panel = NobleHUD._equipment_panel:panel({
+		name = data.id,
+		x = 0, --NobleHUD._equipment_panel:w() - ((#self._special_equipment + 2) * panel_size),
+		y = 0,
+		layer = 0,
+		w = panel_size,
+		h = panel_size
+	})
+	local icon, texture_rect = tweak_data.hud_icons:get_icon_data(data.icon)
+	local amount,amount_bg
+	local bitmap = equipment_panel:bitmap({
+		name = "bitmap",
+		texture = icon,
+		texture_rect = texture_rect,
+		rotation = 360,
+		layer = 2,
+--		alpha = 0.01
+		color = Color.white
+	})
+	
+	amount_bg = equipment_panel:child("amount_bg") or equipment_panel:bitmap({
+		name = "amount_bg",
+		texture = "guis/textures/pd2/equip_count",
+		rotation = 360,
+		layer = 2,
+		visible = data.amount and true or false,
+		color = Color.white
+	})
+	amount = equipment_panel:child("amount") or equipment_panel:text({
+		name = "amount",
+		vertical = "center",
+		font_size = 12,
+		align = "center",
+		font = "fonts/font_small_noshadow_mf",
+		rotation = 360,
+		layer = 3,
+		text = tostring(data.amount),
+		color = Color.black,
+		visible = data.amount and true or false,
+		w = panel_size,
+		h = panel_size
+	})
+	
+	amount_bg:set_center(bitmap:center())
+	amount_bg:move(7, 7)
+	amount_bg:set_visible(data.amount and (data.amount > 1) or false)
+	amount:set_center(amount_bg:center())
+	amount:set_visible(data.amount and (data.amount > 1) or false)
+	table.insert(self._special_equipment, equipment_panel)
+	NobleHUD:layout_equipments(self._special_equipment,data.id)
+end
+
+function HUDTeammate:remove_special_equipment(equipment)
+	local eq_panel = NobleHUD._equipment_panel
+	for i,panel in pairs(self._special_equipment) do 
+		if panel:name() == equipment then 
+			local data = table.remove(self._special_equipment,i)
+			panel:child("bitmap"):set_color(Color(0.5,0.5,0.5))
+			NobleHUD:animate(panel,"animate_fadeout",function(o) eq_panel:remove(o) end,0.66)
+			NobleHUD:layout_equipments(self._special_equipment)
+			return
+		end
+	end
+end
+
+function HUDTeammate:set_special_equipment_amount(equipment_id, amount)
+	local eq_panel = NobleHUD._equipment_panel
+	local special_equipment = self._special_equipment
+
+	for i, panel in ipairs(special_equipment) do
+		if panel:name() == equipment_id then
+			panel:child("amount"):set_text(tostring(amount))
+			panel:child("amount"):set_visible(amount > 1)
+			panel:child("amount_bg"):set_visible(amount > 1)
+			return
+		end
+	end
+end
+
+Hooks:PostHook(HUDTeammate,"clear_special_equipment","noblehud_clearequipment",function(self)
+	local eq = NobleHUD._equipment_panel
+	if alive(eq) then 
+		eq:parent():remove(eq)
+	end
+	NobleHUD:_create_equipment_panel()
+end)
+
 Hooks:PostHook(HUDTeammate,"set_grenades","noblehud_set_grenades",function(self,data)
 	if not self._main_player then 
 		return
@@ -310,14 +397,12 @@ Hooks:PostHook(HUDTeammate,"set_grenades","noblehud_set_grenades",function(self,
 	NobleHUD:_set_grenades(data)
 end)
 
-
 Hooks:PostHook(HUDTeammate,"set_grenades_amount","noblehud_set_grenades_amount",function(self,data)
 	if not self._main_player then 
 		return
 	end
 	NobleHUD:_set_grenades_amount(data.amount)
 end)
-
 
 Hooks:PostHook(HUDTeammate,"activate_ability_radial","noblehud_activate_ability_radial",function(self,time_left,time_total)
 	if not self._main_player then 
@@ -367,7 +452,6 @@ Hooks:PostHook(HUDTeammate,"activate_ability_radial","noblehud_activate_ability_
 	--]]
 end)
 
-
 Hooks:PostHook(HUDTeammate,"set_grenade_cooldown","noblehud_set_grenade_cooldown",function(self,data)
 --sicario uses this instead of activate_ability
 --also, this is called once at the start on use for things like stoic
@@ -377,6 +461,7 @@ Hooks:PostHook(HUDTeammate,"set_grenade_cooldown","noblehud_set_grenade_cooldown
 		end
 		
 		NobleHUD:_set_grenade_cooldown(data)
+	end
 --[[
 
 		local end_time = data and data.end_time
@@ -458,96 +543,6 @@ Hooks:PostHook(HUDTeammate,"set_grenade_cooldown","noblehud_set_grenade_cooldown
 		grenades_recharge:stop()
 		grenades_recharge:animate(animate_recharge)
 		--]]
-	end
-end)
-
---
-function HUDTeammate:add_special_equipment(data,...)
-	local panel_size = 32
-	local equipment_panel = NobleHUD._equipment_panel:panel({
-		name = data.id,
-		x = 0, --NobleHUD._equipment_panel:w() - ((#self._special_equipment + 2) * panel_size),
-		y = 0,
-		layer = 0,
-		w = panel_size,
-		h = panel_size
-	})
-	local icon, texture_rect = tweak_data.hud_icons:get_icon_data(data.icon)
-	local amount,amount_bg
-	local bitmap = equipment_panel:bitmap({
-		name = "bitmap",
-		texture = icon,
-		texture_rect = texture_rect,
-		rotation = 360,
-		layer = 2,
---		alpha = 0.01
-		color = Color.white
-	})
-	
-	amount_bg = equipment_panel:child("amount_bg") or equipment_panel:bitmap({
-		name = "amount_bg",
-		texture = "guis/textures/pd2/equip_count",
-		rotation = 360,
-		layer = 2,
-		visible = data.amount and true or false,
-		color = Color.white
-	})
-	amount = equipment_panel:child("amount") or equipment_panel:text({
-		name = "amount",
-		vertical = "center",
-		font_size = 12,
-		align = "center",
-		font = "fonts/font_small_noshadow_mf",
-		rotation = 360,
-		layer = 3,
-		text = tostring(data.amount),
-		color = Color.black,
-		visible = data.amount and true or false,
-		w = panel_size,
-		h = panel_size
-	})
-	
-	amount_bg:set_center(bitmap:center())
-	amount_bg:move(7, 7)
-	amount_bg:set_visible(data.amount and (data.amount > 1) or false)
-	amount:set_center(amount_bg:center())
-	amount:set_visible(data.amount and (data.amount > 1) or false)
-	table.insert(self._special_equipment, equipment_panel)
-	NobleHUD:layout_equipments(self._special_equipment,data.id)
-end
-
-function HUDTeammate:remove_special_equipment(equipment)
-	local eq_panel = NobleHUD._equipment_panel
-	for i,panel in pairs(self._special_equipment) do 
-		if panel:name() == equipment then 
-			local data = table.remove(self._special_equipment,i)
-			panel:child("bitmap"):set_color(Color(0.5,0.5,0.5))
-			NobleHUD:animate(panel,"animate_fadeout",function(o) eq_panel:remove(o) end,0.66)
-			NobleHUD:layout_equipments(self._special_equipment)
-			return
-		end
-	end
-end
-function HUDTeammate:set_special_equipment_amount(equipment_id, amount)
-	local eq_panel = NobleHUD._equipment_panel
-	local special_equipment = self._special_equipment
-
-	for i, panel in ipairs(special_equipment) do
-		if panel:name() == equipment_id then
-			panel:child("amount"):set_text(tostring(amount))
-			panel:child("amount"):set_visible(amount > 1)
-			panel:child("amount_bg"):set_visible(amount > 1)
-			return
-		end
-	end
-end
-
-Hooks:PostHook(HUDTeammate,"clear_special_equipment","noblehud_clearequipment",function(self)
-	local eq = NobleHUD._equipment_panel
-	if alive(eq) then 
-		eq:parent():remove(eq)
-	end
-	NobleHUD:_create_equipment_panel()
 end)
 
 

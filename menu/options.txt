@@ -5,6 +5,15 @@
 	"back_callback" : "callback_noblehud_close",
 	"items" : [
 		{
+			"type" : "keybind",
+			"id" : "id_noblehud_toggle_chat",
+			"title" : "noblehud_toggle_chat_title",
+			"description" : "noblehud_toggle_chat_desc",
+			"keybind_id" : "keybind_noblehud_toggle_chat",
+			"run_in_game" : true,
+			"func" : "callback_noblehud_toggle_chat"
+		},
+		{
 			"type" : "DISABLED_keybind",
 			"id" : "id_noblehud_toggle_safety",
 			"title" : "dnoblehud_toggle_safety_title",
