@@ -4,16 +4,10 @@
 
 ***** TODO: *****
 	
-	Resolve hudchat show/hide 
-	call UpdateHUD() from persist script
-	Fix shield depleted sound not playing... wait i think i forgot to make it loop
-		nope it's still not playing under any circumstances. investigate loop issue?
-	Create menu option for shield depleting
-		
 	Notes:
 
 		slider setting for popup_fadeout_time
-		menu item for weapon opacity
+
 		check for mag count above max --> bar
 		weapon overheat meter? 
 
@@ -61,6 +55,8 @@ todo shield damage chunking
 
 			
 	&& LOW PRIORITY FEATURES: &&
+		* Better player waypoints
+		* Apply update opacity for all elements from menu
 		* Organize color data
 			- Ability circle needs a baked-blue asset
 		* Queue objective activities rather than stopping current
@@ -75,7 +71,6 @@ todo shield damage chunking
 		* Animate function for text that randomly hides individual characters (similar to auntie dot's fadeout function)
 			* Given list of integers representing non-space character positions, foreach hide animate(text:set_color_range(pos,pos,color:with_alpha(a))) after random(n) delay
 			* Mainly for use in Objectives panel
-		* Better player waypoints
 		* Weapontype-specific bloom decay
 		* Blinky "No ammo" alert
 		* Voice command radial
@@ -241,11 +236,16 @@ NobleHUD.settings = {
 	master_hud_alpha = 0.9,
 	chat_autohide_timer = 3,
 	chat_autohide_mode = 1,
-	chat_notification_mode = true,
+	chat_autoshow_enabled = true,
+	chat_notification_icon_enabled = true,
+	chat_notification_sound_enabled = true,
 	chat_notification_sfx = 1,
+	chat_timestamp_mode = 3,
 	chat_panel_x = 0,
 	chat_panel_y = 0,
-	low_shield_fx_threshold = 0.3
+	shield_low_threshold = 0.3,
+	shield_low_sound_enabled = true,
+	shield_empty_sound_enabled = true
 }
 
 NobleHUD.chat_notification_sounds = {
@@ -303,11 +303,11 @@ NobleHUD._announcer_sound_source = nil
 NobleHUD._shield_sound_source = nil
 
 NobleHUD._assault_phases = {
-	anticipation = "noblehud_assault_phase_anticipation",
-	build = "noblehud_assault_phase_build",
-	sustain = "noblehud_assault_phase_sustain",
-	fade = "noblehud_assault_phase_fade",
-	control = "noblehud_assault_phase_control"
+	anticipation = "noblehud_hud_assault_phase_anticipation",
+	build = "noblehud_hud_assault_phase_build",
+	sustain = "noblehud_hud_assault_phase_sustain",
+	fade = "noblehud_hud_assault_phase_fade",
+	control = "noblehud_hud_assault_phase_control"
 }
 
 NobleHUD._cartographer_data = {}
@@ -339,7 +339,10 @@ NobleHUD._killfeed_presets = {
 NobleHUD._HUD_HEALTH_TICKS = 8
 NobleHUD._RADAR_REFRESH_INTERVAL = 0.5
 NobleHUD._radar_refresh_t = 0
+
 NobleHUD._cache = {
+	t = 0,
+	t_real = 0,
 	killer = {},
 	score_timer_mult = 1,
 	score_popups_count = 0,
@@ -351,7 +354,7 @@ NobleHUD._cache = {
 	objective_total = nil,
 	newest_medal = false,
 	newest_killfeed = false,
-	chat_wanted = false,
+	chat_wanted = true,
 	last_cartographer_t = 0,
 	sounds = {},
 	announcer_queue = {},
@@ -1447,7 +1450,7 @@ NobleHUD._medal_data = {
 		show_text = true,
 		disabled = true,
 		sfx = "extermination",
-		icon_xy = {0,9} --!
+		icon_xy = {0,9} --this is not the right icon
 	},
 	sniper = {
 		name = "sniper", --headshot only
@@ -1886,21 +1889,37 @@ function NobleHUD:log(...)
 	end
 end
 
-function NobleHUD.table_concat(tbl,div)
+function NobleHUD.table_concat(tbl,div,key_div)
 	div = (div and tostring(div)) or " "
 	if type(tbl) == "table" then 
 		local str 
-		for k,v in pairs(tbl) do 
-			if str then 
-				str = str .. div .. tostring(v)
-			else 
-				str = tostring(v)
+		if key_div then
+			if key_div == true then 
+				key_div = " : "
+			else
+				key_div = tostring(key_div)
+			end
+			for k,v in pairs(tbl) do 
+				if str then
+					str = str .. div .. tostring(k) .. key_div .. tostring(v)
+				else
+					str = tostring(k) .. key_div .. tostring(v)
+				end
+			end
+		else
+			for k,v in pairs(tbl) do 
+				if str then 
+					str = str .. div .. tostring(v)
+				else 
+					str = tostring(v)
+				end
 			end
 		end
 		return str or "ERROR2"
 	end
 	return "ERROR"
 end
+
 local function concat(tbl,div) --2lazy 2type
 	return NobleHUD.table_concat(tbl,div)
 end
@@ -2144,12 +2163,16 @@ function NobleHUD:GetMedalIcon(x,y)
 	}
 end
 
-function NobleHUD:AddDelayedCallback(func,args,timer,id)
+function NobleHUD:AddDelayedCallback(func,args,timer,id,use_real_time)
 	if timer then 
-		timer = timer + Application:time()
+		if use_real_time then 
+			timer = timer + os.time()
+		else
+			timer = timer + Application:time()
+		end
 	end
 	id = id or (#NobleHUD._delayed_callbacks + 1)
-	NobleHUD._delayed_callbacks[id] = {func = func,args = args or {},timer = timer}
+	NobleHUD._delayed_callbacks[id] = {func = func,args = args or {},timer = timer,use_real_time = use_real_time}
 end
 
 function NobleHUD:RemoveDelayedCallback(id)
@@ -2394,16 +2417,36 @@ function NobleHUD:GetChatAutohideMode()
 	return self.settings.chat_autohide_mode
 end
 
-function NobleHUD:GetChatNotificationMode()
-	return self.settings.chat_notification_mode
+function NobleHUD:GetChatTimestampMode()
+	return self.settings.chat_timestamp_mode
 end
 
 function NobleHUD:GetLowShieldThreshold()
-	return self.settings.low_shield_fx_threshold
+	return self.settings.shield_low_threshold
 end	
 
 function NobleHUD:GetChatNotificationSound()
 	return self.settings.chat_notification_sfx
+end
+
+function NobleHUD:IsShieldLowSoundEnabled()
+	return self.settings.shield_low_sound_enabled
+end
+
+function NobleHUD:IsShieldEmptySoundEnabled()
+	return self.settings.shield_empty_sound_enabled
+end
+
+function NobleHUD:IsChatAutoshowEnabled() --related to automatic chat displays, not to automobile expos
+	return self.settings.chat_autoshow_enabled
+end
+
+function NobleHUD:IsChatNotificationSoundEnabled()
+	return self.settings.chat_notification_sound_enabled
+end
+
+function NobleHUD:IsChatNotificationIconEnabled()
+	return self.settings.chat_notification_sound_enabled
 end
 
 
@@ -2513,6 +2556,7 @@ function NobleHUD:CreateHUD(orig)
 end
 		
 function NobleHUD:OnLoaded()
+	self._cache.loaded = true
 	self:LoadXAudioSounds()
 
 	self:set_weapon_info()
@@ -2587,7 +2631,7 @@ function NobleHUD:OnLoaded()
 	end
 end
 
-function NobleHUD:UpdateHUD(t,dt)
+function NobleHUD:UpdateHUD(t,dt,t_real)
 
 	if game_state_machine then 
 		local game_state = game_state_machine:current_state_name()		
@@ -2597,7 +2641,40 @@ function NobleHUD:UpdateHUD(t,dt)
 			self._cache.game_state = game_state
 		end
 	end	
+	
 
+--simplified delayed callbacks implementation
+	for i,data in pairs(NobleHUD._delayed_callbacks) do 
+		if data.timer then 
+			if data.use_real_time then 
+				log(i .. ") timer: " .. data.timer .. ", t_real = " .. t_real .. ", finish t = " .. (t_real + data.timer))
+				if data.timer <= t_real then 
+					NobleHUD._delayed_callbacks[i] = nil
+					if type(data.func) == "function" then 
+						data.func(unpack(data.args))
+					end
+				end
+			else
+				if data.timer <= t then 
+					NobleHUD._delayed_callbacks[i] = nil
+	--				table.remove(NobleHUD._delayed_callbacks,i)
+					if type(data.func) == "function" then 
+						data.func(unpack(data.args))
+					end
+				end
+			end
+		else
+			NobleHUD._delayed_callbacks[i] = nil
+		end
+	end	
+	
+	if dt == 0 then 
+		--don't run when paused
+		return
+	end
+	
+--	Console:SetTrackerValue("trackera",tostring(NobleHUD._cache.chat_wanted))
+	
 	local announcer = self._announcer_sound_source
 	if announcer and self._cache.announcer_queue[1] then 
 		if announcer:get_state() ~= 1 then 
@@ -2607,17 +2684,6 @@ function NobleHUD:UpdateHUD(t,dt)
 		end
 	end
 	
-	local assaultstate = managers.groupai:state()
-	local assaulttasks = assaultstate and assaultstate._task_data
-	local assaultdata = assaulttasks and assaulttasks.assault
-	local phase = assaultdata and assaultdata.phase
-	local phasename = self._assault_phases[phase]
-	if phase and not (phasename or assaultstate:whisper_mode()) then 
-		self:log("Did not find phasename for " .. tostring(phase),{color = Color.red})
-	elseif phasename then
-		self:SetAssaultPhase(managers.localization:text(phasename))
-	end
-	
 	
 	local player = managers.player:local_player()
 	if player then 
@@ -2625,7 +2691,20 @@ function NobleHUD:UpdateHUD(t,dt)
 		local inventory = player:inventory()
 		
 		
-		--medal stuff
+		--hud assault state 
+		local assaultstate = managers.groupai:state()
+		local assaulttasks = assaultstate and assaultstate._task_data
+		local assaultdata = assaulttasks and assaulttasks.assault
+		local phase = assaultdata and assaultdata.phase
+		local phasename = self._assault_phases[phase]
+		if phase and not (phasename or assaultstate:whisper_mode()) then 
+			self:log("Did not find phasename for " .. tostring(phase),{color = Color.red})
+		elseif phasename then
+			self:SetAssaultPhase(managers.localization:text(phasename))
+		end
+		
+		
+		--close call medal stuff
 		if self:KillsCache("close_call") and player:character_damage():armor_ratio() >= 1 then 
 			self:KillsCache("close_call",false,true)
 			self:AddMedal("close_call")
@@ -2651,35 +2730,34 @@ function NobleHUD:UpdateHUD(t,dt)
 			end
 		end		
 		--shield sfx (loop)
-		if true then 
-			local player_armor_max = player_damage:_max_armor()
-			if player_armor_max > 0 then
-				local player_armor = player_damage:get_real_armor()
-				if player_armor == 0 then 
-					if not self._shield_sound_source then
-						self._shield_sound_source = XAudio.Source:new()
-					end
-					if self._shield_sound_source:get_state() ~= 1 then 
-						self._shield_sound_source:set_buffer(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/shield_low.ogg"))
-						self._shield_sound_source:play()
-					end
-				elseif (player_armor / player_armor_max) <= NobleHUD:GetLowShieldThreshold() then 						
-					if not self._shield_sound_source then
-						self._shield_sound_source = XAudio.Source:new()
-					end
-					if self._shield_sound_source:get_state() ~= 1 then 
-						self._shield_sound_source:set_buffer(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/shield_depleted.ogg"))
-						self._shield_sound_source:play()
-					end
-				else
-					if self._shield_sound_source then 
-						self._shield_sound_source:close()
-						self._shield_sound_source = nil
-					end
+		local player_armor_max = player_damage:_max_armor()
+		if player_armor_max > 0 then
+			local player_armor = player_damage:get_real_armor()
+			if self:IsShieldEmptySoundEnabled() and (player_armor == 0) then 
+				if not self._shield_sound_source then
+					self._shield_sound_source = XAudio.Source:new()
+					self._shield_sound_source:set_looping(true)
+				end
+				if self._shield_sound_source:get_state() ~= 1 then 
+					self._shield_sound_source:set_buffer(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/shield_low.ogg"))
+					self._shield_sound_source:play()
+				end
+			elseif self:IsShieldLowSoundEnabled() and ((player_armor / player_armor_max) <= NobleHUD:GetLowShieldThreshold()) then
+				if not self._shield_sound_source then
+					self._shield_sound_source = XAudio.Source:new()
+					self._shield_sound_source:set_looping(true)
+				end
+				if self._shield_sound_source:get_state() ~= 1 then 
+					self._shield_sound_source:set_buffer(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/shield_depleted.ogg"))
+					self._shield_sound_source:play()
+				end
+			else
+				if self._shield_sound_source then 
+					self._shield_sound_source:close()
+					self._shield_sound_source = nil
 				end
 			end
 		end
-		
 		
 		
 		
@@ -2713,7 +2791,7 @@ function NobleHUD:UpdateHUD(t,dt)
 			killfeed_count = killfeed_count + 1
 			if (t - item.start_t > KILLFEED_LIFETIME) then 
 				if item.bitmap and alive(item.bitmap) then 
-					self:animate(item.bitmap,"animate_fadeout_linear",function (o) o:parent():remove(o) end,0.15,nil,-item.bitmap:w(),false)
+					self:animate(item.bitmap,"animate_fadeout_linear",function (o) o:parent():remove(o) end,0.25,nil,-item.bitmap:w(),false)
 				end
 				table.remove(self.killfeed_icons,i)
 --				self.killfeed_icons[i] = nil
@@ -3146,22 +3224,35 @@ function NobleHUD:UpdateHUD(t,dt)
 		end		
 		--]]
 	end
-
---simplified delayed callbacks implementation
-	for i,data in pairs(NobleHUD._delayed_callbacks) do 
-		if data.timer then 
-			if data.timer <= t then 
-				NobleHUD._delayed_callbacks[i] = nil
---				table.remove(NobleHUD._delayed_callbacks,i)
-				if type(data.func) == "function" then 
-					data.func(unpack(data.args))
-				end
-			end
-		else
-			NobleHUD._delayed_callbacks[i] = nil
-		end
-	end
 	
+end
+
+function NobleHUD:OnPlayerStateChanged(state)
+	self:log("Changed player state to " .. tostring(state),{color = Color(0,1,1)})
+	if state == "fatal" or state == "bleed_out" or state == "arrested" or state == "incapacitated" then 
+		self:ClearKillsCache()
+	end
+	--todo: on enter custody, destroy NobleHUD hud, and create or show custody hud
+end
+
+function NobleHUD:OnGameStateChanged(before_state,state)
+--lib\utils\game_state_machine
+	self:log("Changed game state from " .. tostring(before_state) .. " to " .. tostring(state),{color = Color.green})
+	local hud = self._ws and self._ws:panel()
+	if not (hud and alive(hud)) then 
+		return
+	end
+	if managers.player and managers.player:local_player() and not self._cache.loaded then
+		self:log("Loaded HUD during state " .. state)
+		self:OnLoaded()
+	end
+	if GameStateFilters.any_end_game[state] or GameStateFilters.player_slot[state] or GameStateFilters.lobby[state] then
+		hud:hide()
+	elseif GameStateFilters.waiting_for_players[state] or GameStateFilters.waiting_for_respawn[state] or GameStateFilters.waiting_for_spawn_allowed[state] then 
+		hud:hide()
+	elseif GameStateFilters.any_ingame[state] then 
+		hud:show()
+	end
 end
 
 function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
@@ -3488,33 +3579,6 @@ function NobleHUD:ClearKillsCache()
 		saw = 0,
 		grenade = 0
 	}
-end
-
-function NobleHUD:OnPlayerStateChanged(state)
-	self:log("Changed player state to " .. tostring(state),{color = Color(0,1,1)})
-	if state == "fatal" or state == "bleed_out" or state == "arrested" or state == "incapacitated" then 
-		self:ClearKillsCache()
-	end
-	--todo: on enter custody, destroy NobleHUD hud, and create or show custody hud
-end
-
-function NobleHUD:OnGameStateChanged(before_state,state)
-
-
-	self:log("Changed game state from " .. (before_state) .. " to " .. tostring(state),{color = Color.green})
-	local hud = self._ws and self._ws:panel()
-	if not (hud and alive(hud)) then 
-		return
-	end
-	if GameStateFilters.any_end_game[state] or GameStateFilters.player_slot[state] or GameStateFilters.lobby[state] then
-		hud:hide()
-	elseif GameStateFilters.waiting_for_players[state] or GameStateFilters.waiting_for_respawn[state] or GameStateFilters.waiting_for_spawn_allowed[state] then 
-		hud:hide()
---	elseif GameStateFilters.arrested[state] then
---	elseif GameStateFilters.ingame_fatal[state] then
-	elseif GameStateFilters.any_ingame[state] then 
-		hud:show()
-	end
 end
 
 function NobleHUD:LoadXAudioSounds()
@@ -5342,6 +5406,7 @@ function NobleHUD:_create_score(hud)
 	})
 	local margin_l = 24
 	local margin_m = 8
+	local margin_s = 4
 	local panel_h = 128
 	local panel_w = 300
 	local score_panel = hud:panel({
@@ -5349,7 +5414,7 @@ function NobleHUD:_create_score(hud)
 		w = panel_w,
 		h = panel_h,
 		x = hud:w() - (panel_w + margin_l),
-		y = hud:h() - (panel_h + margin_m),
+		y = hud:h() - (panel_h + margin_l + margin_m),
 		alpha = self:GetHUDAlpha()
 	})
 	self._score_panel = score_panel
@@ -5363,7 +5428,7 @@ function NobleHUD:_create_score(hud)
 	
 	local banner_l_w = 256
 	local banner_l_h = 24
-	local font_size = 24
+	local font_size = 20
 	local banner_l_x = panel_w - banner_l_w
 	local score_banner_large = score_panel:bitmap({
 		name = "score_banner_large",
@@ -5374,12 +5439,11 @@ function NobleHUD:_create_score(hud)
 		y = panel_h - banner_l_h, --bottom
 		w = banner_l_w,
 		h = banner_l_h,
-		alpha = 0.5
+		alpha = 1
 	})
 	
 	local banner_s_size = 24
-	local margin_small = 4
-	local banner_s_x = banner_l_x - (banner_s_size + margin_small)
+	local banner_s_x = banner_l_x - (banner_s_size + margin_s)
 	local banner_s_y = panel_h - banner_s_size -- bottom
 	local score_banner_small = score_panel:bitmap({
 		name = "score_banner_large",
@@ -5390,21 +5454,23 @@ function NobleHUD:_create_score(hud)
 		y = banner_s_y,
 		w = banner_s_size,
 		h = banner_s_size,
-		alpha = 0.5
+		alpha = 1
 	})
 	
 	local subpanel_w = 24
-	local subpanel_h = subpanel_w + font_size + margin_small
-	local subpanel_y = score_banner_small:y() - (subpanel_h + margin_m)
+	local subpanel_h = subpanel_w + font_size + margin_s
+	local subpanel_y = score_banner_small:y() - (subpanel_h + margin_s)
 	
-	local text_row_y_2 = panel_h - ((2 * font_size) + margin_small)
-	
+	local text_row_y_2 = panel_h - ((2 * font_size) + margin_s)
+
+	local score_arrow_texture,score_arrow_rect = tweak_data.hud_icons:get_icon_data("icon_equipped")
 	local score_icon = score_panel:bitmap({
 		name = "score_banner_large",
-		texture = "guis/textures/radar_blip_near",
+		texture = score_arrow_texture,
+		texture_rect = score_arrow_rect,
 		layer = 3,
 		color = Color.white,
-		x = banner_l_x - (banner_s_size + margin_small),
+		x = banner_l_x - (banner_s_size + margin_s),
 		y = panel_h - banner_s_size,
 		w = banner_s_size,
 		h = banner_s_size,
@@ -5417,8 +5483,8 @@ function NobleHUD:_create_score(hud)
 		text = "0",
 		align = "right",
 		color = Color.white,
-		x = -0,
-		y = score_banner_large:y(),
+		x = -margin_s,
+		y = score_banner_large:y() + margin_s,
 		font = "fonts/font_eurostile_ext",
 		font_size = font_size,
 		layer = 5
@@ -5432,7 +5498,7 @@ function NobleHUD:_create_score(hud)
 		name = "revives_panel",
 		w = subpanel_w,
 		h = subpanel_h,
-		x = score_banner_large:x() - (banner_s_size + margin_small),
+		x = score_banner_large:x() - (banner_s_size + margin_s),
 		y = subpanel_y
 	})
 	self._revives_panel = revives_panel
@@ -5459,22 +5525,26 @@ function NobleHUD:_create_score(hud)
 		text = "3",
 		align = "center",
 		vertical = "bottom",
-		y = margin_small,
+		y = margin_s,
 		color = self.color_data.hud_vitalsoutline_blue,
 		font = "fonts/font_eurostile_ext",
 		font_size = font_size,
 		layer = 4
 	})
+
+--		texture = "guis/textures/pd2/skilltree/icons_atlas",
+--		texture_rect = { --bandaid icon
+--			5 * 64, --or 4,9 for inspire 
+--			7 * 64,
+--			64,
+--			64
+--		},
 	
+	local revives_texture,revives_rect = tweak_data.hud_icons:get_icon_data("csb_lives")
 	local revives_icon = revives_panel:bitmap({
 		name = "revives_icon",
-		texture = "guis/textures/pd2/skilltree/icons_atlas",
-		texture_rect = { --bandaid icon
-			5 * 64, --or 4,9 for inspire 
-			7 * 64,
-			64,
-			64
-		},
+		texture = revives_texture,
+		texture_rect = revives_rect,
 		color = self.color_data.hud_vitalsoutline_blue,
 		w = subpanel_w,
 		h = subpanel_w,
@@ -5508,7 +5578,7 @@ function NobleHUD:_create_score(hud)
 		text = "2",
 		align = "center",
 		vertical = "bottom",
-		y = margin_small,
+		y = margin_s,
 		color = self.color_data.hud_vitalsoutline_blue,
 		font = "fonts/font_eurostile_ext",
 		font_size = font_size,
@@ -5550,7 +5620,7 @@ function NobleHUD:_create_score(hud)
 		text = "0",
 		align = "center",
 		vertical = "bottom",
-		y = margin_small,
+		y = margin_s,
 		color = self.color_data.hud_vitalsoutline_blue,
 		font = "fonts/font_eurostile_ext",
 		font_size = font_size,
@@ -5578,22 +5648,9 @@ function NobleHUD:_create_score(hud)
 		layer = 4
 	})
 		
-	local mission_timer = score_panel:text({
-		name = "mission_timer",
-		text = "04:20",
-		align = "right",
-		layer = 3,
-		x = -margin_m,
-		y = subpanel_y,
-		color = self.color_data.hud_vitalsoutline_blue,
-		font = "fonts/font_eurostile_ext",
-		font_size = font_size,
-		alpha = 0.9
-	})
-	
 	local assault_phase_label = score_panel:text({
 		name = "assault_phase_label",
-		text = managers.localization:text("noblehud_assault_phase_standby"),
+		text = managers.localization:text("noblehud_hud_assault_phase_standby"),
 		align = "right",
 		x = -margin_m,
 		y = text_row_y_2,
@@ -5602,11 +5659,34 @@ function NobleHUD:_create_score(hud)
 		font_size = font_size,
 		layer = 4
 	})
+	
+	local mission_timer = score_panel:text({
+		name = "mission_timer",
+		text = "04:20",
+		align = "right",
+		layer = 3,
+		x = -margin_m,
+		y = subpanel_y, --text_row_y_2 - (font_size + margin_s),
+		color = self.color_data.hud_vitalsoutline_blue,
+		font = "fonts/font_eurostile_ext",
+		font_size = font_size,
+		alpha = 1
+	})
+		
 end
 
 function NobleHUD:SetHostages(text)
 	if text then
-		self._hostages_panel:child("hostages_label"):set_text(text)
+		local label = self._hostages_panel:child("hostages_label")
+		label:set_text(text)
+		local length = string.len(text)
+		if length > 2 then 
+			label:set_font_size(12)
+		elseif length > 1 then 
+			label:set_font_size(16)
+		else 
+			label:set_font_size(20)
+		end
 	end
 end
 
@@ -5620,7 +5700,7 @@ function NobleHUD:SetAssaultPhase(text)
 	local assault_phase_label = self._score_panel:child("assault_phase_label")
 	if text and text ~= assault_phase_label:text() then 
 		assault_phase_label:set_text(text)
-		self:animate(assault_phase_label,"animate_killfeed_text_in",nil,0.3,24,self.color_data.hud_vitalsoutline_blue,self.color_data.hud_text_flash)
+		self:animate(assault_phase_label,"animate_killfeed_text_in",nil,0.3,20,self.color_data.hud_vitalsoutline_blue,self.color_data.hud_text_flash)
 	end
 end
 
@@ -6233,19 +6313,21 @@ function NobleHUD:animate_objective_flash(o,t,dt,start_t,duration,font_size,kern
 end
 
 --blink by number of blinks
-function NobleHUD:animate_blink(o,t,dt,start_t,blinks_per_second,visible_percentage,total_blinks)
+function NobleHUD:animate_blink_2(o,t,dt,start_t,blinks_per_second,visible_percentage,total_blinks)
 	if (t - start_t) * blinks_per_second < total_blinks then
 		return true
 	end
-	o:set_visible((1 - visible_percentage) + math.cos((t - start_t) * 1000 * blinks_per_second) > visible_percentage)
+	o:set_visible((1 - visible_percentage) + math.cos((t - start_t) * 100 * blinks_per_second) > visible_percentage)
 end
 
 --blink by timed duration
 function NobleHUD:animate_blink_time(o,t,dt,start_t,blinks_per_second,visible_percentage,duration)
-	if (t - start_t) > duration then
+	if duration == -1 then 
+		--animate infinitely, until manually stopped with animate_stop() or overridden
+	elseif (t - start_t) > duration then
 		return true
 	end
-	o:set_visible((1 - visible_percentage) + math.cos((t - start_t) * 1000 * blinks_per_second) > visible_percentage)	
+	o:set_visible((1 - visible_percentage) + math.cos((t - start_t) * 100 * blinks_per_second) > visible_percentage)	
 end
 
 function NobleHUD:animate_objective_blinkout(o,t,dt,start_t,duration,start_w,end_w,alpha,mid_x)
@@ -6808,7 +6890,7 @@ function NobleHUD:animate_blip_move(o,delay)
 end
 
 function NobleHUD:_set_radar_range(text)
-	self._radar_panel:child("radar_range_label"):set_text(string.gsub(managers.localization:text("noblehud_radar_distance_label"),"$DISTANCE",text))	
+	self._radar_panel:child("radar_range_label"):set_text(string.gsub(managers.localization:text("noblehud_hud_radar_distance_label"),"$DISTANCE",text))	
 end
 
 
@@ -6903,7 +6985,7 @@ function NobleHUD:_create_vitals(hud)
 	local shield_outline = vitals_panel:bitmap({
 		name = "shield_outline",
 		texture = "guis/textures/shield_outline",
-		layer = 3,
+		layer = 4,
 		color = self.color_data.hud_vitalsoutline_blue,
 --		blend_mode = "add",
 		alpha = 0.7,
@@ -6924,7 +7006,7 @@ function NobleHUD:_create_vitals(hud)
 	local delayed_damage_shield_fill = vitals_panel:bitmap({
 		name = "delayed_damage_shield_fill",
 		texture = "guis/textures/shield_fill",
-		layer = 4,
+		layer = 5,
 		color = self.color_data.hud_delayeddamage_fill,
 		alpha = 0.5,
 		w = 0,
@@ -6957,8 +7039,8 @@ function NobleHUD:_create_vitals(hud)
 	
 	local shield_warning = vitals_panel:text({
 		name = "shield_warning",
-		text = "WARNING",
-		layer = 3,
+		text = managers.localization:text("noblehud_hud_shield_empty"),
+		layer = 6,
 		align = "center",
 		y = 12,
 		alpha = 0,
@@ -7793,14 +7875,21 @@ function NobleHUD:SetChatVisible(state)
 		state = self._cache.chat_wanted --or not panel:visible()
 	end
 	local duration = 0.5
+	local output = panel:child("output_panel")
+	self:animate_stop(bg)
 	if state then
 --		panel:show()
-		panel:child("output_panel"):stop()
-		panel:child("output_panel"):animate(callback(hudchat,hudchat,"_animate_fade_output"))
+		output:stop()
+		
+		output:animate(callback(hudchat, hudchat, "_animate_show_component"), output:alpha())
+--		panel:child("output_panel"):animate(callback(hudchat,hudchat,"_animate_fade_output"))
+		bg:show()
 		self:animate(bg,"animate_fadein",nil,duration,0.5)
 		
 --		self:animate(panel,"animate_fadein",nil,0.33)
 	else
+		output:stop()
+		output:animate(callback(hudchat, hudchat, "_animate_fade_output_immediate"))
 		self:animate(bg,"animate_fadeout",function(o)
 				o:hide()
 			end,
@@ -7818,11 +7907,13 @@ function NobleHUD:DoChatNotification(state)
 	local bg = hudchat:child("noblehud_chat_bg")
 	if state then 
 		icon:show()
-		self:animate(icon,"animate_blink",function(o)
+		self:animate(icon,"animate_blink_time",function(o)
 				o:hide()
 				o:set_alpha(self:GetHUDAlpha())
 			end,
-			7
+			4,
+			0.5,
+			-1
 		)
 			
 	else
@@ -8016,18 +8107,37 @@ end
 Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		
 --CHAT 
+
+	--keybind
 	MenuCallbackHandler.callback_noblehud_toggle_chat = function(self)
 		if managers.hud and managers.hud._hud_chat and managers.hud._hud_chat._panel then
-		NobleHUD._cache.chat_wanted = not NobleHUD._cache.chat_wanted
-			NobleHUD:SetChatVisible()
+			NobleHUD._cache.chat_wanted = not NobleHUD._cache.chat_wanted
+			NobleHUD:SetChatVisible(NobleHUD._cache.chat_wanted)
 			NobleHUD:ClearChatNotification()
+			if NobleHUD:GetChatAutohideMode() == 2 then 
+				NobleHUD:AddDelayedCallback(function()
+						NobleHUD._cache.chat_wanted = false
+						NobleHUD:DoChatNotification(false)
+						NobleHUD:SetChatVisible(false)
+						--[[
+						NobleHUD:animate(bg,"animate_fadeout",function(o)
+								o:hide()
+							end,
+							0.5,
+							bg:alpha()
+						)
+						--]]
+					end,nil,NobleHUD:GetChatAutohideTimer(),"autohide_chat"
+				)
+			end
 		end
 	end
-
+--[[
 	MenuCallbackHandler.callback_noblehud_set_chat_notification_mode = function(self,item)
 		NobleHUD.settings.chat_notification_mode = tonumber(item:value())
 		NobleHUD:SaveSettings()
 	end	
+--]]
 
 	MenuCallbackHandler.callback_noblehud_set_chat_notification_sfx = function(self,item)
 		local value = tonumber(item:value())
@@ -8036,8 +8146,14 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		if notif_sfx then 
 			NobleHUD:AddDelayedCallback(function()
 				XAudio.Source:new(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/ui/" .. notif_sfx))
-			end,nil,0.5,"test_chat_sfx")
+			end,nil,0.5,"test_chat_sfx",true)
 		end
+		NobleHUD:SaveSettings()
+	end	
+	
+	MenuCallbackHandler.callback_noblehud_set_chat_timestamp_mode = function(self,item)
+		local value = tonumber(item:value())
+		NobleHUD.settings.chat_timestamp_mode = value
 		NobleHUD:SaveSettings()
 	end	
 	
@@ -8046,12 +8162,36 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		if notif_sfx then 
 			NobleHUD:AddDelayedCallback(function()
 				XAudio.Source:new(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/ui/" .. notif_sfx))
-			end,nil,0.5,"test_chat_sfx")
+			end,nil,0.5,"test_chat_sfx",true)
 		end
 	end
-
+	
+	MenuCallbackHandler.callback_noblehud_set_chat_notification_sound_enabled = function(self,item)
+		NobleHUD.settings.chat_notification_sound_enabled = item:value() == "on"
+		NobleHUD:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_noblehud_set_chat_notification_icon_enabled = function(self,item)
+		NobleHUD.settings.chat_notification_icon_enabled = item:value() == "on"
+		NobleHUD:SaveSettings()
+	end
+	
+	
+	MenuCallbackHandler.callback_noblehud_set_chat_notification_autoshow_enabled = function(self,item)
+		NobleHUD.settings.chat_autoshow_enabled = item:value() == "on"
+		NobleHUD:SaveSettings()
+	end
+	
+	
 	MenuCallbackHandler.callback_noblehud_set_chat_autohide_mode = function(self,item)
-		NobleHUD.settings.chat_autohide_mode = tonumber(item:value())
+		local value = tonumber(item:value())
+		NobleHUD.settings.chat_autohide_mode = value
+		--[[
+		if value == 1 and (managers.hud and managers.hud._hud_chat and managers.hud._hud_chat._panel then 
+			NobleHUD:AddDelayedCallback(function()		
+			end,NobleHUD:GetChatAutohideTimer(),"autohide_chat")
+		end
+		--]]
 		NobleHUD:SaveSettings()
 	end	
 
@@ -8164,6 +8304,42 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		if alive(NobleHUD._stamina_panel) then 
 			NobleHUD._stamina_panel:set_visible(value)
 		end
+		NobleHUD:SaveSettings()
+	end
+
+	MenuCallbackHandler.callback_noblehud_set_shield_empty_sound_enabled = function(self,item)
+		local value = item:value() == "on"
+		if not value and NobleHUD._shield_sound_source then 
+			--since shield sound check is done every frame, and 
+			--one cannot easily check current buffer 
+			NobleHUD._shield_sound_source:stop()
+			NobleHUD._shield_sound_source:close()
+			NobleHUD._shield_sound_source = nil
+		end		
+		NobleHUD.settings.shield_empty_sound_enabled = value
+		NobleHUD:SaveSettings()
+	end
+	
+
+	MenuCallbackHandler.callback_noblehud_set_shield_low_sound_enabled = function(self,item)
+		local value = item:value() == "on"
+		if not value and NobleHUD._shield_sound_source then 
+			NobleHUD._shield_sound_source:stop()
+			NobleHUD._shield_sound_source:close()
+			NobleHUD._shield_sound_source = nil
+		end		
+		NobleHUD.settings.shield_low_sound_enabled = value
+		NobleHUD:SaveSettings()
+	end
+	
+
+	MenuCallbackHandler.callback_noblehud_set_shield_low_threshold = function(self,item)
+		NobleHUD.settings.shield_low_threshold = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+
+	MenuCallbackHandler.callback_noblehud_set_master_hud_alpha = function(self,item)
+		NobleHUD.settings.master_hud_alpha = tonumber(item:value())
 		NobleHUD:SaveSettings()
 	end
 	

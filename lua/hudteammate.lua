@@ -89,6 +89,7 @@ Hooks:PostHook(HUDTeammate,"set_armor","noblehud_set_armor",function(self,data)
 	local vitals_panel = NobleHUD._vitals_panel
 	if vitals_panel then 
 		if (total == 0) then
+			vitals_panel:child("shield_fill"):set_w(0)
 		else
 			
 --			vitals_panel:child("shield_fill"):set_texture_rect(0,0,512 * ratio,64) --classic, one-way depletion

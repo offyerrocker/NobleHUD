@@ -6,7 +6,7 @@
 	"back_callback" : "noblehud_chat_options_close",
 	"items" : [
 		{
-			"type" : "multiple_choice",
+			"type" : "DISABLED_multiple_choice",
 			"id" : "id_noblehud_set_chat_notification_mode",
 			"title" : "noblehud_set_chat_notification_mode_title",
 			"description" : "noblehud_set_chat_notification_mode_desc",
@@ -18,6 +18,43 @@
 				"noblehud_chat_notification_mode_none"
 			],
 			"value" : "chat_notification_mode"
+		},
+		{
+			"type" : "multiple_choice",
+			"id" : "id_noblehud_set_chat_timestamp_mode",
+			"title" : "noblehud_set_chat_timestamp_mode_title",
+			"description" : "noblehud_set_chat_timestamp_mode_desc",
+			"callback" : "callback_noblehud_set_chat_timestamp_mode",
+			"items" : [
+				"noblehud_chat_timestamp_mode_heist",
+				"noblehud_chat_timestamp_mode_irl",
+				"noblehud_chat_timestamp_mode_none"
+			],
+			"value" : "chat_timestamp_mode"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_chat_notification_sound_enabled",
+			"title" : "noblehud_set_chat_notification_sound_enabled_title",
+			"description" : "noblehud_set_chat_notification_sound_enabled_desc",
+			"callback" : "callback_noblehud_set_chat_notification_sound_enabled",
+			"value" : "chat_notification_sound_enabled"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_chat_notification_icon_enabled",
+			"title" : "noblehud_set_chat_notification_icon_enabled_title",
+			"description" : "noblehud_set_chat_notification_icon_enabled_desc",
+			"callback" : "callback_noblehud_set_chat_notification_icon_enabled",
+			"value" : "chat_notification_icon_enabled"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_chat_notification_autoshow_enabled",
+			"title" : "noblehud_set_chat_notification_autoshow_enabled_title",
+			"description" : "noblehud_set_chat_notification_autoshow_enabled_desc",
+			"callback" : "callback_noblehud_set_chat_notification_autoshow_enabled",
+			"value" : "chat_autoshow_enabled"
 		},
 		{
 			"type" : "multiple_choice",
@@ -53,7 +90,8 @@
 			"description" : "noblehud_set_chat_autohide_mode_desc",
 			"callback" : "callback_noblehud_set_chat_autohide_mode",
 			"items" : [
-				"noblehud_chat_autohide_mode_onmessage",
+				"noblehud_chat_autohide_mode_messageonly",
+				"noblehud_chat_autohide_mode_messageandmanual",
 				"noblehud_chat_autohide_mode_never"
 			],
 			"value" : "chat_autohide_mode"
@@ -83,8 +121,8 @@
 			"callback" : "callback_noblehud_set_chat_panel_x",
 			"value" : "chat_panel_x",
 			"default_value" : 0,
-			"min" : 0,
-			"max" : 1024,
+			"min" : -1280,
+			"max" : 1280,
 			"step" : 1
 		},
 		{
@@ -95,8 +133,8 @@
 			"callback" : "callback_noblehud_set_chat_panel_y",
 			"value" : "chat_panel_y",
 			"default_value" : 0,
-			"min" : 0,
-			"may" : 1024,
+			"min" : -800,
+			"max" : 800,
 			"step" : 1
 		}
 	]

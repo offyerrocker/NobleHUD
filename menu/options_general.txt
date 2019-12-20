@@ -1,0 +1,20 @@
+{
+	"menu_id" : "noblehud_options_general",
+	"parent_menu_id" : "noblehud_options",
+	"title" : "noblehud_options_general_options_title",
+	"back_callback" : "callback_noblehud_general_options_close",
+	"items" : [
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_master_hud_alpha",
+			"title" : "noblehud_set_master_hud_alpha_title",
+			"description" : "noblehud_set_master_hud_alpha_desc",
+			"callback" : "callback_noblehud_set_master_hud_alpha",
+			"value" : "master_hud_alpha",
+			"default_value" : 0.9,
+			"min" : 0,
+			"max" : 1,
+			"step" : 0.1
+		}
+	]
+}

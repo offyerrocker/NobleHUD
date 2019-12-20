@@ -9,7 +9,7 @@ function PlayerStandard:_check_action_primary_attack(t,input,...)
 		
 		if NobleHUD.weapon_data[selection_index].safety then 
 			if input.btn_primary_attack_press then
-				managers.hud:show_hint({text = managers.localization:text("noblehud_safety_check")})
+				managers.hud:show_hint({text = managers.localization:text("noblehud_hud_safety_check")})
 				weapon_base:dryfire()
 			end
 			return
@@ -40,7 +40,7 @@ elseif NewRaycastWeaponBase.can_use_burst_mode then
 
 	local orig_check_firemode = PlayerStandard._check_action_weapon_firemode
 	function PlayerStandard:_check_action_weapon_firemode(t,input,...)
---		OffyLib:c_log("Burstfire toggle")
+		--toggle to burstfire
 		if input.btn_weapon_firemode_press then 
 			local weapon = self._equipped_unit:base()
 			local index = tweak_data.weapon[weapon._name_id].use_data.selection_index

@@ -54,6 +54,7 @@ Hooks:PreHook(PlayerManager,"_change_player_state","noblehud_on_game_state_chang
 end)
 --]]
 
+--[[
 Hooks:PostHook(PlayerManager,"_internal_load","noblehud_on_internal_load",function(self)
 	if not NobleHUD then 
 		log("NOBLEHUD: HEY DIPSHIT YOU STILL HAVEN'T FIXED SOME LOAD ISSUE")
@@ -61,7 +62,7 @@ Hooks:PostHook(PlayerManager,"_internal_load","noblehud_on_internal_load",functi
 	end
 	NobleHUD:OnLoaded()
 end)
-
+--]]
 
 
 --switch_equipment() and select_next_item() overwritten to allow selecting empty equipment

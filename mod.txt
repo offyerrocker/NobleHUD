@@ -84,5 +84,11 @@
 			"hook_id": "lib/units/weapons/raycastweaponbase",
 			"script_path": "lua/raycastweaponbase.lua"
 		}
+	],
+	"persist_scripts" : [
+		{
+			"global" : "NobleHUD_DisableUpdate",
+			"script_path" : "lua/_update.lua"
+		}
 	]
 }

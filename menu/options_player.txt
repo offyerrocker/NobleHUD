@@ -5,7 +5,7 @@
 	"description" : "noblehud_player_options_desc",
 	"back_callback" : "noblehud_player_options_close",
 	"items" : [
-			{
+		{
 			"type" : "slider",
 			"id" : "id_noblehud_set_master_hud_alpha",
 			"title" : "noblehud_set_master_hud_alpha_title",
@@ -24,6 +24,34 @@
 			"description" : "noblehud_set_stamina_enabled_desc",
 			"callback" : "callback_noblehud_set_stamina_enabled",
 			"value" : "stamina_enabled"
+		},
+		{
+			"type" : "toggle",
+			"id" : "id_noblehud_set_shield_empty_sound_enabled",
+			"title" : "noblehud_set_shield_empty_sound_enabled_title",
+			"description" : "noblehud_set_shield_empty_sound_enabled_desc",
+			"callback" : "callback_noblehud_set_shield_empty_sound_enabled",
+			"value" : "shield_empty_sound_enabled"
+		},
+		{
+			"type" : "toggle",
+			"id" : "id_noblehud_set_shield_low_sound_enabled",
+			"title" : "noblehud_set_shield_low_sound_enabled_title",
+			"description" : "noblehud_set_shield_low_sound_enabled_desc",
+			"callback" : "callback_noblehud_set_shield_low_sound_enabled",
+			"value" : "shield_low_sound_enabled"
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_shield_low_threshold",
+			"title" : "noblehud_set_shield_low_threshold_title",
+			"description" : "noblehud_set_shield_low_threshold_desc",
+			"callback" : "callback_noblehud_set_shield_low_threshold",
+			"value" : "shield_low_threshold",
+			"default_value" : 0.3,
+			"min" : 0,
+			"max" : 1,
+			"step" : 0.1
 		}
 	]
 }
