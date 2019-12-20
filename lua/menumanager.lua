@@ -32,9 +32,8 @@ todo shield damage chunking
 
 		%% FEATURES: %%
 			
-			* Assault timer?
-			* Chat panel
-				Alternatively, simply add an opaque background + auto-show/hide chat option
+		* Better player waypoints
+			
 			
 			* Teammates panel
 				-circleplus/character name
@@ -55,7 +54,8 @@ todo shield damage chunking
 
 			
 	&& LOW PRIORITY FEATURES: &&
-		* Better player waypoints
+		* Assault timer?
+			
 		* Apply update opacity for all elements from menu
 		* Organize color data
 			- Ability circle needs a baked-blue asset
@@ -2673,7 +2673,6 @@ function NobleHUD:UpdateHUD(t,dt,t_real)
 		return
 	end
 	
---	Console:SetTrackerValue("trackera",tostring(NobleHUD._cache.chat_wanted))
 	
 	local announcer = self._announcer_sound_source
 	if announcer and self._cache.announcer_queue[1] then 
@@ -2729,6 +2728,8 @@ function NobleHUD:UpdateHUD(t,dt,t_real)
 				end
 			end
 		end		
+		
+		
 		--shield sfx (loop)
 		local player_armor_max = player_damage:_max_armor()
 		if player_armor_max > 0 then
@@ -2808,10 +2809,6 @@ function NobleHUD:UpdateHUD(t,dt,t_real)
 		end
 		
 		--[[
-		NobleHUD.asdfdd = NobleHUD.asdfdd or t
-
-		if NobleHUD.asdfdd < t + 2 then 
-			NobleHUD.asdfdd = NobleHUD.asdfdd + 2
 			for id,data in pairs(managers.criminals._characters) do 
 				if data.taken and data.peer_id then 
 					self:_set_scoreboard_character(data.peer_id,data.name)
@@ -2877,9 +2874,6 @@ function NobleHUD:UpdateHUD(t,dt,t_real)
 				for _,unit in pairs(all_persons) do 
 					if unit and alive(unit) then --dead people are already filtered out of World:find_units_quick()
 						local dis = mvector3.distance_sq(player_pos, unit:position())
---						if unit == Console.tagged_unit then 
---							Console:SetTrackerValue("trackerd","dis " .. dis .. " vs max " .. RADAR_DISTANCE_MAX_SQ)
---						end
 						if dis >= RADAR_DISTANCE_MAX_SQ then
 							--out of range; remove 
 							self:remove_radar_blip(unit)
@@ -2900,26 +2894,13 @@ function NobleHUD:UpdateHUD(t,dt,t_real)
 			
 			for blip_key,data in pairs(self._radar_blips) do 
 				if data.unit and alive(data.unit) and (data.unit:character_damage()) and not data.unit:character_damage():dead() then 
---					if not data.unit:character_damage():dead() then
 					local person_pos = data.unit:position()
 					local angle_to_person = 90 + NobleHUD.angle_from(person_pos,player_pos) - player_aim
 					local distance_to_person = NobleHUD.vec2_distance(player_pos,person_pos)
 					local v_distance = player_pos.z - person_pos.z
---[[					
-						if data.unit == Console.tagged_unit then 
-							Console:SetTrackerValue("trackere",RADAR_DISTANCE_MID .. "," .. RADAR_DISTANCE_MAX .. "," .. RADAR_DISTANCE_MAX_SQ)
-							local distance_to_person_2 = mvector3.distance(player_pos,person_pos) --actual
-							Console:SetTrackerValue("trackera","Exact vertical distance: " .. v_distance)
-							Console:SetTrackerValue("trackerb","N Horizontal distance " .. distance_to_person)
-							Console:SetTrackerValue("trackerc","Mvector3 Total distance is " .. distance_to_person_2)
---							Console:SetTrackerValue("trackerd","N Vertical distance is " .. 1)						
-						end
---]]						
 					local blip_x,blip_y
 					if distance_to_person < RADAR_DISTANCE_MID then 
 					
---						blip_x = (1 + (math.sin(angle_to_person) * (distance_to_person / RADAR_DISTANCE_MID))) * (RADAR_SIZE / 2)
---						blip_y = (1 + (math.cos(angle_to_person) * (distance_to_person / RADAR_DISTANCE_MID))) * (RADAR_SIZE / 2)
 						blip_x = (math.sin(angle_to_person) * (distance_to_person / RADAR_DISTANCE_MID) * (RADAR_SIZE / 2))
 						blip_y = (math.cos(angle_to_person) * (distance_to_person / RADAR_DISTANCE_MID) * (RADAR_SIZE / 2))
 						if math.abs(v_distance) > V_DISTANCE_MID then 
@@ -8119,26 +8100,12 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 						NobleHUD._cache.chat_wanted = false
 						NobleHUD:DoChatNotification(false)
 						NobleHUD:SetChatVisible(false)
-						--[[
-						NobleHUD:animate(bg,"animate_fadeout",function(o)
-								o:hide()
-							end,
-							0.5,
-							bg:alpha()
-						)
-						--]]
 					end,nil,NobleHUD:GetChatAutohideTimer(),"autohide_chat"
 				)
 			end
 		end
 	end
---[[
-	MenuCallbackHandler.callback_noblehud_set_chat_notification_mode = function(self,item)
-		NobleHUD.settings.chat_notification_mode = tonumber(item:value())
-		NobleHUD:SaveSettings()
-	end	
---]]
-
+	
 	MenuCallbackHandler.callback_noblehud_set_chat_notification_sfx = function(self,item)
 		local value = tonumber(item:value())
 		NobleHUD.settings.chat_notification_sfx = value
@@ -8311,7 +8278,9 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		local value = item:value() == "on"
 		if not value and NobleHUD._shield_sound_source then 
 			--since shield sound check is done every frame, and 
-			--one cannot easily check current buffer 
+			--one cannot easily check current buffer, just stop the sound.
+			--the interruption should be imperceptible,
+			--especially since it'll probably be masked by the menu ui noises.
 			NobleHUD._shield_sound_source:stop()
 			NobleHUD._shield_sound_source:close()
 			NobleHUD._shield_sound_source = nil
@@ -8387,7 +8356,8 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		--NobleHUD:SaveSettings()
 	end
 	
-	MenuCallbackHandler.callback_noblehud_toggle_safety = function(self)		
+	MenuCallbackHandler.callback_noblehud_toggle_safety = function(self)
+		--dummied out for now
 	end
 	
 	NobleHUD:LoadSettings()
@@ -8398,5 +8368,4 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	MenuHelper:LoadFromJsonFile(NobleHUD._options_path .. "options_crosshair.txt", NobleHUD, NobleHUD.settings)
 	MenuHelper:LoadFromJsonFile(NobleHUD._options_path .. "options_score.txt", NobleHUD, NobleHUD.settings)
 	MenuHelper:LoadFromJsonFile(NobleHUD._options_path .. "options_radar.txt", NobleHUD, NobleHUD.settings)
---	MenuHelper:LoadFromJsonFile(NobleHUD._options_path .. "options_general.txt", NobleHUD, NobleHUD.settings)
 end)
