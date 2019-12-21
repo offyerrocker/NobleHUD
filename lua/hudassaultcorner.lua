@@ -7,10 +7,12 @@ Hooks:PostHook(HUDAssaultCorner,"init","noblehud_assaultcorner_init",function(se
 	self._hud_panel:child("hostages_panel"):set_alpha(0)
 end)
 
+--[[
 Hooks:PostHook(HUDAssaultCorner,"_end_assault","noblehud_assault_end",function(self)
 --	NobleHUD:SetAssaultPhase(managers.localization:text("noblehud_assault_phase_control"))
 NobleHUD:log("hudassault: ending assault")
 end)
+--]]
 
 Hooks:PostHook(HUDAssaultCorner,"set_control_info","noblehud_set_control_info",function(self,data)
 	NobleHUD:SetHostages(data.nr_hostages)

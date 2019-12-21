@@ -103,6 +103,12 @@
 	"noblehud_set_popup_font_size_title" : "Popup Font Size",
 	"noblehud_set_popup_font_size_desc" : "The size of the popup text.",
 		
+		
+	"noblehud_hud_objective_activate" : "Current Objective:",
+	"noblehud_hud_objective_reminder" : "Objective Reminder:",
+	"noblehud_hud_objective_update" : "Objective Updated:",
+	"noblehud_hud_objective_complete" : "Objective Complete:",
+	
 	"noblehud_hud_shield_empty" : "WARNING",
 	"noblehud_hud_radar_distance_label" : "$DISTANCEm",
 	"noblehud_hud_safety_check" : "Your safety is on!",

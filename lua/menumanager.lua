@@ -1,18 +1,18 @@
 --[[ 
 
 
-
 ***** TODO: *****
-	
 	Notes:
-
+	
+		mod icon through main.xml AND mod.txt
+	
 		slider setting for popup_fadeout_time
 
 		check for mag count above max --> bar
 		weapon overheat meter? 
 
-todo grenade cooldown animation circles
-todo shield damage chunking
+		todo grenade cooldown animation circles
+		todo shield damage chunking
 
 
 	&&& HIGH PRIORITY: &&&
@@ -56,8 +56,11 @@ todo shield damage chunking
 	&& LOW PRIORITY FEATURES: &&
 		* Assault timer?
 			
+		* Implement Auto-update from GitHub provider
+		
 		* Apply update opacity for all elements from menu
 		* Organize color data
+			- All HUD elements should be the same blue color
 			- Ability circle needs a baked-blue asset
 		* Queue objective activities rather than stopping current
 		* Tab should refresh view_timer or call remind objective
@@ -91,7 +94,6 @@ todo shield damage chunking
 		* Killfeed/JoyScore
 			* Record medals with score
 			* Show weapon icon (PLAYERNAME [WEAPON_ICON] ENEMYNAME) ?
-			* Implement campaign-similar scoring system; medals should award additive score bonus
 		* More Medals:
 			* Seek and Destroy (for bosses?)
 			* EMP Blast for stunned enemies?
@@ -127,9 +129,6 @@ todo shield damage chunking
 				* Right arrow should do something
 				* Left arrow rotates with distance?
 				* Left arrow is not colored (frame, circle, and altimeter are already colored)
-		* Downs counter
-			* Find a better representation of downs
-			* Actually count downs
 		* Radar
 			* Radar ghost effect
 			* Motion-based tracking
@@ -175,10 +174,8 @@ todo shield damage chunking
 			
 --grenade/ability outline (baked blue color for vertex radial render template)
 		-- Replacement tube for auntie dot
---score banner
+--score banner (tiny beveled corner)
 --score banner small
---score icon (play icon)
-
 - bloom funcs should all have a reference to their own crosshair tweakdata
 - bloom funcs should also have reference to their own weapon tweakdata
 - crosshair data blacklist should be replaced by a manual override list for weapon ids
@@ -1224,7 +1221,16 @@ NobleHUD._helper_sequences = {
 	}
 }
 
-
+NobleHUD._queued_objectives = {
+--[[example:
+	{
+		id = "ovengrill_office_objective2",
+		text = "Steal four bags of pepsi", 
+		current_amount = 1, --optional
+		amount = 4 --optional
+	}
+--]]
+}
 
 NobleHUD.score_unit_points = {
 	civilian = -25, 
@@ -1889,7 +1895,7 @@ function NobleHUD:log(...)
 	end
 end
 
-function NobleHUD.table_concat(tbl,div,key_div)
+function NobleHUD.table_concat(tbl,div,key_div,include_subtables)
 	div = (div and tostring(div)) or " "
 	if type(tbl) == "table" then 
 		local str 
@@ -1901,17 +1907,17 @@ function NobleHUD.table_concat(tbl,div,key_div)
 			end
 			for k,v in pairs(tbl) do 
 				if str then
-					str = str .. div .. tostring(k) .. key_div .. tostring(v)
+					str = str .. div .. tostring(k) .. key_div .. ((include_subtables and type(v) == "table" and ("{" .. NobleHUD.table_concat(v,div,key_div,include_subtables) .. "}")) or tostring(v))
 				else
-					str = tostring(k) .. key_div .. tostring(v)
+					str = tostring(k) .. key_div .. ((include_subtables and type(v) == "table" and ("{" .. NobleHUD.table_concat(v,div,key_div,include_subtables) .. "}")) or tostring(v))
 				end
 			end
 		else
 			for k,v in pairs(tbl) do 
 				if str then 
-					str = str .. div .. tostring(v)
+					str = str .. div .. ((include_subtables and type(v) == "table" and ("{" .. NobleHUD.table_concat(v,div,key_div,include_subtables) .. "}")) or tostring(v)) 
 				else 
-					str = tostring(v)
+					str = ((include_subtables and type(v) == "table" and ("{" .. NobleHUD.table_concat(v,div,key_div,include_subtables) .. "}")) or tostring(v))
 				end
 			end
 		end
@@ -2593,6 +2599,9 @@ function NobleHUD:OnLoaded()
 			
 	managers.hud:script(PlayerBase.PLAYER_INFO_HUD_PD2).panel:child("teammates_panel"):hide()
 	
+--	local peer_id = managers.network:session():local_peer():id() or 1
+--	self._score_panel:child("score_banner_small"):set_color(tweak_data.chat_colors[peer_id])
+	
 	self:SetRadarDistance(self:GetRadarDistance())
 	
 	--[[
@@ -3224,7 +3233,7 @@ function NobleHUD:OnGameStateChanged(before_state,state)
 		return
 	end
 	if managers.player and managers.player:local_player() and not self._cache.loaded then
-		self:log("Loaded HUD during state " .. state)
+--		self:log("Loaded HUD during state " .. state)
 		self:OnLoaded()
 	end
 	if GameStateFilters.any_end_game[state] or GameStateFilters.player_slot[state] or GameStateFilters.lobby[state] then
@@ -5132,8 +5141,8 @@ function NobleHUD:_create_stamina(hud)
 		w = icon_size,
 		h = icon_size,
 		alpha = 0,
-		x = 0,
-		y = 330
+		x = 250,
+		y = 430
 --		x = 170,
 --		y = 430
 	})
@@ -5426,11 +5435,12 @@ function NobleHUD:_create_score(hud)
 	local banner_s_size = 24
 	local banner_s_x = banner_l_x - (banner_s_size + margin_s)
 	local banner_s_y = panel_h - banner_s_size -- bottom
+
 	local score_banner_small = score_panel:bitmap({
-		name = "score_banner_large",
+		name = "score_banner_small",
 		texture = "guis/textures/test_blur_df",
 		layer = 1,
-		color = Color(0.6,0.6,0.6), --light grey
+		color = tweak_data.chat_colors[managers.network:session():local_peer():id() or 1],--Color(0.6,0.6,0.6), --light grey
 		x = banner_s_x,
 		y = banner_s_y,
 		w = banner_s_size,
@@ -6186,14 +6196,18 @@ function NobleHUD:_create_objectives(hud)
 	self._objectives_panel = objectives_panel
 end
 
-function NobleHUD:AnimateShowObjective() --not an animate() function, but calls animate() 
+function NobleHUD:AnimateShowObjective(data) --not an animate() function, but calls animate() 
+
+	if not self._queued_objectives[1] then
+		self:log("NobleHUD:AnimateShowObjective() ERROR: Tried to animate nonexistent objective queue",{color=Color.red})
+		return
+	end
+	self._queued_objectives[1].is_animating = true
 	local objectives_panel = NobleHUD._objectives_panel
 	local objectives_label = objectives_panel:child("objectives_label")
 	local objectives_label_shadow = objectives_panel:child("objectives_label_shadow")
 	local objectives_title = objectives_panel:child("objectives_title")
 	local objectives_title_shadow = objectives_panel:child("objectives_title_shadow")
---return NobleHUD._objectives_panel:child("blink_label")
-
 	local _,_,label_w,label_h = objectives_label:text_rect()
 	
 	local _,_,title_w,title_h = objectives_title:text_rect()
@@ -6204,9 +6218,18 @@ function NobleHUD:AnimateShowObjective() --not an animate() function, but calls 
 	local kern = -2
 	local title_font_size = tweak_data.hud.active_objective_title_font_size
 	local label_font_size = title_font_size * 1.15
-	local duration = 0.2
+	local in_duration = 0.2
+	local mid_x = objectives_panel:w() / 2
+	local blinkout_time = 0.25
+	local blinkout_alpha = 0.9
+	local blinkout_stretch_w_mul = 1.25
+	local display_hold_time = 3
+	
+--prep
 	blink_label:set_size(label_w,label_h)
+--	blink_label:set_alpha(1)
 	blink_title:set_size(title_w,title_h)
+	blink_title:set_alpha(1)
 	objectives_title:set_font_size(0)
 	objectives_title:set_kern(kern)
 	objectives_title:set_alpha(1)
@@ -6225,52 +6248,148 @@ function NobleHUD:AnimateShowObjective() --not an animate() function, but calls 
 	self:animate_stop(objectives_title_shadow)
 	self:animate_stop(objectives_label)
 	self:animate_stop(objectives_label_shadow)
+	
+	if (data.mode ~= "remind") or (data.id and data.id == managers.hud._hud_objectives._active_objective_id) then
+		local label_text = utf8.to_upper(data.text)
+		if data.amount and data.current_amount then
+			label_text = label_text .. string.gsub(" [$CURRENT/$TOTAL]","$CURRENT",data.current_amount)
+			label_text = string.gsub(label_text,"$TOTAL",data.amount)
+		elseif data.amount or data.current_amount then 
+		--i don't know under what circumstances this would trigger, probably just weirdly scripted custom heissts
+			label_text = label_text .. " [" .. tostring(data.amount or data.current_amount) .. "]"
+		end
+		objectives_label:set_text(label_text)
+		objectives_label_shadow:set_text(label_text)
+	end
+	
+	
+--build display cb sequence backwards
+
+--forward order:
+
+--animate white flash
+	-- done_cb fadein title, fadein label
+--fadein title
+	--done cb: delayed cb to fadeout title after display duration
+--fadein label
+	--done cb: delayed cb to fadeout label after display duration
+--return done
+	
+--basically, title and label are animated concurrently (after the initial flash)
+--each with their own cb tree,
+--but title is the one that calls the overall animate done callback for this objective 
+
+--
+	local function done () 
+	--remove this objective from queue, 
+	--	and display next queued objective, if one exists
+		table.remove(self._queued_objectives,1)
+		if self._queued_objectives[1] then 
+			self:PerformObjectiveFromQueue()
+		end
+	end
+	
+	
+	
 	local function fadeout_title()
-		self:AddDelayedCallback(
-			function()
-				self:animate(objectives_title,"animate_fadeout",function(o) o:set_font_size(title_font_size) end,0.5)
-				self:animate(objectives_title_shadow,"animate_fadeout",function(o) o:set_font_size(title_font_size) end,0.5)
-			end,
-			nil,
-			5,
-			"fadeout_objective_title"
-		)
+		self:AddDelayedCallback(function()
+			self:animate(objectives_title,"animate_fadeout",function(o) o:set_font_size(title_font_size) done() end,0.5)
+			self:animate(objectives_title_shadow,"animate_fadeout",function(o) o:set_font_size(title_font_size) end,0.5)		
+		end,nil,display_hold_time,"objective_title_hide")
 	end
 	local function fadeout_label()
-		self:AddDelayedCallback(
-			function()
-				self:animate(objectives_label,"animate_fadeout",nil,0.5)
-				self:animate(objectives_label_shadow,"animate_fadeout",nil,0.5)
-			end,
-			nil,
-			4,
-			"fadeout_objective_label"
-		)
+		self:AddDelayedCallback(function()
+			self:animate(objectives_label,"animate_fadeout",nil,0.5)
+			self:animate(objectives_label_shadow,"animate_fadeout",nil,0.5)
+		end,nil,display_hold_time,"objective_label_hide")
 	end
+	
+	local function animate_objective_label_in()		
+		self:animate(objectives_label,"animate_objective_flash",fadeout_label,in_duration,label_font_size,kern)
+		self:animate(objectives_label_shadow,"animate_objective_flash",nil,in_duration,label_font_size,kern)
+	end
+	local function animate_blink_blinkout()
+		blink_label:set_alpha(1)
+		self:animate(blink_label,"animate_objective_blinkout",animate_objective_label_in,blinkout_time,label_w,label_w * blinkout_stretch_w_mul,blinkout_alpha,mid_x)
+	end
+	
 	local function animate_objective_title_in()
+		self:animate(objectives_title,"animate_objective_flash",fadeout_title,in_duration,title_font_size,kern)
+		self:animate(objectives_title_shadow,"animate_objective_flash",nil,in_duration,title_font_size,kern)
+		animate_blink_blinkout()
+	end
 
-		self:animate(objectives_title,"animate_objective_flash",fadeout_title,duration,title_font_size,kern)
-		self:animate(objectives_title_shadow,"animate_objective_flash",nil,duration,title_font_size,kern)
-	end
-	local function animate_objective_text_in()
-		self:animate(objectives_label,"animate_objective_flash",fadeout_label,duration,label_font_size,kern)
-		self:animate(objectives_label_shadow,"animate_objective_flash",nil,duration,label_font_size,kern)
-	end
-	local mid_x = objectives_panel:w() / 2
-	local blinkout_time = 0.25
-	local blinkout_alpha = 0.9
-	local blinkout_stretch_w_mul = 1.25
-	self:AddDelayedCallback(
-		function()
-			blink_label:set_alpha(1)
-			self:animate(blink_label,"animate_objective_blinkout",animate_objective_text_in,blinkout_time,label_w,label_w * blinkout_stretch_w_mul,blinkout_alpha,mid_x)
-		end,
-		nil,
-		0.5,
-		"fadein_objective_title"
-	)
---	blink_title:set_alpha(1)
 	self:animate(blink_title,"animate_objective_blinkout",animate_objective_title_in,blinkout_time,title_w,title_w * blinkout_stretch_w_mul,blinkout_alpha,mid_x)
+end
+
+function NobleHUD:SetObjectiveTitle(label)
+	if alive(self._objectives_panel) then 
+		self._objectives_panel:child("objectives_title"):set_text(label)
+		self._objectives_panel:child("objectives_title_shadow"):set_text(label)
+	end
+end
+
+function NobleHUD:AddQueuedObjective(data)
+	if not data then
+		self:log("NobleHUD:AddQueuedObjective(): Really bro? You're gonna try to queue an objective with no data? For shame.")
+		return
+	end
+	if not data.id then 
+		self:log("NobleHUD:AddQueuedObjective(): I don't believe this. You come into my home and try to add an objective without an id?" )
+		return
+	end	
+	
+	local added = false
+	
+	--search queued objectives for this objective, and replace it if it exists (and isn't already animating)
+	for i,queued in ipairs(NobleHUD._queued_objectives) do 
+		if queued.id == data.id and not queued.is_animating then 
+			table.remove(NobleHUD._queued_objectives,i)
+			table.insert(NobleHUD._queued_objectives,data)
+			added = true
+			break
+		end
+	end
+	if not added then 		
+		table.insert(NobleHUD._queued_objectives,data)
+	end
+	if NobleHUD._queued_objectives[1] and not NobleHUD._queued_objectives[1].is_animating then
+		self:PerformObjectiveFromQueue()
+	end
+	
+	--do start animation
+end
+	
+function NobleHUD:PerformObjectiveFromQueue()
+	local data = NobleHUD._queued_objectives[1]
+	
+	local mode = data.mode --can be activate, remind, or complete
+	if mode == "activate" then 
+		NobleHUD:SetObjectiveTitle(utf8.to_upper(managers.localization:text("noblehud_hud_objective_activate")))
+	elseif mode == "remind" then 
+		NobleHUD:SetObjectiveTitle(utf8.to_upper(managers.localization:text("noblehud_hud_objective_reminder")))
+	elseif mode == "update_amount" then
+		NobleHUD:SetObjectiveTitle(utf8.to_upper(managers.localization:text("noblehud_hud_objective_update")))
+	elseif mode == "complete" then
+		NobleHUD:SetObjectiveTitle(utf8.to_upper(managers.localization:text("noblehud_hud_objective_complete")))
+	else
+		self:log("NobleHUD:AddQueuedObjective(): I don't believe this. You come into my home and try to add an objective without an objective_id? TWICE?")
+		table.remove(NobleHUD._queued_objectives,1)
+	end
+	
+	NobleHUD:AnimateShowObjective(data)
+end
+
+function NobleHUD:SetObjectiveLabel(label)
+	local progress = ""
+	if NobleHUD._cache.objective_progress and NobleHUD._cache.objective_total then
+		progress = string.gsub(" [$CURRENT/$TOTAL]","$CURRENT",data.current_amount,"$TOTAL",data.amount)
+	end
+	label = label .. progress
+	if alive(self._objectives_panel) then 
+		self._objectives_panel:child("objectives_label"):set_text(label)
+		self._objectives_panel:child("objectives_label_shadow"):set_text(label)
+	end
 end
 
 function NobleHUD:animate_objective_flash(o,t,dt,start_t,duration,font_size,kern)
@@ -6314,7 +6433,6 @@ end
 function NobleHUD:animate_objective_blinkout(o,t,dt,start_t,duration,start_w,end_w,alpha,mid_x)
 --	duration = duration or 0.25
 	local elapsed = t - start_t
-	
 	local scale = elapsed / duration
 	if scale > 1 then 
 		o:set_h(0)
@@ -6327,38 +6445,6 @@ function NobleHUD:animate_objective_blinkout(o,t,dt,start_t,duration,start_w,end
 	scale = math.pow(scale,2)
 	o:set_w(start_w + ((end_w + start_w) * (1 - scale)))
 	o:set_x(mid_x - (o:w() / 2))
-end
-
-function NobleHUD:SetObjectiveTitle(label)
-	if alive(self._objectives_panel) then 
-		self._objectives_panel:child("objectives_title"):set_text(label)
-		self._objectives_panel:child("objectives_title_shadow"):set_text(label)
-	end
-end
-
-function NobleHUD:SetObjectiveAmount(data)
-	if alive(self._objectives_panel) then 
-		local progress = ""
-		if data.amount and data.current_amount then 
-			progress = string.gsub(" [$CURRENT/$TOTAL]","$CURRENT",data.current_amount)
-			progress = string.gsub(progress,"$TOTAL",data.amount)
-		end
-		local label = utf8.to_upper(self._cache.current_objective or "") .. progress
-		self._objectives_panel:child("objectives_label"):set_text(label)
-		self._objectives_panel:child("objectives_label_shadow"):set_text(label)
-	end
-end
-
-function NobleHUD:SetObjectiveLabel(label)
-	local progress = ""
-	if NobleHUD._cache.objective_progress and NobleHUD._cache.objective_total then
-		progress = string.gsub(" [$CURRENT/$TOTAL]","$CURRENT",data.current_amount,"$TOTAL",data.amount)
-	end
-	label = label .. progress
-	if alive(self._objectives_panel) then 
-		self._objectives_panel:child("objectives_label"):set_text(label)
-		self._objectives_panel:child("objectives_label_shadow"):set_text(label)
-	end
 end
 
 

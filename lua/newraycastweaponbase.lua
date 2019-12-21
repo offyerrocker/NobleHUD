@@ -13,7 +13,7 @@ function NewRaycastWeaponBase:toggle_firemode(...)
 	local firemode = self:fire_mode()
 	local index = tweak_data.weapon[self._name_id].use_data.selection_index
 	NobleHUD:_set_firemode(index,firemode,prev_firemode,self._in_burst_mode)
-	OffyLib:c_log("Set Firemode!" .. tostring(prev_firemode) .. "," .. tostring(firemode))
+	self:log("Set Firemode!" .. tostring(prev_firemode) .. "," .. tostring(firemode))
 	return result
 end
 

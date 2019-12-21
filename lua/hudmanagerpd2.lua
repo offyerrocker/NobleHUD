@@ -359,7 +359,7 @@ function HUDManager:_animate_dot_tube_interp(tube) --why doesn't this work
 		tube:set_alpha(tube_alpha + ((MIN_ALPHA - tube_alpha) * (elapsed / duration)))
 		tube:set_color(NobleHUD.interp_colors(tube_color,desired_color,elapsed/duration))
 	end
-	Log("elapsed: " .. tostring(elapsed) .. "," .. "duration: " .. tostring(duration))
+	self:log("elapsed: " .. tostring(elapsed) .. "," .. "duration: " .. tostring(duration))
 	tube:set_alpha(1)
 	
 end
@@ -402,7 +402,7 @@ function HUDManager:_animate_helper_tube_on_fast(tube) --reduced delay; used for
 		if delay <= 0 then 
 			tube_alpha = (tube_alpha + 0.15) * rate
 			tube:set_alpha(tube_alpha)
---			Log(tube:name() .. "," .. dt)
+--			self:log(tube:name() .. "," .. dt)
 			tube:set_color(NobleHUD.interp_colors(tube:color(),desired_color,0.5)) --gradually progress toward "lit" color; effectively a logarithmic function
 --			tube:set_color(interp_col(tube:color(),desired_color,dt * 1.5)) --gradually progress toward "lit" color; effectively a logarithmic function
 		else
