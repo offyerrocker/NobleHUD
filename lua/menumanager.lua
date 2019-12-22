@@ -4,6 +4,8 @@
 ***** TODO: *****
 	Notes:
 	
+		switch to update through beardlib instead of persist script
+		
 		mod icon through main.xml AND mod.txt
 	
 		slider setting for popup_fadeout_time
@@ -19,14 +21,12 @@
 			
 		* Update should be in persist	
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER 
-			* Objectives
-		* 
+
 		%% BUGS:
 			- abnormal gametypes like Safe House Raid, holdout/skirmish (unconfirmed), and crimespree have different objective styles
 			
 			- hide radar when in camera
 			- Rocket reticle will not proc???
-			- CROSSHAIR DETECTION SHOULD BE FROM PLAYER, NOT CAMERA
 			- Swapping while aiming at an enemy or aiming at invalid ray (eg. empty/too far distance on ray such as on Lab Rats) keeps the crosshair color
 			- ADS should maintain mostly still reticle, unusable otherwise
 
@@ -56,7 +56,7 @@
 	&& LOW PRIORITY FEATURES: &&
 		* Assault timer?
 			
-		* Implement Auto-update from GitHub provider
+		* Implement Auto-update from GitHub provider?
 		
 		* Apply update opacity for all elements from menu
 		* Organize color data
@@ -1895,7 +1895,18 @@ function NobleHUD:log(...)
 	end
 end
 
-function NobleHUD.table_concat(tbl,div,key_div,include_subtables)
+function NobleHUD.table_concat(tbl,div,key_div,include_subtables,current_level)
+	if type(include_subtables) ~= "number" then 
+		include_subtables = 1 --default
+	end
+	current_level = (type(current_level) == "number") and current_level or 1
+	local function a(b)
+		if include_subtables and (type(b) == "table") and current_level <= include_subtables then 
+			return ("{" .. NobleHUD.table_concat(v,div,key_div,include_subtables) .. "}")
+		else
+			return tostring(b)
+		end
+	end	
 	div = (div and tostring(div)) or " "
 	if type(tbl) == "table" then 
 		local str 
@@ -1907,17 +1918,17 @@ function NobleHUD.table_concat(tbl,div,key_div,include_subtables)
 			end
 			for k,v in pairs(tbl) do 
 				if str then
-					str = str .. div .. tostring(k) .. key_div .. ((include_subtables and type(v) == "table" and ("{" .. NobleHUD.table_concat(v,div,key_div,include_subtables) .. "}")) or tostring(v))
+					str = str .. div .. tostring(k) .. key_div.. a(v)
 				else
-					str = tostring(k) .. key_div .. ((include_subtables and type(v) == "table" and ("{" .. NobleHUD.table_concat(v,div,key_div,include_subtables) .. "}")) or tostring(v))
+					str = tostring(k) .. key_div .. a(v)
 				end
 			end
 		else
 			for k,v in pairs(tbl) do 
 				if str then 
-					str = str .. div .. ((include_subtables and type(v) == "table" and ("{" .. NobleHUD.table_concat(v,div,key_div,include_subtables) .. "}")) or tostring(v)) 
+					str = str .. div .. a(v) 
 				else 
-					str = ((include_subtables and type(v) == "table" and ("{" .. NobleHUD.table_concat(v,div,key_div,include_subtables) .. "}")) or tostring(v))
+					str = a(v)
 				end
 			end
 		end
@@ -1926,8 +1937,8 @@ function NobleHUD.table_concat(tbl,div,key_div,include_subtables)
 	return "ERROR"
 end
 
-local function concat(tbl,div) --2lazy 2type
-	return NobleHUD.table_concat(tbl,div)
+local function concat(...) --2lazy 2type
+	return NobleHUD.table_concat(...)
 end
 
 function NobleHUD.angle_from(a,b,c,d) --mvector3.angle() is a big fat meanie zucchini
@@ -5250,9 +5261,20 @@ function NobleHUD:_create_teammates(hud)
 	return teammates_panel
 end
 
+function NobleHUD:GetTeammatePanel(i)
+	return self._teammates_panel:child("teammate_" .. tostring(i))
+end
+
 function NobleHUD:_create_teammate_panel(teammates_panel,i)
+	local ammo_font = tweak_data.hud_players.ammo_font
+--	local name_font = tweak_data.hud_players.name_font
 	local teammate_w = 200
-	local teammate_h = 32
+	local teammate_h = 48
+	local subpanel_w = 24
+	local subpanel_h = 36
+	local icon_size = 16
+	local divider_w = 2
+	
 	local panel = teammates_panel:panel({
 		name = "teammate_" .. tostring(i),
 		y = (i - 1) * teammate_h,
@@ -5283,39 +5305,145 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 		vertical = "center",
 		color = Color.white,
 		font_size = tweak_data.hud_players.name_size,
-		font = tweak_data.hud_players.name_font
+		font = ammo_font
 	})
-	local a,b = tweak_data.hud_icons:get_icon_data("equipment_thermite")
-	local deployable_icon = panel:bitmap({
+	
+	local deployable_subpanel = panel:panel({
+		name = "deployable_subpanel",
+		x = callsign_box:right(),
+		w = subpanel_w * 2,
+		h = subpanel_h,
+		visible = false
+	})
+	local debug_subpanel1 = deployable_subpanel:rect({
+		name = "debug_subpanel1",
+		color = Color.red,
+		alpha = 0.1,
+		visible = false
+	})
+	
+	local deployable_texture,deployable_rect = tweak_data.hud_icons:get_icon_data("equipment_ammo_bag")
+	local deployable_icon = deployable_subpanel:bitmap({
 		name = "deployable_icon",
 		layer = 0,
 		rotation = 360,
-		texture = a,
-		texture_rect = b,
+		texture = deployable_texture,
+		texture_rect = deployable_rect,
 		color = self.color_data.hud_blueoutline,
-		x = callsign_box:right() + 4,
-		w = 32,
-		visible = false,
-		h = 32
+		x = (deployable_subpanel:w() - icon_size) / 2,
+		w = icon_size,
+		h = icon_size
 	})
-	local deployable_count = panel:text({
-		name = "deployable_count",
+	local deployable_label = deployable_subpanel:text({
+		name = "deployable_label",
 		layer = 1,
-		text = "3",
-		x = deployable_icon:right(),
-		vertical = "center",
+		text = "14 | 6",
+		align = "center",
+		vertical = "bottom",
 		color = Color.white,
 		font_size = tweak_data.hud_players.name_size,
-		visible = false,
-		font = tweak_data.hud_players.name_font
+		font = ammo_font
 	})
 	
 	
+	local deployable_divider = deployable_subpanel:rect({
+		name = "deployable_divider",
+		color = self.color_data.hud_blueoutline,
+		w = divider_w,
+		h = teammate_h,
+		x = deployable_subpanel:w() - divider_w
+	})
+	
+	
+	local ties_subpanel = panel:panel({
+		name = "ties_subpanel",
+		x = deployable_subpanel:right(),
+		w = subpanel_w,
+		h = subpanel_h,
+		visible = false
+	})
+	local debug_subpanel2 = ties_subpanel:rect({
+		name = "debug_subpanel2",
+		color = Color.red,
+		alpha = 0.1,
+		visible = false
+	})
+	
+	
+	local ties_texture,ties_rect = tweak_data.hud_icons:get_icon_data("equipment_cable_ties")
+	local ties_icon = ties_subpanel:bitmap({
+		name = "ties_icon",
+		layer = 0,
+		rotation = 360,
+		texture = ties_texture,
+		texture_rect = ties_rect,
+		color = self.color_data.hud_blueoutline,
+		x = (ties_subpanel:w() - icon_size) / 2,
+		w = icon_size,
+		h = icon_size	
+	})
+	local ties_label = ties_subpanel:text({
+		name = "ties_label",
+		layer = 1,
+		text = "3",
+		vertical = "bottom",
+		align = "center",
+		color = Color.white,
+		font_size = tweak_data.hud_players.name_size,
+		font = ammo_font
+	})
+	
+	local ties_divider = ties_subpanel:rect({
+		name = "ties_divider",
+		color = self.color_data.hud_blueoutline,
+		w = divider_w,
+		h = teammate_h,
+		x = ties_subpanel:w() - divider_w
+	})
+	
+	
+	local grenade_subpanel = panel:panel({
+		name = "grenade_subpanel",
+		x = ties_subpanel:right(),
+		w = subpanel_w,
+		h = subpanel_h,
+		visible = false
+	})
+	local debug_subpanel3 = grenade_subpanel:rect({
+		name = "debug_subpanel3",
+		color = Color.red,
+		alpha = 0.1,
+		visible = false
+	})
+	
+	
+	local grenade_texture,grenade_rect = tweak_data.hud_icons:get_icon_data("frag_grenade")
+	local grenade_icon = grenade_subpanel:bitmap({
+		name = "grenade_icon",
+		layer = 0,
+		rotation = 360,
+		texture = grenade_texture,
+		texture_rect = grenade_rect,
+		color = self.color_data.hud_blueoutline,
+		x = (grenade_subpanel:w() - icon_size) / 2,
+		w = icon_size,
+		h = icon_size	
+	})
+	local grenade_label = grenade_subpanel:text({
+		name = "grenade_label",
+		layer = 1,
+		text = "3",
+		align = "center",
+		vertical = "bottom",
+		color = Color.white,
+		font_size = tweak_data.hud_players.name_size,
+		font = ammo_font
+	})
 	
 	local teammate_panel_debug = panel:rect({
 		visible = false,
 		color = tweak_data.chat_colors[i],
-		alpha = 0.4
+		alpha = 0.2
 	})
 	return panel
 end
@@ -5452,6 +5580,8 @@ function NobleHUD:_create_score(hud)
 	local subpanel_h = subpanel_w + font_size + margin_s
 	local subpanel_y = score_banner_small:y() - (subpanel_h + margin_s)
 	
+	local divider_w = 2
+	
 	local text_row_y_2 = panel_h - ((2 * font_size) + margin_s)
 
 	local score_arrow_texture,score_arrow_rect = tweak_data.hud_icons:get_icon_data("icon_equipped")
@@ -5493,24 +5623,12 @@ function NobleHUD:_create_score(hud)
 		y = subpanel_y
 	})
 	self._revives_panel = revives_panel
-	
 	local revives_debug = revives_panel:rect({
 		name = "revives_debug",
 		alpha = 0.5,
 		visible = false,
 		color = Color(1,0,1)
 	})
-	
-	local divider_w = 1
-	local divider_revives = revives_panel:rect({
-		name = "divider_revives",
-		w = divider_w,
-		h = subpanel_h,
-		x = subpanel_w - divider_w,
-		y = 0,
-		color = self.color_data.hud_vitalsoutline_blue
-	})
-	
 	local revives_label = revives_panel:text({
 		name = "revives_label",
 		text = "3",
@@ -5522,7 +5640,6 @@ function NobleHUD:_create_score(hud)
 		font_size = font_size,
 		layer = 4
 	})
-
 --		texture = "guis/textures/pd2/skilltree/icons_atlas",
 --		texture_rect = { --bandaid icon
 --			5 * 64, --or 4,9 for inspire 
@@ -5530,7 +5647,6 @@ function NobleHUD:_create_score(hud)
 --			64,
 --			64
 --		},
-	
 	local revives_texture,revives_rect = tweak_data.hud_icons:get_icon_data("csb_lives")
 	local revives_icon = revives_panel:bitmap({
 		name = "revives_icon",
@@ -5543,15 +5659,23 @@ function NobleHUD:_create_score(hud)
 		y = 0
 	})
 	
+	local divider_revives = score_panel:rect({
+		name = "divider_revives",
+		w = divider_w,
+		h = subpanel_h,
+		x = revives_panel:right(),
+		y = subpanel_y,
+		color = self.color_data.hud_vitalsoutline_blue
+	})
+	
 	local ties_panel = score_panel:panel({
 		name = "ties_panel",
 		w = subpanel_w,
 		h = subpanel_h,
-		x = revives_panel:x() + subpanel_w,
+		x = divider_revives:right(),
 		y = subpanel_y
 	})
 	self._ties_panel = ties_panel
-	
 	local ties_texture,ties_rect = tweak_data.hud_icons:get_icon_data("equipment_cable_ties")
 	local ties_icon = ties_panel:bitmap({
 		name = "ties_icon",
@@ -5563,7 +5687,6 @@ function NobleHUD:_create_score(hud)
 		x = 0,
 		y = 0
 	})
-	
 	local ties_label = ties_panel:text({
 		name = "ties_label",
 		text = "2",
@@ -5575,17 +5698,17 @@ function NobleHUD:_create_score(hud)
 		font_size = font_size,
 		layer = 4
 	})
-		
-	local divider_ties = ties_panel:rect({
+	
+	local divider_ties = score_panel:rect({
 		name = "divider_ties",
 		w = divider_w,
 		h = subpanel_h,
-		x = subpanel_w - divider_w,
-		y = 0,
+		x = ties_panel:right(),
+		y = subpanel_y,
 		color = self.color_data.hud_vitalsoutline_blue
 	})
 	
-	
+		
 	local hostages_panel = score_panel:panel({
 		name = "hostages_panel",
 		w = subpanel_w,
@@ -5617,12 +5740,13 @@ function NobleHUD:_create_score(hud)
 		font_size = font_size,
 		layer = 4
 	})
-	local divider_hostages = hostages_panel:rect({
+	
+	local divider_hostages = score_panel:rect({
 		name = "divider_hostages",
 		w = divider_w,
 		h = subpanel_h,
-		x = subpanel_w - divider_w,
-		y = 0,
+		x = hostages_panel:right(),
+		y = subpanel_y,
 		color = self.color_data.hud_vitalsoutline_blue
 	})
 	
@@ -7395,7 +7519,7 @@ end
 
 --		EQUIPMENT
 function NobleHUD:_create_equipment(hud)
-	local eq_h = 128
+	local eq_h = 144
 	local equipment_panel = hud:panel({
 		name = "equipment_panel",
 		layer = 1,
@@ -7909,29 +8033,6 @@ function NobleHUD:animate_killfeed_icon_pulse(o,t,dt,start_t,duration,icon_size,
 end
 
 
---		BUFFS
-
-function NobleHUD:_create_buffs(hud) --buffs, cloned from khud (not implemented)
-	local buffs_panel = hud:panel({
-		name = "buffs_panel",
-		w = 300,
-		h = 300,
-		x = 600,
-		y = 600,
-		alpha = self:GetHUDAlpha()
-	})
-	local debug_buffs = buffs_panel:rect({
-		color = Color.green,
-		visible = false,
-		alpha = 0.1
-	})
-end
-
-function NobleHUD:AddBuff(id,params)
-
-end
-
-
 --		CHAT
 
 function NobleHUD:SetChatVisible(state)
@@ -7996,6 +8097,32 @@ end
 function NobleHUD:ClearChatNotification()
 	self:DoChatNotification(false)
 	self:RemoveDelayedCallback("autohide_chat")
+end
+
+
+--things below this line aren't implemented yet
+
+
+--		BUFFS
+
+function NobleHUD:_create_buffs(hud) --buffs, cloned from khud (not implemented)
+	local buffs_panel = hud:panel({
+		name = "buffs_panel",
+		w = 300,
+		h = 300,
+		x = 600,
+		y = 600,
+		alpha = self:GetHUDAlpha()
+	})
+	local debug_buffs = buffs_panel:rect({
+		color = Color.green,
+		visible = false,
+		alpha = 0.1
+	})
+end
+
+function NobleHUD:AddBuff(id,params)
+
 end
 
 

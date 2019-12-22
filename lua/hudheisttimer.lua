@@ -2,7 +2,7 @@ Hooks:PostHook(HUDHeistTimer,"init","noblehud_heisttimer_init",function(self,hud
 	self._timer_text:hide()
 end)
 
-Hooks:PostHook(HUDHeistTimer,"set_time","noblehud_heisttimer_settime",function(self,time)
+function HUDHeistTimer:set_time(time)
 	local inverted = false
 
 	if time < 0 then
@@ -23,6 +23,6 @@ Hooks:PostHook(HUDHeistTimer,"set_time","noblehud_heisttimer_settime",function(s
 	local seconds = math.round(time)
 	local text = hours > 0 and (hours < 10 and "0" .. hours or hours) .. ":" or ""
 	local text = text .. (minutes < 10 and "0" .. minutes or minutes) .. ":" .. (seconds < 10 and "0" .. seconds or seconds)
-	
+
 	NobleHUD:_set_mission_timer(text)
-end)
+end

@@ -18,8 +18,33 @@ Hooks:PostHook(HUDTeammate,"set_name","noblehud_setteammatename",function(self,p
 	end
 end)
 
+
+
 Hooks:PostHook(HUDTeammate,"set_cable_ties_amount","noblehud_setcabletiesamount",function(self,amount)
-	NobleHUD:SetCableTies(amount)
+	if self._main_player then 
+		NobleHUD:SetCableTies(amount)
+	else
+		local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
+		if teammate_panel then 
+			local subpanel = teammate_panel:child("ties_subpanel")
+			subpanel:show()
+			local icon = subpanel:child("ties_icon")
+			local label = subpanel:child("ties_label")
+			local color = NobleHUD.color_data.hud_vitalsoutline_blue
+						
+			if amount == -1 then 
+				label:set_text("--")
+				color = Color(1,1,1) * 0.5 --grey
+			else
+				label:set_text(amount)
+				if amount == 0 then
+					color = NobleHUD.color_data.hud_vitalsfill_blue
+				end
+			end
+			label:set_color(color)
+			icon:set_color(color)
+		end
+	end
 end)
 
 Hooks:PostHook(HUDTeammate,"set_health","noblehud_set_health",function(self,data)
@@ -222,19 +247,167 @@ Hooks:PostHook(HUDTeammate,"set_absorb_active","noblehud_set_absorb",function(se
 end)
 
 Hooks:PostHook(HUDTeammate,"set_grenades","noblehud_set_grenades",function(self,data)
-	if PlayerBase.USE_GRENADES and self._main_player then
-		local icon, texture_rect = tweak_data.hud_icons:get_icon_data(data.icon, {
-			0,
-			0,
-			32,
-			32
-		})
-		local grenades_panel = NobleHUD._grenades_panel:child("primary_grenade_panel")
-		local grenades_icon = grenades_panel:child("grenade_icon")
+	if PlayerBase.USE_GRENADES then
+		if self._main_player then
 
-		grenades_panel:set_visible(true)
-		grenades_icon:set_image(icon, unpack(texture_rect))
+			NobleHUD:_set_grenades(data)
+		else
+			NobleHUD:log("set_grenades(" .. NobleHUD.table_concat(data,"|","=") .. ")")
+			local icon, texture_rect = tweak_data.hud_icons:get_icon_data(data.icon, {
+				0,
+				0,
+				32,
+				32
+			})
+			
+			local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
+			if teammate_panel then 
+				local subpanel = teammate_panel:child("grenade_subpanel")
+				subpanel:show()
+				
+				local grenade_icon = subpanel:child("grenade_icon")
+				grenade_icon:set_image(icon,unpack(texture_rect))
+				local grenade_label = subpanel:child("grenade_label")
+				local color = NobleHUD.color_data.hud_vitalsoutline_blue
+				if data.amount then
+					grenade_label:set_text(data.amount)
+					if data.amount == 0 then 
+						color = NobleHUD.color_data.hud_vitalsfill_blue
+					end
+				end
+				grenade_icon:set_color(color)
+				grenade_label:set_color(color)
+			end
+		end
 	end
+end)
+		--[[
+managers.hud:set_teammate_grenades(2,{icon = "frag_grenade",amount = 9})
+managers.hud:set_deployable_equipment(2,{icon = "frag_grenade",amount = 9})
+managers.hud:set_cable_ties_amount(2,9)
+managers.hud:set_teammate_deployable_equipment_amount_from_string(2,1,{icon = "equipment_soda",amount = {1,9}})
+
+			--]]
+Hooks:PostHook(HUDTeammate,"set_deployable_equipment","noblehud_set_deployable_equipment",function(self,data)
+	if not self._main_player then 
+		local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
+		if teammate_panel then 
+			NobleHUD:log("set_deployable_equipment(" .. NobleHUD.table_concat(data,"|","=") .. ")")
+			local subpanel = teammate_panel:child("deployable_subpanel")
+			subpanel:show()
+			local icon, texture_rect = tweak_data.hud_icons:get_icon_data(data.icon)
+			subpanel:child("deployable_icon"):set_image(icon,unpack(texture_rect))
+		end
+	else
+		NobleHUD:_set_deployable_equipment(data.index)
+	end
+end)
+
+Hooks:PostHook(HUDTeammate,"set_deployable_equipment_amount","noblehud_set_deployable_equipment_amount",function(self,index,data)
+	if not self._main_player then 
+		local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
+		if teammate_panel then 
+			NobleHUD:log("set_deployable_equipment_amount(" .. tostring(index) .. "," .. NobleHUD.table_concat(data,"|","=") .. ")")
+			local subpanel = teammate_panel:child("deployable_subpanel")
+			local label = subpanel:child("deployable_label")
+			local amount = data.amount
+			if type(amount) == "table" then 
+				self:set_deployable_equipment_amount_from_string(data.index,data)
+			else
+				label:set_text(data.amount)
+				label:set_color(NobleHUD.color_data[(data.amount == 0) and "hud_vitalsfill_blue" or "hud_vitalsoutline_blue"])
+			end
+		end
+	else
+		NobleHUD:_set_deployable_amount(index)
+	end
+end)
+
+Hooks:PostHook(HUDTeammate,"set_deployable_equipment_from_string","noblehud_set_deployable_from_string",function(self,data)
+	if not self._main_player then 
+		local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
+		if teammate_panel then 
+			NobleHUD:log("set_deployable_equipment_from_string(" .. NobleHUD.table_concat(data,"|","=") .. ")")
+			local subpanel = teammate_panel:child("deployable_subpanel")
+			subpanel:show()
+			local icon, texture_rect = tweak_data.hud_icons:get_icon_data(data.icon)
+			subpanel:child("deployable_icon"):set_image(icon,unpack(texture_rect))
+		end
+	else
+		NobleHUD:_set_deployable_equipment(data.index)
+	end
+end)
+
+Hooks:PostHook(HUDTeammate,"set_deployable_equipment_amount_from_string","noblehud_set_deployable_amount_from_string",function(self,index,data)
+	if not self._main_player then 
+		local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
+		if teammate_panel then 
+			NobleHUD:log("set_deployable_equipment_amount_from_string(" .. tostring(index) .. "," .. NobleHUD.table_concat(data,"|","=") .. ")")
+			
+			local subpanel = teammate_panel:child("deployable_subpanel")
+			subpanel:show()
+			local amounts = ""
+			local zero_ranges = {}
+			local color = NobleHUD.color_data.hud_vitalsfill_blue
+			
+			for i, amount in ipairs(data.amount) do 
+				NobleHUD:log("amount: " .. amount)
+				local amount_str = string.format("%01d",amount)
+				local divider = "|"
+				
+				if i > 1 then
+					amounts = amounts .. divider
+				end
+				if amount == 0 then 
+					local current_length = string.len(amounts)
+					table.insert(zero_ranges, {
+						current_length,
+						current_length + string.len(amount_str)
+					})
+				end
+				
+				amounts = amounts .. amount_str
+				if amount > 0 then 
+					color = NobleHUD.color_data.hud_vitalsoutline_blue
+				end
+			end
+			
+			subpanel:child("deployable_icon"):set_color(color)
+			
+			local label = subpanel:child("deployable_label")
+			
+			label:set_text(amounts)
+			NobleHUD:log(amounts)
+			label:set_color(color)
+					
+			for _, range in ipairs(zero_ranges) do
+				label:set_range_color(range[1], range[2], NobleHUD.color_data.hud_vitalsfill_blue)
+			end
+			
+		end
+	else
+		NobleHUD:_set_deployable_amount(index)
+	end
+end)
+
+--[[
+Hooks:PostHook(HUDTeammate,"set_grenades","noblehud_set_grenades",function(self,data)
+	if not self._main_player then 
+		local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
+		if teammate_panel then 
+			NobleHUD:log("set_grenades(" .. NobleHUD.table_concat(data,"|","=") .. ")")
+		end
+	else
+		NobleHUD:_set_grenades(data)
+	end	
+end)
+--]]
+
+Hooks:PostHook(HUDTeammate,"set_grenades_amount","noblehud_set_grenades_amount",function(self,data)
+	if not self._main_player then 
+		return
+	end
+	NobleHUD:_set_grenades_amount(data.amount)
 end)
 
 Hooks:PostHook(HUDTeammate,"set_weapon_selected","noblehud_set_weapon_selected",function(self,id)
@@ -257,6 +430,9 @@ Hooks:PostHook(HUDTeammate,"set_teammate_weapon_firemode","noblehud_set_teammate
 --
 end)
 
+
+
+
 --burstfire mod support
 --function HUDTeammate:set_weapon_firemode_burst(slot,firemode,burst_fire)
 --	NobleHUD:_set_firemode(slot,firemode,burst_fire)
@@ -273,138 +449,112 @@ Hooks:PostHook(HUDTeammate,"set_ammo_amount_by_type","noblehud_set_ammo",functio
 
 end)
 
-Hooks:PostHook(HUDTeammate,"set_deployable_equipment","noblehud_set_deployable_equipment",function(self,data)
-	if not self._main_player then 
-		return
-	end
-	NobleHUD:_set_deployable_equipment(data.index)
-end)
+--Hooks:PostHook(HUDTeammate,"set_ai","noblehud_set_teammate_ai",function(self,ai)
+--end)
 
-Hooks:PostHook(HUDTeammate,"set_deployable_equipment_amount","noblehud_set_deployable_equipment_amount",function(self,index,data)
-	if not self._main_player then 
-		return
-	end
-	NobleHUD:_set_deployable_amount(index)
-end)
-
-Hooks:PostHook(HUDTeammate,"set_deployable_equipment_from_string","noblehud_set_deployable_from_string",function(self,data)
-	if not self._main_player then 
-		return
-	end
-	NobleHUD:log("set_deployable_equipment_from_string(" .. table.concat(data,",") .. ")")
-	NobleHUD:_set_deployable_equipment(data.index)
-end)
-
-Hooks:PostHook(HUDTeammate,"set_deployable_equipment_amount_from_string","noblehud_set_deployable_amount_from_string",function(self,index,data)
-	if not self._main_player then 
-		return
-	end
-	NobleHUD:_set_deployable_amount(index)
-end)
+--mission equipment stuff
 
 function HUDTeammate:add_special_equipment(data,...)
-	local panel_size = 32
-	local equipment_panel = NobleHUD._equipment_panel:panel({
-		name = data.id,
-		x = 0, --NobleHUD._equipment_panel:w() - ((#self._special_equipment + 2) * panel_size),
-		y = 0,
-		layer = 0,
-		w = panel_size,
-		h = panel_size
-	})
-	local icon, texture_rect = tweak_data.hud_icons:get_icon_data(data.icon)
-	local amount,amount_bg
-	local bitmap = equipment_panel:bitmap({
-		name = "bitmap",
-		texture = icon,
-		texture_rect = texture_rect,
-		rotation = 360,
-		layer = 2,
---		alpha = 0.01
-		color = Color.white
-	})
-	
-	amount_bg = equipment_panel:child("amount_bg") or equipment_panel:bitmap({
-		name = "amount_bg",
-		texture = "guis/textures/pd2/equip_count",
-		rotation = 360,
-		layer = 2,
-		visible = data.amount and true or false,
-		color = Color.white
-	})
-	amount = equipment_panel:child("amount") or equipment_panel:text({
-		name = "amount",
-		vertical = "center",
-		font_size = 12,
-		align = "center",
-		font = "fonts/font_small_noshadow_mf",
-		rotation = 360,
-		layer = 3,
-		text = tostring(data.amount),
-		color = Color.black,
-		visible = data.amount and true or false,
-		w = panel_size,
-		h = panel_size
-	})
-	
-	amount_bg:set_center(bitmap:center())
-	amount_bg:move(7, 7)
-	amount_bg:set_visible(data.amount and (data.amount > 1) or false)
-	amount:set_center(amount_bg:center())
-	amount:set_visible(data.amount and (data.amount > 1) or false)
-	table.insert(self._special_equipment, equipment_panel)
-	NobleHUD:layout_equipments(self._special_equipment,data.id)
+	if self._main_player then 
+		local panel_size = 32
+		local equipment_panel = NobleHUD._equipment_panel:panel({
+			name = data.id,
+			x = 0, --NobleHUD._equipment_panel:w() - ((#self._special_equipment + 2) * panel_size),
+			y = 0,
+			layer = 0,
+			w = panel_size,
+			h = panel_size
+		})
+		local icon, texture_rect = tweak_data.hud_icons:get_icon_data(data.icon)
+		local amount,amount_bg
+		local bitmap = equipment_panel:bitmap({
+			name = "bitmap",
+			texture = icon,
+			texture_rect = texture_rect,
+			rotation = 360,
+			layer = 2,
+	--		alpha = 0.01
+			color = Color.white
+		})
+		
+		amount_bg = equipment_panel:child("amount_bg") or equipment_panel:bitmap({
+			name = "amount_bg",
+			texture = "guis/textures/pd2/equip_count",
+			rotation = 360,
+			layer = 2,
+			visible = data.amount and true or false,
+			color = Color.white
+		})
+		amount = equipment_panel:child("amount") or equipment_panel:text({
+			name = "amount",
+			vertical = "center",
+			font_size = 12,
+			align = "center",
+			font = "fonts/font_small_noshadow_mf",
+			rotation = 360,
+			layer = 3,
+			text = tostring(data.amount),
+			color = Color.black,
+			visible = data.amount and true or false,
+			w = panel_size,
+			h = panel_size
+		})
+		
+		amount_bg:set_center(bitmap:center())
+		amount_bg:move(7, 7)
+		amount_bg:set_visible(data.amount and (data.amount > 1) or false)
+		amount:set_center(amount_bg:center())
+		amount:set_visible(data.amount and (data.amount > 1) or false)
+		table.insert(self._special_equipment, equipment_panel)
+		NobleHUD:layout_equipments(self._special_equipment,data.id)
+	end
 end
 
 function HUDTeammate:remove_special_equipment(equipment)
-	local eq_panel = NobleHUD._equipment_panel
-	for i,panel in pairs(self._special_equipment) do 
-		if panel:name() == equipment then 
-			local data = table.remove(self._special_equipment,i)
-			panel:child("bitmap"):set_color(Color(0.5,0.5,0.5))
-			NobleHUD:animate(panel,"animate_fadeout",function(o) eq_panel:remove(o) end,0.66)
-			NobleHUD:layout_equipments(self._special_equipment)
-			return
+	if self._main_player then 
+		local eq_panel = NobleHUD._equipment_panel
+		for i,panel in pairs(self._special_equipment) do 
+			if panel:name() == equipment then 
+				local data = table.remove(self._special_equipment,i)
+				panel:child("bitmap"):set_color(Color(0.5,0.5,0.5))
+				NobleHUD:animate(panel,"animate_fadeout",function(o) eq_panel:remove(o) end,0.66)
+				NobleHUD:layout_equipments(self._special_equipment)
+				return
+			end
 		end
 	end
 end
 
 function HUDTeammate:set_special_equipment_amount(equipment_id, amount)
-	local eq_panel = NobleHUD._equipment_panel
-	local special_equipment = self._special_equipment
+	if self._main_player then 
+		local eq_panel = NobleHUD._equipment_panel
+		local special_equipment = self._special_equipment
 
-	for i, panel in ipairs(special_equipment) do
-		if panel:name() == equipment_id then
-			panel:child("amount"):set_text(tostring(amount))
-			panel:child("amount"):set_visible(amount > 1)
-			panel:child("amount_bg"):set_visible(amount > 1)
-			return
+		for i, panel in ipairs(special_equipment) do
+			if panel:name() == equipment_id then
+				panel:child("amount"):set_text(tostring(amount))
+				panel:child("amount"):set_visible(amount > 1)
+				panel:child("amount_bg"):set_visible(amount > 1)
+				return
+			end
 		end
 	end
 end
 
 Hooks:PostHook(HUDTeammate,"clear_special_equipment","noblehud_clearequipment",function(self)
-	local eq = NobleHUD._equipment_panel
-	if alive(eq) then 
-		eq:parent():remove(eq)
+	if not self._main_player then
+		
+	else
+		local eq = NobleHUD._equipment_panel
+		if alive(eq) then 
+			eq:parent():remove(eq)
+		end
+		NobleHUD:_create_equipment_panel()
 	end
-	NobleHUD:_create_equipment_panel()
 end)
 
-Hooks:PostHook(HUDTeammate,"set_grenades","noblehud_set_grenades",function(self,data)
-	if not self._main_player then 
-		return
-	end
-	NobleHUD:_set_grenades(data)
-end)
 
-Hooks:PostHook(HUDTeammate,"set_grenades_amount","noblehud_set_grenades_amount",function(self,data)
-	if not self._main_player then 
-		return
-	end
-	NobleHUD:_set_grenades_amount(data.amount)
-end)
-
+--grenades
 Hooks:PostHook(HUDTeammate,"activate_ability_radial","noblehud_activate_ability_radial",function(self,time_left,time_total)
 	if not self._main_player then 
 		return
