@@ -4,14 +4,10 @@
 ***** TODO: *****
 	Notes:
 	
-		switch to update through beardlib instead of persist script
-		
-		mod icon through main.xml AND mod.txt
-	
 		slider setting for popup_fadeout_time
 
 		check for mag count above max --> bar
-		weapon overheat meter? 
+		covenant weapon overheat meter? 
 
 		todo grenade cooldown animation circles
 		todo shield damage chunking
@@ -19,13 +15,12 @@
 
 	&&& HIGH PRIORITY: &&&
 			
-		* Update should be in persist	
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER 
 
 		%% BUGS:
 			- abnormal gametypes like Safe House Raid, holdout/skirmish (unconfirmed), and crimespree have different objective styles
 			
-			- hide radar when in camera
+			- hide HUD when in camera
 			- Rocket reticle will not proc???
 			- Swapping while aiming at an enemy or aiming at invalid ray (eg. empty/too far distance on ray such as on Lab Rats) keeps the crosshair color
 			- ADS should maintain mostly still reticle, unusable otherwise
@@ -5170,6 +5165,7 @@ function NobleHUD:_create_stamina(hud)
 		w = icon_size,
 		h = icon_size,
 		render_template = "VertexColorTexturedRadial",
+		alpha = 0.5,
 		layer = 4
 --		color = self.color_data.hud_vitalsoutline_blue
 	})
