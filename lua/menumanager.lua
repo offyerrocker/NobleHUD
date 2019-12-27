@@ -2754,7 +2754,7 @@ function NobleHUD:UpdateHUD(t,dt,t_real)
 		
 		--shield sfx (loop)
 		local player_armor_max = player_damage:_max_armor()
-		if player_armor_max > 0 then
+		if player_armor_max > 0 and self._shield_sound_source and self._shield_sound_source:is_active() then
 			local player_armor = player_damage:get_real_armor()
 			local shield_source = self._shield_sound_source
 			if self:IsShieldEmptySoundEnabled() and (player_armor == 0) then
@@ -3248,6 +3248,19 @@ function NobleHUD:OnGameStateChanged(before_state,state)
 		self:OnLoaded()
 	end
 	if GameStateFilters.any_end_game[state] or GameStateFilters.player_slot[state] or GameStateFilters.lobby[state] or (state == "server_left") then
+	--on game ended
+		if self._shield_sound_source then 
+			self._shield_sound_source:close()
+			self._shield_sound_source = nil
+		end
+		self:PlayAnnouncerSound("game_over")
+		--[[
+		if self._announcer_sound_source then 
+			self._announcer_sound_source:stop()
+			self._announcer_sound_source:set_buffer(self._cache.sounds.game_over)
+			self._announcer_sound_source:play()
+		end
+		--]]
 		hud:hide()
 	elseif GameStateFilters.waiting_for_players[state] or GameStateFilters.waiting_for_respawn[state] or GameStateFilters.waiting_for_spawn_allowed[state] then 
 		hud:hide()
