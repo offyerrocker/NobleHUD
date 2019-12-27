@@ -3342,7 +3342,7 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 			--	return
 			end
 		elseif variant == "bullet" then 
-			local head = data.head_shot
+			local head = attack_data.head_shot
 			if head then
 				self:AddMedal("headshot")
 				medal_multiplier = medal_multiplier * self:GetMedalMultiplier("headshot")
