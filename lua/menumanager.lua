@@ -3247,7 +3247,7 @@ function NobleHUD:OnGameStateChanged(before_state,state)
 --		self:log("Loaded HUD during state " .. state)
 		self:OnLoaded()
 	end
-	if GameStateFilters.any_end_game[state] or GameStateFilters.player_slot[state] or GameStateFilters.lobby[state] then
+	if GameStateFilters.any_end_game[state] or GameStateFilters.player_slot[state] or GameStateFilters.lobby[state] or (state == "server_left") then
 		hud:hide()
 	elseif GameStateFilters.waiting_for_players[state] or GameStateFilters.waiting_for_respawn[state] or GameStateFilters.waiting_for_spawn_allowed[state] then 
 		hud:hide()
@@ -3342,7 +3342,7 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 			--	return
 			end
 		elseif variant == "bullet" then 
-		
+			local head = data.head_shot
 			if head then
 				self:AddMedal("headshot")
 				medal_multiplier = medal_multiplier * self:GetMedalMultiplier("headshot")
@@ -5311,7 +5311,7 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 	local deployable_subpanel = panel:panel({
 		name = "deployable_subpanel",
 		x = callsign_box:right(),
-		w = subpanel_w * 2,
+		w = subpanel_w, --*2	
 		h = subpanel_h,
 		visible = false
 	})
@@ -5329,7 +5329,7 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 		rotation = 360,
 		texture = deployable_texture,
 		texture_rect = deployable_rect,
-		color = self.color_data.hud_blueoutline,
+		color = self.color_data.hud_bluefill,
 		x = (deployable_subpanel:w() - icon_size) / 2,
 		w = icon_size,
 		h = icon_size

@@ -314,8 +314,13 @@ Hooks:PostHook(HUDTeammate,"set_deployable_equipment_amount","noblehud_set_deplo
 			if type(amount) == "table" then 
 				self:set_deployable_equipment_amount_from_string(data.index,data)
 			else
+				local color = NobleHUD.color_data.hud_vitalsoutline_blue
 				label:set_text(data.amount)
-				label:set_color(NobleHUD.color_data[(data.amount == 0) and "hud_vitalsfill_blue" or "hud_vitalsoutline_blue"])
+				if data.amount <= 0 then 
+					color = NobleHUD.color_data.hud_vitalsfill_blue
+				end
+				label:set_color(color)
+				subpanel:child("deployable_icon"):set_color(color)
 			end
 		end
 	else
