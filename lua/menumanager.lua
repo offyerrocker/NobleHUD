@@ -298,6 +298,8 @@ NobleHUD._announcer_path = ModPath .. "assets/snd/announcer/"
 --for reference; set later
 NobleHUD._announcer_sound_source = nil
 NobleHUD._shield_sound_source = nil
+NobleHUD._shield_empty_buffer = nil
+NobleHUD._shield_low_buffer = nil
 
 NobleHUD._assault_phases = {
 	anticipation = "noblehud_hud_assault_phase_anticipation",
@@ -2754,28 +2756,26 @@ function NobleHUD:UpdateHUD(t,dt,t_real)
 		local player_armor_max = player_damage:_max_armor()
 		if player_armor_max > 0 then
 			local player_armor = player_damage:get_real_armor()
-			if self:IsShieldEmptySoundEnabled() and (player_armor == 0) then 
-				if not self._shield_sound_source then
-					self._shield_sound_source = XAudio.Source:new()
-					self._shield_sound_source:set_looping(true)
+			local shield_source = self._shield_sound_source
+			if self:IsShieldEmptySoundEnabled() and (player_armor == 0) then
+				if shield_source._buffer ~= self._cache.sounds.shield_empty then 
+					shield_source:stop()
+					shield_source:set_buffer(self._cache.sounds.shield_empty)
 				end
-				if self._shield_sound_source:get_state() ~= 1 then 
-					self._shield_sound_source:set_buffer(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/shield_low.ogg"))
-					self._shield_sound_source:play()
+				if shield_source:get_state() ~= 1 then 
+					shield_source:play()
 				end
 			elseif self:IsShieldLowSoundEnabled() and ((player_armor / player_armor_max) <= NobleHUD:GetLowShieldThreshold()) then
-				if not self._shield_sound_source then
-					self._shield_sound_source = XAudio.Source:new()
-					self._shield_sound_source:set_looping(true)
+				if shield_source._buffer ~= self._cache.sounds.shield_low then 
+					shield_source:stop()
+					shield_source:set_buffer(self._cache.sounds.shield_low)
 				end
-				if self._shield_sound_source:get_state() ~= 1 then 
-					self._shield_sound_source:set_buffer(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/shield_depleted.ogg"))
-					self._shield_sound_source:play()
+				if shield_source:get_state() ~= 1 then 
+					shield_source:play()
 				end
 			else
-				if self._shield_sound_source then 
-					self._shield_sound_source:close()
-					self._shield_sound_source = nil
+				if shield_source:get_state() == 1 then 
+					shield_source:stop()
 				end
 			end
 		end
@@ -3605,6 +3605,13 @@ function NobleHUD:LoadXAudioSounds()
 					end
 				end
 			end
+		end
+		self._cache.sounds.shield_low = XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/shield_low.ogg")
+		self._cache.sounds.shield_empty = XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/shield_depleted.ogg")
+		
+		if managers.player:local_player() and (managers.player:local_player():character_damage():_max_armor() > 0) then 
+			self._shield_sound_source = XAudio.Source:new()
+			self._shield_sound_source:set_looping(true)
 		end
 		
 		
