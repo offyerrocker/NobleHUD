@@ -4,6 +4,7 @@
 	"author" : "Offyerrocker",
 	"contact" : "Discord: Offyerrocker#3878",
 	"version" : "0.6b",
+	"image" : "icon.png",
 	"blt_version" : 2,
 	"priority" : 7,
 	"color" : "255 128 0",
@@ -83,12 +84,6 @@
 		{
 			"hook_id": "lib/units/weapons/raycastweaponbase",
 			"script_path": "lua/raycastweaponbase.lua"
-		}
-	],
-	"persist_scripts" : [
-		{
-			"global" : "NobleHUD_DisableUpdate",
-			"script_path" : "lua/_update.lua"
 		}
 	]
 }

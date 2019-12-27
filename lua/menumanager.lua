@@ -2182,16 +2182,12 @@ function NobleHUD:GetMedalIcon(x,y)
 	}
 end
 
-function NobleHUD:AddDelayedCallback(func,args,timer,id,use_real_time)
+function NobleHUD:AddDelayedCallback(func,args,timer,id)
 	if timer then 
-		if use_real_time then 
-			timer = timer + os.time()
-		else
-			timer = timer + Application:time()
-		end
+		timer = timer + Application:time()
 	end
 	id = id or (#NobleHUD._delayed_callbacks + 1)
-	NobleHUD._delayed_callbacks[id] = {func = func,args = args or {},timer = timer,use_real_time = use_real_time}
+	NobleHUD._delayed_callbacks[id] = {func = func,args = args or {},timer = timer}
 end
 
 function NobleHUD:RemoveDelayedCallback(id)
@@ -2535,6 +2531,10 @@ end
 
 --		HUD UPDATE STUFF / EVENT FUNCTIONS
 
+Hooks:Add("BeardLibSetupInitFinalize","NobleHUD_AddUpdator",function()
+	BeardLib:AddUpdater("NobleHUD_update",callback(NobleHUD,NobleHUD,"UpdateHUD"))
+end)
+
 function NobleHUD:CreateHUD(orig)
 	if not orig:alive(PlayerBase.PLAYER_INFO_HUD_PD2) then 
 		return
@@ -2653,7 +2653,7 @@ function NobleHUD:OnLoaded()
 	end
 end
 
-function NobleHUD:UpdateHUD(t,dt,t_real)
+function NobleHUD:UpdateHUD(t,dt)
 
 	if game_state_machine then 
 		local game_state = game_state_machine:current_state_name()		
@@ -2668,21 +2668,11 @@ function NobleHUD:UpdateHUD(t,dt,t_real)
 --simplified delayed callbacks implementation
 	for i,data in pairs(NobleHUD._delayed_callbacks) do 
 		if data.timer then 
-			if data.use_real_time then 
-				log(i .. ") timer: " .. data.timer .. ", t_real = " .. t_real .. ", finish t = " .. (t_real + data.timer))
-				if data.timer <= t_real then 
-					NobleHUD._delayed_callbacks[i] = nil
-					if type(data.func) == "function" then 
-						data.func(unpack(data.args))
-					end
-				end
-			else
-				if data.timer <= t then 
-					NobleHUD._delayed_callbacks[i] = nil
-	--				table.remove(NobleHUD._delayed_callbacks,i)
-					if type(data.func) == "function" then 
-						data.func(unpack(data.args))
-					end
+			if data.timer <= t then 
+				NobleHUD._delayed_callbacks[i] = nil
+--				table.remove(NobleHUD._delayed_callbacks,i)
+				if type(data.func) == "function" then 
+					data.func(unpack(data.args))
 				end
 			end
 		else
@@ -3247,20 +3237,16 @@ function NobleHUD:OnGameStateChanged(before_state,state)
 --		self:log("Loaded HUD during state " .. state)
 		self:OnLoaded()
 	end
+	
 	if GameStateFilters.any_end_game[state] or GameStateFilters.player_slot[state] or GameStateFilters.lobby[state] or (state == "server_left") then
-	--on game ended
-		if self._shield_sound_source then 
-			self._shield_sound_source:close()
-			self._shield_sound_source = nil
+		if GameStateFilters.any_end_game[state] or (state == "server_left") then 
+			--on game ended
+			if self._shield_sound_source then 
+				self._shield_sound_source:close()
+				self._shield_sound_source = nil
+			end
+			self:PlayAnnouncerSound("game_over")
 		end
-		self:PlayAnnouncerSound("game_over")
-		--[[
-		if self._announcer_sound_source then 
-			self._announcer_sound_source:stop()
-			self._announcer_sound_source:set_buffer(self._cache.sounds.game_over)
-			self._announcer_sound_source:play()
-		end
-		--]]
 		hud:hide()
 	elseif GameStateFilters.waiting_for_players[state] or GameStateFilters.waiting_for_respawn[state] or GameStateFilters.waiting_for_spawn_allowed[state] then 
 		hud:hide()
