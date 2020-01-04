@@ -17,7 +17,9 @@
 	"noblehud_set_crosshair_alpha_desc" : "Transparency of the Reticle.",
 	
 	"noblehud_set_announcer_enabled_title" : "Enable Announcer VO",
-	"noblehud_set_announcer_enabled_desc" : "If true, the announcer from Halo: Reach will announce each medal as it appears.\nNote: Not all medals have voice lines.",
+	"noblehud_set_announcer_enabled_desc" : "If true, the announcer from Halo: Reach will narrate earned medals.\nNote: Not all medals have voice lines.",
+	"noblehud_set_announcer_frantic_enabled_title" : "Announcer: Frantic Mode",
+	"noblehud_set_announcer_frantic_enabled_desc" : "If true, the announcer will narrate each medal as it occurs, rather than waiting for a streak or multikill to end.",
 	
 	"noblehud_test_chat_notification_sfx_title" : "Test Sound",
 	"noblehud_test_chat_notification_sfx_desc" : "Play Selected Chat Notification Sound",
@@ -71,6 +73,8 @@
 	"noblehud_set_stamina_enabled_desc" : "Shows a circular stamina indicator next to your motion tracker.",
 	"noblehud_set_master_hud_alpha_title" : "Set HUD Alpha",
 	"noblehud_set_master_hud_alpha_desc" : "Change the opacity of all NobleHUD elements (Requires restart)",
+	"noblehud_set_shield_charge_sound_enabled_title" : "Enable Shield Charge SFX",
+	"noblehud_set_shield_charge_sound_enabled_desc" : "Plays a sound when armor regenerates fully (Replaces vanilla sound)",
 	"noblehud_set_shield_low_sound_enabled_title" : "Enable Shield Low SFX",
 	"noblehud_set_shield_low_sound_enabled_desc" : "Plays a sound when armor is low"
 	"noblehud_set_shield_low_threshold_title" : "Set Shield Low Threshold",

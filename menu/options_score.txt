@@ -23,6 +23,14 @@
 		},
 		{
 			"type" : "toggle",
+			"id" : "id_noblehud_set_announcer_frantic_enabled",
+			"title" : "noblehud_set_announcer_frantic_enabled_title",
+			"description" : "noblehud_set_announcer_frantic_enabled_desc",
+			"callback" : "callback_noblehud_set_announcer_frantic_enabled",
+			"value" : "announcer_frantic_enabled"
+		},
+		{
+			"type" : "toggle",
 			"id" : "id_noblehud_set_medals_enabled",
 			"title" : "noblehud_set_medals_enabled_title",
 			"description" : "noblehud_set_medals_enabled_desc",

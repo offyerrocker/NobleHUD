@@ -42,6 +42,14 @@
 			"value" : "shield_low_sound_enabled"
 		},
 		{
+			"type" : "toggle",
+			"id" : "id_noblehud_set_shield_charge_sound_enabled",
+			"title" : "noblehud_set_shield_charge_sound_enabled_title",
+			"description" : "noblehud_set_shield_charge_sound_enabled_desc",
+			"callback" : "callback_noblehud_set_shield_charge_sound_enabled",
+			"value" : "shield_charge_sound_enabled"
+		},
+		{
 			"type" : "slider",
 			"id" : "id_noblehud_set_shield_low_threshold",
 			"title" : "noblehud_set_shield_low_threshold_title",

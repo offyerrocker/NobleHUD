@@ -14,11 +14,64 @@ NobleHUD:log("hudassault: ending assault")
 end)
 --]]
 
-Hooks:PostHook(HUDAssaultCorner,"set_control_info","noblehud_set_control_info",function(self,data)
+
+function HUDAssaultCorner:set_control_info(data)
 	NobleHUD:SetHostages(data.nr_hostages)
-end)
+end
 
 
+function HUDAssaultCorner:show_casing(mode)
+	NobleHUD:log("Showing casing mode " .. tostring(mode))
+	if mode == "civilian" then 
+		NobleHUD:SetAssaultPhase(managers.localization:text("civilian"))
+	else
+		NobleHUD:SetAssaultPhase("Casing")--managers.localization:text(""))	
+	end
+	self:_end_assault()
+
+	self:_hide_hostages()
+	self._casing = true
+end
+
+
+
+function HUDAssaultCorner:feed_point_of_no_return_timer(time, is_inside)
+	NobleHUD:SetPONR(time)
+end
+
+function HUDAssaultCorner:show_point_of_no_return_timer()
+	NobleHUD:ShowPONR()
+
+	self:_end_assault()
+
+	self:_hide_hostages()
+	
+	self:_set_feedback_color(self._noreturn_color)
+
+	self._point_of_no_return = true
+end
+
+function HUDAssaultCorner:hide_point_of_no_return_timer()
+	NobleHUD:HidePONR()
+	
+	self._point_of_no_return = false
+	self:_set_feedback_color(nil)
+end
+
+function HUDAssaultCorner:flash_point_of_no_return_timer(beep)
+	NobleHUD:AnimatePONRFlash(beep)
+end
+
+
+function HUDAssaultCorner:_popup_wave(text, color)
+	local preset = NobleHUD._killfeed_presets.wave
+	--i don't care about preserving the preset color
+	color = color or Color.green
+	local flash_color = Color(color.red + 0.5,color.green + 0.5,color.blue + 0.5):with_alpha(1)
+	preset.color_1 = color:with_alpha(1)
+	preset.color_2 = flash_color
+	NobleHUD:AddKillfeedMessage(text,preset)
+end
 
 function HUDAssaultCorner:_show_hostages()
 	if not self._point_of_no_return then
@@ -78,6 +131,8 @@ function HUDAssaultCorner:set_assault_wave_number(assault_number)
 end
 
 function HUDAssaultCorner:_start_assault(text_list)
+
+	
 --[[
 	text_list = text_list or {
 		""
