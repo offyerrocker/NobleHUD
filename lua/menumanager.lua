@@ -3,7 +3,10 @@
 
 ***** TODO: *****
 	Notes:
-	
+		add shield sounds slider?
+		if reloading, set bloom to 1
+		if radar disabled, realign panels: ability panel down, cartographer text indicator left align
+		
 		parse team name + color from message
 		send assault phase
 	
@@ -262,7 +265,8 @@ NobleHUD.chat_notification_sounds = {
 NobleHUD.network_messages = {
 	down_counter = "DownCounterStandalone",
 	sync_assault = "SyncAssaultPhase",
-	sync_teamname = "SyncNobleHUDTeam"
+	sync_teamname = "SyncNobleHUDTeam",
+	sync_callsign = "SyncNobleHUDCallsign"
 }
 
 NobleHUD._bgboxes = {} --why tf did i make this
@@ -2119,6 +2123,21 @@ function NobleHUD.make_compact_number(num,scale,places)
 	str = string.format(formatter(places) .. suffix,num / e(powers[suffix]))
 	
 	return str or string.format("%." .. scale .. "f",num)
+end
+
+function NobleHUD:make_callsign_name(original_name,max_len,character)
+	local name = original_name
+	
+--	name = string.sub(name,string.find(name,"%w"))
+	
+--    s = "Deadline is 30/05/1999, firm"
+ --   date = "%d%d/%d%d/%d%d%d%d"
+  --  print(string.sub(s, string.find(s, date)))   --> 30/05/1999
+	
+	
+	
+--	name = string.gsub(name,"-","")
+	
 end
 
 function NobleHUD.to_camelcase(s)
@@ -8293,6 +8312,8 @@ Hooks:Add("NetworkReceivedData", "noblehud_onreceiveluanetworkingmessage", funct
 			NobleHUD:SetAssaultPhase(managers.localization:text(NobleHUD._assault_phases[data]))
 		end
 	elseif (message == NobleHUD.network_messages.down_counter) then
+		--stuff
+	elseif (message == NobleHUD.network_messages.sync_callsign) then
 		--stuff
 	elseif (message == NobleHUD.network_messages.sync_teamname) then
 		if sender == 1 then
