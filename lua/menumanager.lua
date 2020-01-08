@@ -1780,7 +1780,7 @@ NobleHUD._medal_data = {
 			icon_xy = {3,6}
 		}
 	},
-	spree_grenade = { --not implemented properly
+	spree_grenade = {
 		[5] = {
 			name = "spree_grenade_1",
 			sfx = "spree_grenade_1",
@@ -2918,7 +2918,6 @@ function NobleHUD:UpdateHUD(t,dt)
 	
 		self._compass_panel:child("compass_strip"):set_x(compass_yaw * self._compass_panel:w())
 		
---todo make radar update dotcolor for converted enemies
 		--radar/crosshair stuff
 
 
@@ -2971,7 +2970,7 @@ function NobleHUD:UpdateHUD(t,dt)
 						if math.abs(v_distance) > V_DISTANCE_MID then 
 							data.bitmap:set_alpha(0.33)
 							data.bitmap:set_rotation(0)
-							if v_distance > 0 then 							
+							if v_distance > 0 then
 								--if lower than player by x, use radar_blip_near_lower
 								
 								data.bitmap:set_image("guis/textures/radar_blip_low")
@@ -7094,7 +7093,7 @@ function NobleHUD:remove_radar_blip(u,key)
 	end
 
 	local blip = self._radar_blips[key]
-	if blip then 
+	if blip and blip.bitmap and alive(blip.bitmap) then 
 		blip.bitmap:stop()
 		blip.bitmap:animate(callback(self,self,"animate_blip_fadeout"))
 		--self._radar_panel:remove(blip.bitmap) --done after fadeout complete

@@ -46,7 +46,9 @@ function HUDChat:receive_message(name,message,color,icon,...)
 	
 	if NobleHUD:IsChatNotificationSoundEnabled() then
 		local notif_sfx = NobleHUD.chat_notification_sounds[NobleHUD:GetChatNotificationSound()]
-		XAudio.Source:new(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/ui/" .. notif_sfx))
+		if managers.player:local_player() then
+			XAudio.Source:new(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/ui/" .. notif_sfx))
+		end
 	end	
 	if NobleHUD:IsChatAutoshowEnabled() or (NobleHUD:GetChatTimestampMode() < 3) then	
 		local output_panel = self._panel:child("output_panel")
