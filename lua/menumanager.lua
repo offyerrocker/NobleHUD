@@ -3,6 +3,8 @@
 
 ***** TODO: *****
 	Notes:
+		hide popup if outside viewing angle
+	
 		add shield sounds slider?
 		if reloading, set bloom to 1
 		if radar disabled, realign panels: ability panel down, cartographer text indicator left align
@@ -229,6 +231,7 @@ NobleHUD.settings = {
 	popups_enabled = true,
 	popup_font_size = 16,
 	radar_distance = 25,
+	radar_style = 2,
 	popup_duration = 3,
 	show_all_medals = false,
 	announcer_enabled = true,
@@ -295,6 +298,12 @@ NobleHUD.color_data = {
 	hud_hint_lightorange = Color("FFE5B8"),
 --	hud_blueoutline = Color(168/255,203/255,255/255), --shield/hp outline color; unused
 	hud_text = Color.white,
+	hud_radar_cop = Color(212/255,0/255,0/255), --red
+	hud_radar_criminal = Color("F1E667"), --yellow
+	hud_radar_civilian = Color("18D400"), --green
+	hud_radar_gangster = Color("D46800"), --orange
+	hud_radar_convert = Color("67EFF1"), --cyan
+	hud_radar_turret = Color("B600D4"), --purple
 	hud_compass = Color("2EA1FF")
 }
 
@@ -357,6 +366,10 @@ NobleHUD._killfeed_presets = {
 NobleHUD._HUD_HEALTH_TICKS = 8
 NobleHUD._RADAR_REFRESH_INTERVAL = 0.5
 NobleHUD._radar_refresh_t = 0
+NobleHUD._RADAR_GHOST_INTERVAL = 0.066
+NobleHUD._RADAR_GHOST_FADEIN = 0.15
+NobleHUD._RADAR_GHOST_FADEOUT = 0.4
+NobleHUD._radar_ghost_t = 0
 
 NobleHUD._cache = {
 	t = 0,
@@ -2319,6 +2332,39 @@ function NobleHUD:animate_fadein(o,t,dt,start_t,duration,end_alpha,start_x,end_x
 	end
 end
 
+function NobleHUD:animate_blip_ghost(o,t,dt,start_t,duration,end_alpha,start_w,start_h,end_w,end_h,center_x,center_y)
+	--i'm cheating a bit here by calling two other animate functions from this one
+	local fade_done = self:animate_fadein(o,t,dt,start_t,duration,end_alpha) 
+	local scale_done = self:animate_scale(o,t,dt,start_t,duration,start_w,start_h,end_w,end_h,center_x,center_y)
+	if fade_done and scale_done then
+		return true
+	end	
+end
+
+function NobleHUD:animate_scale(o,t,dt,start_t,duration,start_w,start_h,end_w,end_h,center_x,center_y)
+	duration = duration or 1
+	if center_x and center_y then 
+		o:set_center(center_x,center_y)
+	end
+	local ratio = math.pow((t - start_t) / duration,2)
+	if ratio >= 1 then 
+		if end_w then 
+			o:set_w(end_w)
+		end
+		if end_h then 
+			o:set_h(end_h)
+		end
+		return true
+	else
+		if start_w and end_w then
+			o:set_w(start_w + ((end_w - start_w) * ratio))
+		end
+		if start_h and end_h then 
+			o:set_h(start_h + ((end_h - start_h) * ratio))
+		end
+	end
+end
+
 --overkill made "PRIMARY" weapons in slot [2] and "SECONDARY" weapons in slot [1],
 --probably recycled/holdover/legacy code from PD:TH
 --no longer used
@@ -2371,6 +2417,10 @@ function NobleHUD:GetRadarDistance()
 	return self.settings.radar_distance
 end
 
+function NobleHUD:GetRadarStyle()
+	return self.settings.radar_style --1 is completely accurate, noblehud beta; 2 is halo:reach style 
+end
+
 function NobleHUD:IsFloatingAmmoPanelEnabled()
 	return false
 end
@@ -2379,12 +2429,12 @@ function NobleHUD:get_blip_color_by_team(team_name)
 	team_name = team_name or "nil"
 	local cd = self.color_data --sorry crackdown team, cd is ColorData mod now
 	local team_colors = {
-		law1 = cd.hud_vitalsfill_red,
-		neutral1 = Color.green,
-		mobster1 = Color(1,0.5,0),
-		converted_enemy = Color(0,1,1),
-		hacked_turret = Color(0,1,1),
-		criminal1 = cd.hud_vitalsfill_yellow
+		law1 = cd.hud_radar_cop,
+		neutral1 = cd.hud_radar_civilian,
+		mobster1 = cd.hud_radar_gangster,
+		converted_enemy = cd.hud_radar_convert,
+		hacked_turret = cd.hud_radar_turret,
+		criminal1 = cd.hud_radar_criminal
 	}
 	if not team_colors[team_name] then 
 		self:log("No blip color found for " .. team_name)
@@ -2911,7 +2961,7 @@ function NobleHUD:UpdateHUD(t,dt)
 		local player_aim = player:movement():m_head_rot():yaw()
 		
 		local cam_aim = viewport_cam:rotation():yaw()
-		local cam_rot_a = viewport_cam:rotation():y()
+--		local cam_rot_a = viewport_cam:rotation():y()
 
 		local compass_yaw = ((cam_aim) / 180) - 1 --should this perhaps use modulo
 		--todo get range of cam_aim
@@ -2929,6 +2979,12 @@ function NobleHUD:UpdateHUD(t,dt)
 			local RADAR_DISTANCE_MAX_SQ = RADAR_DISTANCE_MAX * RADAR_DISTANCE_MAX
 			local V_DISTANCE_MID = 350 --at vertical distances over this threshold, the icon will change to reflect this difference
 			
+			local refresh_radar_ghosts = false
+			if (t - self._radar_ghost_t) > self._RADAR_GHOST_INTERVAL then 
+				self._radar_ghost_t = t
+				refresh_radar_ghosts = true
+			end
+
 			
 			--refresh radar targets (add)
 			if (t > NobleHUD._radar_refresh_t + NobleHUD._RADAR_REFRESH_INTERVAL) then
@@ -2953,62 +3009,112 @@ function NobleHUD:UpdateHUD(t,dt)
 			
 
 			--refresh currently existing radar blips
+			--create new blip ghosts
 			
 			local radar = self._radar_panel
 			
+			local asdf = 0
 			for blip_key,data in pairs(self._radar_blips) do 
-				if data.unit and alive(data.unit) and (data.unit:character_damage()) and not data.unit:character_damage():dead() then 
+				if data.unit and alive(data.unit) and data.unit:character_damage() then 
 					local person_pos = data.unit:position()
 					local angle_to_person = 90 + NobleHUD.angle_from(person_pos,player_pos) - player_aim
 					local distance_to_person = NobleHUD.vec2_distance(player_pos,person_pos)
 					local v_distance = player_pos.z - person_pos.z
-					local blip_x,blip_y
+					local blip_x,blip_y,blip_image,blip_alpha,blip_angle
+					local team = data.unit:movement() and data.unit:movement():team() and data.unit:movement():team().id or "law1"
+					local blip_color = self:get_blip_color_by_team(team)
 					if distance_to_person < RADAR_DISTANCE_MID then 
 					
 						blip_x = (math.sin(angle_to_person) * (distance_to_person / RADAR_DISTANCE_MID) * (RADAR_SIZE / 2))
 						blip_y = (math.cos(angle_to_person) * (distance_to_person / RADAR_DISTANCE_MID) * (RADAR_SIZE / 2))
 						if math.abs(v_distance) > V_DISTANCE_MID then 
-							data.bitmap:set_alpha(0.33)
-							data.bitmap:set_rotation(0)
+							blip_alpha = 0.33
+							blip_angle = 0
 							if v_distance > 0 then
 								--if lower than player by x, use radar_blip_near_lower
+								blip_image = "guis/textures/radar_blip_low"
 								
-								data.bitmap:set_image("guis/textures/radar_blip_low")
+								blip_w = 8
+								blip_h = 8
 							else
 								--if higher than player by x, use radar_blip_near_higher
 								
-								data.bitmap:set_image("guis/textures/radar_blip_high")
+								blip_image = "guis/textures/radar_blip_high"
+								
+								blip_w = 8
+								blip_h = 8
 							end
 						else
 --							if data.unit == Console.tagged_unit then 	
 --								self:log(v_distance .. "<" .. V_DISTANCE_MID)
 --							end
-							data.bitmap:set_rotation(-angle_to_person)
-							data.bitmap:set_alpha(0.7)
-							data.bitmap:set_image("guis/textures/radar_blip_near") --mid
+							blip_angle = -angle_to_person
+							blip_alpha = 0.7
+							blip_image = "guis/textures/radar_blip_near" --mid
+							
+							blip_w = 10
+							blip_h = 10
 						end
 					elseif distance_to_person > RADAR_DISTANCE_MAX then 
 						--is out of range
 						
 						blip_x,blip_y = -1000,-1000
+						blip_alpha = 0
 						self:remove_radar_blip(data.unit,blip_key)
 					else 
-						data.bitmap:set_rotation(-angle_to_person)
+						blip_angle = -angle_to_person
 						
 						--on outskirts of range
 						blip_x = math.sin(angle_to_person) * RADAR_SIZE / 2
 						blip_y = math.cos(angle_to_person) * RADAR_SIZE / 2
-						
-						data.bitmap:set_image("guis/textures/radar_blip_far")
+						blip_image = "guis/textures/radar_blip_far"
+						blip_alpha = 0.5
+						blip_w = 32
+						blip_h = 32
 					end
-					data.bitmap:set_center(blip_x + (RADAR_SIZE/2),blip_y + (RADAR_SIZE/2))
 					
-						
-				else 
-					--is dead
+					
+					if data.unit:character_damage():dead() then 
+						self:remove_radar_blip(data.unit,blip_key)
+					else
+						if (NobleHUD:GetRadarStyle() == 2) then 
+							if refresh_radar_ghosts then 
+								self:create_radar_blip_ghost({
+									alpha = 0,
+									rotation = blip_angle,
+									texture = blip_image,
+									layer = 4,
+									color = blip_color,
+									end_alpha = blip_alpha,
+		--							size_mult = 1,
+									blip_w = blip_w,
+									blip_h = blip_h,
+									center_x = blip_x + (RADAR_SIZE/2),
+									center_y = blip_y + (RADAR_SIZE/2)
+								})
+							end
+						elseif data.bitmap and alive(data.bitmap) then 
+							local blip_bitmap = data.bitmap
+							blip_bitmap:set_alpha(blip_alpha)
+							blip_bitmap:set_rotation(blip_angle)
+							blip_bitmap:set_image(blip_image)
+							blip_bitmap:set_center(blip_x + (RADAR_SIZE/2),blip_y + (RADAR_SIZE/2))
+							blip_bitmap:set_color(blip_color)
+							if blip_w then 
+								blip_bitmap:set_w(blip_w)
+							end
+							if blip_h then 
+								blip_bitmap:set_h(blip_h)
+							end
+						end
+					end
+				else
 					self:remove_radar_blip(data.unit,blip_key)
+					--is dead
 				end
 			end
+			Console:SetTrackerValue("trackerb",tostring(self._radar_ghost_t))
+			Console:SetTrackerValue("trackera",tostring(asdf))
 		end
 -- ************** CROSSHAIR ************** 
 		if self:IsCrosshairEnabled() then --crosshair enabled
@@ -3062,22 +3168,25 @@ function NobleHUD:UpdateHUD(t,dt)
 			
 			--bloom
 			if self:IsCrosshairBloomEnabled() then 
-				local bloom_decay_mul = 1.5 -- 3
-				if self.weapon_data.bloom > 0 then 
-					self.weapon_data.bloom = math.max(self.weapon_data.bloom - (bloom_decay_mul * dt),0)
-					local bloom = 0
-					if false then --exponential decay
-						bloom = 1 - math.pow(1 - self.weapon_data.bloom,2)
-					else
-						bloom = self.weapon_data.bloom
+				if state:_is_reloading() then 
+					self.weapon_data.bloom = 1
+					self:_set_crosshair_bloom(1)
+				else
+					local bloom_decay_mul = 1.5 -- 3
+					if self.weapon_data.bloom > 0 then 
+						self.weapon_data.bloom = math.max(self.weapon_data.bloom - (bloom_decay_mul * dt),0)
+						local bloom = 0
+						if false then --exponential decay
+							bloom = 1 - math.pow(1 - self.weapon_data.bloom,2)
+						else
+							bloom = self.weapon_data.bloom
+						end
+						self:_set_crosshair_bloom(bloom)
 					end
-					self:_set_crosshair_bloom(bloom)
 				end
-				
 				if true then --if special crosshairs enabled, like grenade launcher altimeter
 					self:_set_crosshair_altimeter(viewport_cam:rotation():pitch())
 				end
-				
 			end
 		end
 		
@@ -5948,6 +6057,8 @@ function NobleHUD:animate_popup_bluespider(o,t,dt,start_t,cb,duration,unit,fadeo
 			o:set_alpha(o:alpha() + (dt * duration * 2))
 		end
 		local viewport_cam = managers.viewport:get_current_camera()
+--		local camera_angle = viewport_cam:rotation():yaw()
+--		if viewport_cam:position() - unit_pos
 		local head_pos = unit:movement() and unit:movement():m_head_pos()
 		local unit_pos = head_pos and NobleHUD._ws:world_to_screen(viewport_cam,head_pos)
 		if unit_pos then 
@@ -7050,26 +7161,55 @@ function NobleHUD:create_radar_blip(u)
 	end
 	
 	local team = u:movement():team().id
+
 	local blip_bitmap = self._radar_panel:bitmap({
 		name = "blip_" .. tostring(u:key()),
 		texture = "guis/textures/radar_blip",
 		layer = 4,
 		color = self:get_blip_color_by_team(team),
 		blend_mode = "add",
-		alpha = 0.7,
+		alpha = 0,
 		x = 0,
 		y = 0
 	})
+	
 	
 	local blip_data = {
 		bitmap = blip_bitmap,
 		unit = u
 	}
+	
+	
 	self._radar_blips[u:key()] = blip_data
 	return blip_data
 end
 
-function NobleHUD:check_radar_blip_color(u,key) --todo change color if joker
+function NobleHUD:create_radar_blip_ghost(blip_data)
+	if not blip_data then 
+		self:log("Attempt to create radar blip ghost with invalid data!",{color=Color.red})
+		return
+	end
+	local start_size = 0.25
+	
+	blip_data.name = blip_data.name or ("radar_ghost_" .. tostring(blip_data))
+	
+	local blip_bitmap = self._radar_panel:bitmap(blip_data)
+	local blip_w = blip_data.blip_w or (blip_bitmap:w() * (blip_data.size_mult or 1))
+	local blip_h = blip_data.blip_h or (blip_bitmap:h() * (blip_data.size_mult or 1))
+	
+	if blip_data.center_x and blip_data.center_y then 
+		blip_bitmap:set_center(blip_data.center_x,blip_data.center_y)
+	end
+	blip_bitmap:set_w(blip_w * start_size)
+	blip_bitmap:set_h(blip_h * start_size)
+	
+	local function fadeout_func(o)
+		self:animate(o,"animate_fadeout",function(p) p:parent():remove(p) end,self._RADAR_GHOST_FADEOUT,o:alpha())
+	end
+	self:animate(blip_bitmap,"animate_blip_ghost",fadeout_func,self._RADAR_GHOST_FADEIN,blip_data.end_alpha,blip_bitmap:w(),blip_bitmap:h(),blip_w,blip_h,blip_data.center_x,blip_data.center_y)
+end
+
+function NobleHUD:check_radar_blip_color(u,key)
 	key = key or (u and u:key())
 	if not key then 
 		self:log("Error: No key for check_radar_blip_color()!",{color = Color.red})
@@ -7078,11 +7218,10 @@ function NobleHUD:check_radar_blip_color(u,key) --todo change color if joker
 	local blip = self._radar_blips[key]
 	if blip then 
 		local unit = u or blip.unit
-		local color = self:get_blip_color_by_team(unit:movement():team().id)
+		local team = unit:movement() and unit:movement():team() and unit:movement():team().id or "law1"
+		local color = self:get_blip_color_by_team(team)
 		blip.bitmap:set_color(color)
 	end
-	
-	
 end
 
 function NobleHUD:remove_radar_blip(u,key)
