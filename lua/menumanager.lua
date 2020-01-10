@@ -3,10 +3,21 @@
 
 ***** TODO: *****
 	Notes:
+		
+		--enemy turret is not vehicle sized on radar
+		--enemy swat van is not vehicle sized on radar, and seems to be elevated high above the player
+		--fix poorly positioned radar_far blips/increase size?
+		radar_far blips should not clip outside the radar panel
+		unique blip texture so that they're not blurry?
+		test vehicle detection on non-ghost mode
+	
+		-crash from assault (missing bgbox text_panel)
+	
 		hide popup if outside viewing angle
-		show turret/other eq on radar? check slotmask 
+		show other eq on radar? check slotmask 
 		add shield sounds slider?
 		adjust overshield color to be more green (check MCC screenshots)
+		
 		
 		if radar disabled, hide radar and realign panels: ability panel down, cartographer text indicator left align
 		
@@ -305,6 +316,9 @@ NobleHUD.color_data = {
 	hud_radar_gangster = Color("D46800"), --orange
 	hud_radar_convert = Color("67EFF1"), --cyan
 	hud_radar_turret = Color("B600D4"), --purple
+	hud_radar_empty_vehicle = Color(0.7,0.7,0.7),
+	hud_radar_friendly_vehicle = Color("F1E667"),
+	hud_radar_hostile_vehicle = Color(212/255,0/255,0/255),
 	hud_compass = Color("2EA1FF"),
 	normal = Color("B2B2B2"), --grey
 	unique = Color("FFD700"), --yellow 
@@ -2455,10 +2469,11 @@ function NobleHUD:get_blip_color_by_team(team_name)
 		mobster1 = cd.hud_radar_gangster,
 		converted_enemy = cd.hud_radar_convert,
 		hacked_turret = cd.hud_radar_turret,
-		criminal1 = cd.hud_radar_criminal
+		criminal1 = cd.hud_radar_criminal,
+		empty_vehicle = cd.hud_radar_empty_vehicle
 	}
 	if not team_colors[team_name] then 
-		self:log("No blip color found for " .. team_name)
+		self:log("No blip color found for " .. tostring(team_name))
 	end
 	return team_colors[team_name] or Color.white
 end
@@ -3001,6 +3016,8 @@ function NobleHUD:UpdateHUD(t,dt)
 			local RADAR_DISTANCE_MAX = RADAR_DISTANCE_MID * 1.2
 			local RADAR_DISTANCE_MAX_SQ = RADAR_DISTANCE_MAX * RADAR_DISTANCE_MAX
 			local V_DISTANCE_MID = 350 --at vertical distances over this threshold, the icon will change to reflect this difference
+			local MAX_BLIP_DEVIATION = 25 --percentage
+			local blip_deviation = 1 + (math.random(MAX_BLIP_DEVIATION) / 100)
 			
 			local refresh_radar_ghosts = false
 			if (t - self._radar_ghost_t) > self._RADAR_GHOST_INTERVAL then 
@@ -3021,10 +3038,42 @@ function NobleHUD:UpdateHUD(t,dt)
 							--out of range; remove 
 							self:remove_radar_blip(unit)
 						else
-							self:create_radar_blip(unit) --todo animate fadein
+							self:create_radar_blip(unit,"person") --todo animate fadein
 						end
 					
 					else --no valid unit; this should never happen due to World:find_units_quick() filtering out invalid/dead units
+						self:remove_radar_blip(unit)
+					end
+				end
+				
+				local all_vehicles = World:find_units_quick("sphere",player_pos,RADAR_DISTANCE_MAX,managers.slot:get_mask("vehicles"))
+				for _,unit in pairs(all_vehicles) do 
+					if unit and alive(unit) then 
+						local dis = mvector3.distance_sq(player_pos,unit:position())
+						if dis >= RADAR_DISTANCE_MAX_SQ then 
+							self:remove_radar_blip(unit)
+						else
+							if unit:vehicle_driving() then 
+								self:create_radar_blip(unit,"vehicle")	
+							else
+								self:create_radar_blip(unit,"fake_vehicle")
+							end
+						end
+					else
+						self:remove_radar_blip(unit)
+					end
+				end
+				
+				local all_sentries = World:find_units_quick("sphere",player_pos,RADAR_DISTANCE_MAX,managers.slot:get_mask("sentry_gun"))
+				for _,unit in pairs(all_sentries) do 
+					if unit and alive(unit) then 
+						local dis = mvector3.distance_sq(player_pos,unit:position())
+						if dis >= RADAR_DISTANCE_MAX_SQ then 
+							self:remove_radar_blip(unit)
+						else
+							self:create_radar_blip(unit,"sentry")
+						end
+					else
 						self:remove_radar_blip(unit)
 					end
 				end
@@ -3037,20 +3086,92 @@ function NobleHUD:UpdateHUD(t,dt)
 			local radar = self._radar_panel
 			
 			for blip_key,data in pairs(self._radar_blips) do 
-				if data.unit and alive(data.unit) and data.unit:character_damage() then 
-					local person_pos = data.unit:position()
-					local angle_to_person = 90 + NobleHUD.angle_from(person_pos,player_pos) - player_aim
-					local distance_to_person = NobleHUD.vec2_distance(player_pos,person_pos)
-					local v_distance = player_pos.z - person_pos.z
-					local blip_x,blip_y,blip_image,blip_alpha,blip_angle
-					local team = data.unit:movement() and data.unit:movement():team() and data.unit:movement():team().id
-					if team and data.unit:brain() and data.unit:brain().is_current_logic and data.unit:brain():is_current_logic("intimidated") then 
-						team = "converted_enemy"
-					elseif not team then 
-						team = "law1"
+				
+				local blip_x,blip_y,blip_image,blip_alpha,blip_angle
+				local blip_team
+				local blip_dead
+				local blip_pos
+				local blip_unit = data.unit
+				local blip_w = RADAR_SIZE / 20
+				local blip_h = RADAR_SIZE / 20
+				local is_vehicle
+				if data.variant == "ecm_decoy" then 
+					self:log("radar: found ecm decoy. this shouldn't be happening yet")
+					blip_pos = data.position or (blip_unit and alive(blip_unit) and blip_unit:position())
+					if data.expire_t and data.expire_t <= t then 
+						blip_dead = true
+					elseif blip_pos then 
+						data.position = data.position + (data.velocity or Vector3(math.random(),math.random(),math.random()))
+						--still kickin'!
+					--Vector3(math.random(RADAR_DISTANCE_MAX / 2),math.random(RADAR_DISTANCE_MAX / 2),math.random(RADAR_DISTANCE_MAX / 2))
+					else
+						blip_dead = true
 					end
+				else
+					if blip_unit and alive(blip_unit) then
+						if ((data.variant == "person") or (data.variant == "sentry")) then
+							blip_pos = blip_unit:position()
+							if blip_unit:character_damage() and not blip_unit:character_damage():dead() then 
+								if blip_unit:movement() and blip_unit:movement():team() then 
+									blip_team = blip_unit:movement():team().id
+								end
+								if variant == "sentry" then
+									if blip_team ~= "criminal1" then 
+										is_vehicle = true
+									end
+								end
+								if blip_team and blip_unit:brain() and blip_unit:brain().is_current_logic and blip_unit:brain():is_current_logic("intimidated") then 
+									blip_team = "converted_enemy"
+								elseif not blip_team then 
+									blip_team = "law1"
+								end
+							else
+								blip_dead = true
+							end
+						elseif data.variant == "vehicle" then 
+--							blip_pos = blip_unit:oobb():center()
+							is_vehicle = true
+							local driving_state = blip_unit:vehicle_driving()
+							if driving_state then 
+								if driving_state:num_players_inside() > 0 then 
+									blip_team = "criminal1"
+								elseif driving_state:_number_in_the_vehicle() > 0 then 
+									local driver_unit = driving_state._seats.driver and driving_state._seats.driver.occupant
+									if driver_unit and alive(driver_unit) and driver_unit:brain() then 
+										--is AI
+										if driver_unit:movement() and driver_unit:movement():team() then 
+											blip_team = driver_unit:movement():team().id or "empty_vehicle"
+										end
+									end
+								end
+							end
+							blip_team = blip_team or "empty_vehicle"
+						elseif data.variant == "fake_vehicle" then 
+--							blip_pos = blip_unit:oobb():center()
+							is_vehicle = true
+							if blip_unit:base() and blip_unit:base()._modules then 
+								blip_team = "law1"
+							end
+							--things like cop cars or swat vans; not currently detected
+							blip_team = blip_team or "empty_vehicle"
+						else
+							self:log("radar: not sure why, but finding " .. tostring(data.variant))
+						end
+					else	
+						blip_dead = true
+					end
+				end
+				if not blip_pos then
+					blip_dead = true
+				end
+				if blip_dead then 
+					self:remove_radar_blip(blip_unit,blip_key)
+				else
+					local angle_to_person = 90 + NobleHUD.angle_from(blip_pos,player_pos) - player_aim
+					local distance_to_person = NobleHUD.vec2_distance(player_pos,blip_pos)
+					local v_distance = player_pos.z - blip_pos.z
 					
-					local blip_color = self:get_blip_color_by_team(team)
+					local blip_color = self:get_blip_color_by_team(blip_team)
 					if distance_to_person < RADAR_DISTANCE_MID then 
 					
 						blip_x = (math.sin(angle_to_person) * (distance_to_person / RADAR_DISTANCE_MID) * (RADAR_SIZE / 2))
@@ -3058,28 +3179,21 @@ function NobleHUD:UpdateHUD(t,dt)
 						if math.abs(v_distance) > V_DISTANCE_MID then 
 							blip_alpha = 0.33
 							blip_angle = 0
+							blip_w = RADAR_SIZE / 24
+							blip_h = RADAR_SIZE / 24
 							if v_distance > 0 then
 								--if lower than player by x, use radar_blip_near_lower
 								blip_image = "guis/textures/radar_blip_low"
-								
-								blip_w = RADAR_SIZE / 24
-								blip_h = RADAR_SIZE / 24
 							else
 								--if higher than player by x, use radar_blip_near_higher
-								
 								blip_image = "guis/textures/radar_blip_high"
-								
-								blip_w = RADAR_SIZE / 24
-								blip_h = RADAR_SIZE / 24
 							end
+							
 						else
---							if data.unit == Console.tagged_unit then 	
---								self:log(v_distance .. "<" .. V_DISTANCE_MID)
---							end
 							blip_angle = -angle_to_person
 							blip_alpha = 0.7
 							blip_image = "guis/textures/radar_blip_near" --mid
-							
+
 							blip_w = RADAR_SIZE / 20
 							blip_h = RADAR_SIZE / 20
 						end
@@ -3087,7 +3201,7 @@ function NobleHUD:UpdateHUD(t,dt)
 						--is out of range
 						blip_x,blip_y = -1000,-1000
 						blip_alpha = 0
-						self:remove_radar_blip(data.unit,blip_key)
+						self:remove_radar_blip(blip_unit,blip_key)
 					else 
 						blip_angle = -angle_to_person
 						
@@ -3096,48 +3210,45 @@ function NobleHUD:UpdateHUD(t,dt)
 						blip_y = math.cos(angle_to_person) * RADAR_SIZE / 2
 						blip_image = "guis/textures/radar_blip_far"
 						blip_alpha = 0.5
-						blip_w = RADAR_SIZE / 6
-						blip_h = RADAR_SIZE / 6
+						blip_w = 2 * RADAR_SIZE / 6
+						blip_h = 2 * RADAR_SIZE / 6
 					end
-					
-					
-					if data.unit:character_damage():dead() then 
-						self:remove_radar_blip(data.unit,blip_key)
-					else
-						if (NobleHUD:GetRadarStyle() == 2) then 
-							if refresh_radar_ghosts then 
-								self:create_radar_blip_ghost({
-									alpha = 0,
-									rotation = blip_angle,
-									texture = blip_image,
-									layer = 4,
-									color = blip_color,
-									end_alpha = blip_alpha,
-		--							size_mult = 1,
-									blip_w = blip_w,
-									blip_h = blip_h,
-									center_x = blip_x + ((RADAR_PANEL_W) / 2), --centered
-									center_y = blip_y + (RADAR_SIZE / 2) + (RADAR_PANEL_H - RADAR_SIZE) --bottom
-								})
-							end
-						elseif data.bitmap and alive(data.bitmap) then 
-							local blip_bitmap = data.bitmap
-							blip_bitmap:set_alpha(blip_alpha)
-							blip_bitmap:set_rotation(blip_angle)
-							blip_bitmap:set_image(blip_image)
-							blip_bitmap:set_center(blip_x + (RADAR_PANEL_W / 2),blip_y + (RADAR_PANEL_H / 2))
-							blip_bitmap:set_color(blip_color)
-							if blip_w then 
-								blip_bitmap:set_w(blip_w)
-							end
-							if blip_h then 
-								blip_bitmap:set_h(blip_h)
-							end
+					if is_vehicle then 
+						blip_w = blip_w * 2
+						blip_h = blip_h * 2
+					end
+					if (NobleHUD:GetRadarStyle() == 2) then 
+						if refresh_radar_ghosts then 
+							self:create_radar_blip_ghost({
+								alpha = 0,
+								rotation = blip_angle,
+								texture = blip_image,
+								layer = 4,
+								color = blip_color,
+								end_alpha = blip_alpha,
+	--							size_mult = 1,
+								blip_w = blip_w * blip_deviation,
+								blip_h = blip_h * blip_deviation,
+								center_x = blip_x + ((RADAR_PANEL_W) / 2), --centered
+								center_y = blip_y + (RADAR_SIZE / 2) + (RADAR_PANEL_H - RADAR_SIZE) --bottom
+							})
 						end
+					elseif data.bitmap and alive(data.bitmap) then 
+						local blip_bitmap = data.bitmap
+						blip_bitmap:set_alpha(blip_alpha)
+						blip_bitmap:set_rotation(blip_angle)
+						blip_bitmap:set_image(blip_image)
+						blip_bitmap:set_center(blip_x + (RADAR_PANEL_W / 2),blip_y + (RADAR_PANEL_H / 2))
+						blip_bitmap:set_color(blip_color)
+						if blip_w then 
+							blip_bitmap:set_w(blip_w)
+						end
+						if blip_h then 
+							blip_bitmap:set_h(blip_h)
+						end
+					else
+						self:remove_radar_blip(data.unit,blip_key)
 					end
-				else
-					self:remove_radar_blip(data.unit,blip_key)
-					--is dead
 				end
 			end
 		end
@@ -3228,66 +3339,6 @@ function NobleHUD:UpdateHUD(t,dt)
 			end
 		end
 		
-		
-		
-		--interact stuff
-		
-		--[[
-		local interact = state._interact_params
-		local interact_panel = self._interact_panel
-		if interact then 
-			local interact_style = self.settings.interact_style
-			
-			
-			local floating_panel = interact_panel:child("floating_panel")
---			local itd = tweak_data.interaction[interact.tweak_data or ""] or {text_id = "ERROR"}
---			local interact_text_id = managers.localization:text(itd.text_id)
---			floating_panel:child("interact_name"):set_text(utf8.to_upper(interact_text_id or "ERROR"))
---			floating_panel:child("interact_progress"):set_text(string.format("%0.01fs",(interact.timer and t - interact.timer) or -99.99))
-			local interact_v = interact_panel:child("trace_vertical")
-			local interact_h = interact_panel:child("trace_horizontal")
-			local interacting_pos = alive(interact.object) and interact.object:position()
-			if interacting_pos then 
-				local interact_pos = self._ws:world_to_screen(viewport_cam,interacting_pos)
-				local i_x_d
-				local i_y_d
-				if interact_style == 1 then
-					--panel stays still, but lines trace between unit and panel onscreen
-					i_x_d = floating_panel:x() - interact_pos.x
-					i_y_d = floating_panel:y() - interact_pos.y
-					interact_v:set_height(i_y_d)
-					interact_v:set_x(interact_pos.x)
-					interact_v:set_y(interact_pos.y)
-				
-					interact_h:set_width(i_x_d)
-					interact_h:set_x(interact_pos.x)
-					interact_h:set_y(interact_pos.y + interact_v:height())
-				elseif interact_style == 2 then
-					--panel moves to unit position onscreen, but lines trace between remaining unit and panel distance if offscreen
-					floating_panel:set_x(math.clamp(interact_pos.x,0,interact_panel:w() - floating_panel:w()))		
-					floating_panel:set_y(math.clamp(interact_pos.y,0,interact_panel:h() - floating_panel:h()))
-					i_x_d = floating_panel:x() - interact_pos.x
-					i_y_d = floating_panel:y() - interact_pos.y
-					
-					interact_v:set_height(i_y_d)
-					interact_v:set_x(interact_pos.x)
-					interact_v:set_y(interact_pos.y)
-				
-					interact_h:set_width(i_x_d)
-					interact_h:set_x(interact_pos.x)
-					interact_h:set_y(floating_panel:y() + interact_v:height())
-					
-				elseif interact_style == 3 then 
-					--panel moves to unit position onscreen
-					floating_panel:set_x(math.clamp(interact_pos.x,0,interact_panel:w() - floating_panel:w()))		
-					floating_panel:set_y(math.clamp(interact_pos.y,0,interact_panel:h() - floating_panel:h()))
-				end
-			end
-		end
-		--]]
-		
-		
-			
 	-- ************** SCORE ************** 
 		self:UpdateScoreTimerMultiplier(t) --set multiplier based on heist timer
 		self:SetTotalScoreMultiplierDisplay()
@@ -7174,21 +7225,71 @@ function NobleHUD:_create_radar(hud)
 	})
 end
 
-function NobleHUD:create_radar_blip(u)
-	if (not (alive(u) and u:movement() and u:movement():team())) or u:character_damage():dead() then 
-		self:log("Error: No unit for create_radar_blip()!",{color = Color.red})
-		return
+function NobleHUD:create_radar_blip(u,variant)
+	variant = variant or "person"
+		
+	if ((variant == "person") or (variant == "sentry")) then
+		if (not (alive(u) and u:movement() and u:movement():team())) or ((not u:character_damage()) or u:character_damage():dead()) then 
+			self:log("Error: No unit for create_radar_blip()!",{color = Color.red})
+			return
+		end
+	elseif variant == "vehicle" then 
+		if not (alive(u) and u:vehicle_driving()) then 
+			self:log("Error: No unit for create_radar_blip()!",{color = Color.red})
+			return
+		end
 	end
 	
 	if self._radar_blips[u:key()] then --blip data already exists, so return it
 		return self._radar_blips[u:key()]
 	end
-	
-	local team = u:movement():team().id
+		
+	local blip_texture = "guis/textures/radar_blip"
+	local team
+	if variant == "vehicle" then 
+		blip_texture = "guis/textures/radar_blip" --vehicle blip texture
+		local driving_state = u:vehicle_driving()
+		if driving_state then 
+			if driving_state:num_players_inside() > 0 then 
+				team = "criminal1"
+			elseif driving_state:_number_in_the_vehicle() > 0 then 
+				local driver_unit = driving_state._seats.driver and driving_state._seats.driver.occupant
+				if driver_unit and alive(driver_unit) and driving_state._seats.driver.occupant:brain() then 
+					self:log("Holy heck, an NPC is driving a vehicle?!",{color = Color.red}) 
+					if driver_unit:movement() and driver_unit:movement():team() then 
+						local driver_team = driver_unit:movement():team().id 
+						if driver_team then 
+							self:log("It's on team " .. tostring(driver_team),{color=Color.red})
+							team = driver_team
+						end
+					end
+				end
+				team = team or "empty_vehicle"
+			end
+		end
+		team = team or "empty_vehicle"
+	elseif variant == "fake_vehicle" then 
+		if u:base() and u:base()._modules then 
+			team = "law1"
+			blip_texture = "guis/textures/radar_blip" --vehicle blip texture
+		end
+		team = team or "empty_vehicle"
+	--things like cop cars or swat vans; not currently detected
+	elseif variant == "sentry" then
+		team = u:movement():team().id
+		blip_texture = "guis/textures/radar_blip" --vehicle blip texture
+		if team == "criminal1" then 
+			blip_texture = "guis/textures/radar_blip" --normal blip texture
+			--don't be huge vehicle indicator, actually
+		end
+	else
+--		blip_texture = "guis/textures/radar_blip"
+		team = u:movement():team().id
+	end
 
 	local blip_bitmap = self._radar_panel:bitmap({
 		name = "blip_" .. tostring(u:key()),
-		texture = "guis/textures/radar_blip",
+		texture = blip_texture,
 		layer = 4,
 		color = self:get_blip_color_by_team(team),
 		blend_mode = "add",
@@ -7200,7 +7301,8 @@ function NobleHUD:create_radar_blip(u)
 	
 	local blip_data = {
 		bitmap = blip_bitmap,
-		unit = u
+		unit = u,
+		variant = variant
 	}
 	
 	
@@ -7242,6 +7344,7 @@ function NobleHUD:check_radar_blip_color(u,key) --updates radar blip color based
 		return
 	end
 	local blip = self._radar_blips[key]
+	
 	if blip then 
 		local unit = u or blip.unit
 		local team = unit:movement() and unit:movement():team() and unit:movement():team().id or "law1"
