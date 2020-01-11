@@ -1,19 +1,16 @@
---at the moment, pretty much everything in this file is just about disabling the vanilla assault panel
+--thanks to Dom for bravely diving into this mod's code and fixing stuff in Better Assault Indicators mod
 
 Hooks:PostHook(HUDAssaultCorner,"init","noblehud_assaultcorner_init",function(self,hud,full_hud,tweak_hud)
 	self._hud_panel:hide()
 	self._hostages_bg_box:hide()
 	self._hud_panel:child("hostages_panel"):set_y(-100)
 	self._hud_panel:child("hostages_panel"):set_alpha(0)
+	if alive(self._hud_panel:child("wave_panel")) then 
+		self._hud_panel:child("wave_panel"):hide()
+	end
+--	NobleHUD:ShowWaveNumber(self:should_display_waves())
+--yeah turns out hudassault is created before noblehud
 end)
-
---[[
-Hooks:PostHook(HUDAssaultCorner,"_end_assault","noblehud_assault_end",function(self)
---	NobleHUD:SetAssaultPhase(managers.localization:text("noblehud_assault_phase_control"))
-NobleHUD:log("hudassault: ending assault")
-end)
---]]
-
 
 function HUDAssaultCorner:set_control_info(data)
 	NobleHUD:SetHostages(data.nr_hostages)
@@ -21,31 +18,71 @@ end
 
 
 function HUDAssaultCorner:show_casing(mode)
+
 	NobleHUD:log("Showing casing mode " .. tostring(mode))
 	if mode == "civilian" then 
-		NobleHUD:SetAssaultPhase(managers.localization:text("civilian"))
+		NobleHUD:SetAssaultPhase(managers.localization:text("civilian"),false)
 	else
-		NobleHUD:SetAssaultPhase("Casing")--managers.localization:text(""))	
+		NobleHUD:log("Casing mode: " .. tostring(mode),{color=Color.yellow})
+--		NobleHUD:SetAssaultPhase("Casing")--managers.localization:text(""))	
 	end
 	self:_end_assault()
-
-	self:_hide_hostages()
 	self._casing = true
 end
 
+function HUDAssaultCorner:_start_assault(text_list)
 
+	local started_now = not self._assault
+	self._assault = true
+
+	if managers.skirmish:is_skirmish() and started_now then
+		self:_popup_wave_started()
+	end
+	--assault panel: show wave info
+end
+
+function HUDAssaultCorner:_end_assault()
+	if not self._assault then
+		return
+	end
+
+	self:_set_feedback_color(nil) --i wish my keyboard supported assault colors lol
+
+	self._assault = false
+
+	if self:should_display_waves() then
+		self:_update_assault_hud_color(self._assault_survived_color)
+		self:_set_text_list(self:_get_survived_assault_strings())
+		local wave_max
+		local wave_current
+		if self._max_waves < math.huge then 
+			wave_current = managers.network:session():is_host() and managers.groupai:state():get_assault_number() or self._wave_number
+			wave_max = self._max_waves
+		end
+		NobleHUD:SetWaveNumber(wave_current,wave_max)
+		
+		if managers.skirmish:is_skirmish() then
+			self:_popup_wave_finished()
+		else
+			NobleHUD:AddQueuedObjective({
+				mode = "wave",
+				id = "noblehud_assault_wave",
+				color = self._current_assault_color,
+				amount = wave_current,
+				current_amount = wave_max,
+				text = self:wave_popup_string_end()
+			})
+		end
+	end
+end
 
 function HUDAssaultCorner:feed_point_of_no_return_timer(time, is_inside)
-	NobleHUD:SetPONR(time)
+	NobleHUD:SetPONR(time) --time formatting is done inside SetPONR()
 end
 
 function HUDAssaultCorner:show_point_of_no_return_timer()
 	NobleHUD:ShowPONR()
 
-	self:_end_assault()
-
-	self:_hide_hostages()
-	
 	self:_set_feedback_color(self._noreturn_color)
 
 	self._point_of_no_return = true
@@ -59,11 +96,22 @@ function HUDAssaultCorner:hide_point_of_no_return_timer()
 end
 
 function HUDAssaultCorner:flash_point_of_no_return_timer(beep)
-	NobleHUD:AnimatePONRFlash(beep)
+--	NobleHUD:AnimatePONRFlash(beep)
 end
 
 
 function HUDAssaultCorner:_popup_wave(text, color)
+	NobleHUD:AddQueuedObjective({
+		mode = "wave",
+		id = "noblehud_assault_wave",
+		color = color,
+--		amount = total_wave,
+--		current_amount = current_wave,
+		text = text
+	})
+	
+	--[[
+--	NobleHUD:AddQueuedObjective({ mode = "wave", id = "noblehud_assault_wave", color = color, text = "butts!"})	
 	local preset = NobleHUD._killfeed_presets.wave
 	--i don't care about preserving the preset color
 	color = color or Color.green
@@ -71,12 +119,10 @@ function HUDAssaultCorner:_popup_wave(text, color)
 	preset.color_1 = color:with_alpha(1)
 	preset.color_2 = flash_color
 	NobleHUD:AddKillfeedMessage(text,preset)
+	--]]
 end
 
 function HUDAssaultCorner:_show_hostages()
-	if not self._point_of_no_return then
---		self._hud_panel:child("hostages_panel"):show()
-	end
 end
 
 function HUDAssaultCorner:_hide_hostages()
@@ -84,108 +130,26 @@ function HUDAssaultCorner:_hide_hostages()
 end
 
 function HUDAssaultCorner:set_buff_enabled(buff_name, enabled) --winters dmg resist buff for cops; other captains in resmod
---	self:log("Buff enabled [" .. tostring(buff_name) .. "]: " .. tostring(enabled))
+	self:log("ASSAULTCORNER: Buff enabled [" .. tostring(buff_name) .. "]: " .. tostring(enabled))
+	--self:AddBuff("phalanx")
 end
 
 function HUDAssaultCorner:sync_set_assault_mode(mode) --from host
+	if self._assault_mode == mode then 
+		return 
+	end
 	NobleHUD:log("sync_set_assault_mode(" .. mode .. ")")
---	NobleHUD:SetAssaultPhase(mode)
-	
-	--[[
-	if self._assault_mode == mode then
-		return
-	end
-	self:log("Changed to assault mode " .. tostring(mode))
 	self._assault_mode = mode
-	local color = self._assault_color
-
-	if mode == "phalanx" then
+	if mode == "phalanx" then 
 		color = self._vip_assault_color
+		NobleHUD:SetAssaultPhase(mode)
 	end
-
+	
 	self:_update_assault_hud_color(color)
-	self:_set_text_list(self:_get_assault_strings())
-
-	local assault_panel = self._hud_panel:child("assault_panel")
-	local icon_assaultbox = assault_panel:child("icon_assaultbox")
-	local image = mode == "phalanx" and "guis/textures/pd2/hud_icon_padlockbox" or "guis/textures/pd2/hud_icon_assaultbox"
-
-	icon_assaultbox:set_image(image)
---]]
+	
 end
 
 function HUDAssaultCorner:set_assault_wave_number(assault_number)
 	self._wave_number = assault_number
-	--[[
-	local panel = self._hud_panel:child("wave_panel")
-
-	if alive(self._wave_bg_box) and panel then
-		local wave_text = panel:child("num_waves")
-
-		if wave_text then
-			wave_text:set_text(self:get_completed_waves_string())
-		end
-	end
-	
-	--]]
+	NobleHUD:SetWaveNumber(assault_number,self._max_waves)
 end
-
-function HUDAssaultCorner:_start_assault(text_list)
-
-	
---[[
-	text_list = text_list or {
-		""
-	}
-	local assault_panel = self._hud_panel:child("assault_panel")
-	local text_panel = assault_panel:child("text_panel")
-
-	self:_set_text_list(text_list)
-
-	local started_now = not self._assault
-	self._assault = true
-
-	if self._bg_box:child("text_panel") then
-		self._bg_box:child("text_panel"):stop()
-		self._bg_box:child("text_panel"):clear()
-	else
-		self._bg_box:panel({
-			name = "text_panel"
-		})
-	end
-
-	self._bg_box:child("bg"):stop()
-	assault_panel:set_visible(true)
-
-	local icon_assaultbox = assault_panel:child("icon_assaultbox")
-
-	icon_assaultbox:stop()
-	icon_assaultbox:animate(callback(self, self, "_show_icon_assaultbox"))
-
-	local config = {
-		attention_forever = true,
-		attention_color = self._assault_color,
-		attention_color_function = callback(self, self, "assault_attention_color_function")
-	}
-
-	self._bg_box:stop()
-	self._bg_box:animate(callback(nil, _G, "HUDBGBox_animate_open_left"), 0.75, self._bg_box_size, function ()
-	end, config)
-
-	local box_text_panel = self._bg_box:child("text_panel")
-
-	box_text_panel:stop()
-	box_text_panel:animate(callback(self, self, "_animate_text"), nil, nil, callback(self, self, "assault_attention_color_function"))
-	self:_set_feedback_color(self._assault_color)
-
-	if alive(self._wave_bg_box) then
-		self._wave_bg_box:stop()
-		self._wave_bg_box:animate(callback(self, self, "_animate_wave_started"), self)
-	end
-
-	if managers.skirmish:is_skirmish() and started_now then
-		self:_popup_wave_started()
-	end
-	--]]
-end
-

@@ -3,7 +3,7 @@
 
 ***** TODO: *****
 	Notes:
-		
+		DROP IN MENU
 		--enemy turret is not vehicle sized on radar
 		--enemy swat van is not vehicle sized on radar, and seems to be elevated high above the player
 		--fix poorly positioned radar_far blips/increase size?
@@ -198,7 +198,7 @@
 --score banner small
 - bloom funcs should all have a reference to their own crosshair tweakdata
 - bloom funcs should also have reference to their own weapon tweakdata
-- crosshair data blacklist should be replaced by a manual override list for weapon ids
+- crosshair data blacklist should be replaced by a manual override list for weapon ids, or from tweak data
 
 CODE:
 
@@ -320,6 +320,15 @@ NobleHUD.color_data = {
 	hud_radar_friendly_vehicle = Color("F1E667"),
 	hud_radar_hostile_vehicle = Color(212/255,0/255,0/255),
 	hud_compass = Color("2EA1FF"),
+	hud_objective_title_text = Color(0.66,0.66,0.66),
+	hud_objective_label_text = Color.white,
+	hud_objective_shadow_text = Color(0,0,0),
+	hud_wave_start = Color("FFD700"), -- yellow
+	hud_wave_end = Color("29da23"), -- green
+	hud_buff_status = Color("FFD700"), -- yellow
+	hud_buff_negative = Color("FF2E2E"),
+	hud_buff_neutral = Color.white,
+	hud_buff_positive = Color.blue,
 	normal = Color("B2B2B2"), --grey
 	unique = Color("FFD700"), --yellow 
 	vintage = Color("476291"), --desat navy ish
@@ -360,7 +369,10 @@ NobleHUD._assault_phases = {
 	build = "noblehud_hud_assault_phase_build",
 	sustain = "noblehud_hud_assault_phase_sustain",
 	fade = "noblehud_hud_assault_phase_fade",
-	control = "noblehud_hud_assault_phase_control"
+	control = "noblehud_hud_assault_phase_control",
+	phalanx = "noblehud_hud_assault_phase_phalanx",
+	generic_on = "noblehud_hud_assault_phase_generic_on",
+	generic_off = "noblehud_hud_assault_phase_generic_off"
 }
 
 NobleHUD._cartographer_data = {}
@@ -404,7 +416,7 @@ NobleHUD._RADAR_GHOST_FADEIN = 0.15
 NobleHUD._RADAR_GHOST_FADEOUT = 0.45
 NobleHUD._radar_ghost_t = 0
 
-NobleHUD._cache = {
+NobleHUD._cache = { --buffer type deal, holds IMPORTANT THINGS tm
 	t = 0,
 	killer = {},
 	score_timer_mult = 1,
@@ -412,15 +424,13 @@ NobleHUD._cache = {
 	score_popups = {},
 	score_session = 0,
 	game_state = "",
-	current_objective = "",
-	objective_progress = nil,
-	objective_total = nil,
 	newest_medal = false,
 	newest_killfeed = false,
 	chat_wanted = true,
 	last_cartographer_t = 0,
 	sounds = {},
 	announcer_queue = {},
+	objectives = {},
 	kills = {
 		multipliers = {
 			spree_all = 1,
@@ -571,6 +581,551 @@ NobleHUD.weapon_data = {
 		underbarrel = {}
 	}
 }
+
+NobleHUD.buff_data = {
+	["dmg_resist_total"] = { --aggregated
+		menu_title = "Show Total Damage Resistance [autodetect]",
+		icon = "juggernaut", --naut too sure about this icon. --drop_soap?
+		icon_rect = {1,7},
+		label = "Damage Resist",
+		buff_type = "buff",
+		value_type = "value",
+		source = "skill",
+		flash = false
+	},
+	["crit_chance_total"] = { --aggregated
+		menu_title = "Show Total Crit Chance [autodetect]",
+		icon = "backstab",
+		icon_rect = {1,7},
+		label = "Crit Chance",
+		buff_type = "buff",
+		value_type = "value",
+		source = "skill",
+		flash = false
+	},
+	["dodge_chance_total"] = {
+		menu_title = "Show Total Dodge Chance [autodetect]",
+		icon = "jail_diet", --'dance_instructor' is pistol mag bonus
+		icon_rect = {1,7},
+		label = "Dodge Chance",
+		buff_type = "buff",
+		value_type = "value",
+		source = "skill",
+		flash = false
+	},
+	["hp_regen"] = { --aggregated, standard timed-healing from multiple sources (muscle, hostage taker, etc)
+		menu_title = "Health Regen (Aggregated)",
+		icon = 17, --chico perk deck
+		icon_tier = 3, --heart with hollow +  
+		icon_rect = {1,1},
+		persistent_timer = true,
+		label = "Health Regen",
+		duration = 10,
+		value_type = "timer",
+		source = "perk",
+		text_color = Color("FFD700"),
+		flash = false
+	},
+	["long_dis_revive"] = { --cooldown; done
+		menu_title = "Inspire Aced Cooldown",
+		icon = "inspire",
+		icon_rect = {4,9},
+		label = "Inspire Cooldown",
+		value_type = "timer",
+		duration = 20,
+		source = "skill",
+		text_color = NobleHUD.color_data.hud_buff_negative,
+		flash = true
+	},
+	["morale_boost"] = {
+		menu_title = "Inspire Basic",
+		icon = "inspire",
+		icon_rect = {4,9},
+		label = "Inspire Basic",
+		value_type = "timer",
+		duration = 4,
+		source = "skill",
+		flash = false
+	},
+	["flashbang"] = { --owww my eyes; temp disabled
+		menu_title = "Flashbang",
+		icon = "concussion_grenade", --if no source is specified, use this icon tweak data
+		icon_rect = {1,7}, --if source is "manual" then use "icon" as path and "icon_rect" to find bitmap
+		label = "Blind", --display name
+		text_color = Color.black:with_alpha(0.3),
+		icon_color = NobleHUD.color_data.hud_buff_negative,
+		value_type = "timer", --value calculation type
+		source = "icon", --where to get icon (not directly related to where ingame buff came from)
+		flash = true --alpha sine flash if true
+	},
+	["downed"] = { --bleedout;  mugshot_in_custody; done
+		menu_title = "Downed",
+		disabled = true,
+		icon = "mugshot_downed",
+		icon_rect = {240,464,48,48},
+		label = "Downed",
+		text_color = NobleHUD.color_data.hud_buff_negative,
+		value_type = "timer",
+		duration = 30,
+		source = "icon",
+		flash = false
+	},
+	["tased"] = { --yellow icon?
+		icon = "mugshot_electrified",--skill icon "insulation",
+		icon_rect = {1,7},
+		label = "Tased",
+		icon_color = Color.white,
+		text_color = NobleHUD.color_data.hud_buff_negative,
+		value_type = "timer",
+		source = "icon",
+		flash = true
+	},
+	["electrocuted"] = {--not referenced, probably
+		icon = "mugshot_electrified",
+		icon_rect = {1,7},
+		label = "Electrocuted",
+		icon_color = Color.yellow,
+		text_color = NobleHUD.color_data.hud_buff_negative,
+		buff_type = "debuff",
+		value_type = "timer",
+		source = "icon",
+		flash = true
+	},
+	["swan_song"] = { --state duration
+		icon = "perseverance",
+		icon_rect = {1,7},
+		duration = 3, --6 aced
+		label = "Swan Song",
+		text_color = NobleHUD.color_data.hud_buff_negative,
+		buff_type = "buff",
+		value_type = "timer",
+		source = "skill",
+		flash = false
+	},
+	["messiah_charge"] = { --has messiah charge left; TODO
+		icon = "messiah",
+		icon_rect = {1,7},
+		label = "Messiah Charge",
+		buff_type = "buff",
+		value_type = "value", --just in case multiple messiah charges is ever implemented, or modded in
+		source = "skill",
+		flash = false
+	},
+	["bullseye"] = { --cooldown; internally, "prison_wife"
+		icon = "prison_wife",
+		icon_rect = {6,11},
+		label = "Bullseye",
+		buff_type = "buff",
+		value_type = "timer",
+		text_color = NobleHUD.color_data.hud_buff_negative,
+		duration = 2.5, --td.values.player.headshot_regen_armor_bonus[2]
+		source = "skill",
+		flash = true
+	},
+	["wild_kill_counter"] = {
+		menu_title = "Biker Kills Tracker",
+		icon = 16,
+		icon_tier = 1,
+		icon_rect = {1,7},
+		label = "Prospect",
+		buff_type = "buff",
+		value_type = "value",
+		text_color = NobleHUD.color_data.hud_buff_neutral,
+		icon_color = NobleHUD.color_data.hud_buff_neutral,
+		source = "perk",
+		flash = true
+	},
+	["grinder"] = {
+		menu_title = "Grinder Healing over Time",
+		icon = 11,
+		icon_tier = 1, --overridden by tier_floors
+		tier_floors = {1,3,5,7,9},
+		icon_rect = {6,1},
+		label = "Grinder",
+		buff_type = "buff",
+		value_type = "value",
+		source = "perk",
+		flash = false
+	},
+	["uppers_aced_cooldown"] = { --20 seconds but tweakdata says 500???
+		menu_title = "Uppers Aced Cooldown",
+		icon = "tea_cookies",
+		icon_rect = {1,7},
+		label = "Uppers Cooldown",
+		text_color = NobleHUD.color_data.hud_buff_negative,
+		value_type = "timer",
+		source = "skill",
+		flash = false
+	},
+	["anarchist_armor_regen"] = {
+		menu_title = "Anarchist Armor Grinding",
+		icon = 15,
+		icon_tier = 1,
+		icon_rect = {1,7},
+		label = "Blitzkrieg Bop",
+		persistent_timer = true,
+		text_color = NobleHUD.color_data.hud_buff_status,
+		value_type = "timer",
+		source = "perk",
+		flash = false
+	},
+	["armor_break_invulnerable"] = { --anarchist/armorer; game adds this buff as a cooldown for the invulnerability itself
+		menu_title = "Armorer 7/9 & Anarchist 1/9 Invulnerability",
+		icon = 15,
+		icon_tier = 1,
+		icon_rect = {1,7},
+		label = "Invulnerable",
+		text_color = NobleHUD.color_data.hud_buff_negative,--red for 15s cooldown; blue for 2s invuln period
+		value_type = "timer",
+		source = "perk",
+		flash = false
+	},
+	["chico_injector"] = { --DONE
+		icon = 17,--"chico_injector",
+		icon_tier = 1,
+		icon_rect = {1,7},
+		label = "Kingpin Injector",
+		icon_color = NobleHUD.color_data.hud_buff_status,
+		value_type = "timer",
+		source = "perk",
+		flash = true
+	},
+	["pocket_ecm_jammer"] = {
+		icon = 21,--"pocket_ecm_jammer",
+		icon_tier = 1,
+		icon_rect = {1,7},
+		label = "Pocket ECM Jammer",
+		value_type = "timer",
+		source = "perk",
+		flash = true
+	},
+	["pocket_ecm_kill_dodge"] = {
+		menu_title = "Pocket ECM Dodge Bonus",
+		icon = 21,--"pocket_ecm_jammer",
+		icon_tier = 7,
+		icon_rect = {1,7},
+		label = "Kluge",
+		buff_type = "buff",
+		value_type = "timer",
+		source = "perk",
+		flash = false
+	},
+	["hysteria"] = { --hysteria; internally identical to absorption, so i just called it absorption 
+		icon = 14, --index for perk deck "maniac". todo recategorize
+		icon_rect = {1,7},
+		icon_tier = 1,
+		label = "Damage Absorption",
+		buff_type = "buff",
+		value_type = "value",
+		source = "perk",
+		flash = true
+	
+	},
+	["berserker_damage_multiplier"] = { --low health; show damage %l DONE
+		menu_title = "Berserker Melee Damage Boost % [autodetect]",
+		icon = "wolverine",
+		icon_rect = {1,7},
+		label = "Berserker",
+		buff_type = "buff",
+		value_type = "value",
+		source = "skill",
+		flash = true
+	},
+	["berserker_melee_damage_multiplier"] = {
+		disabled = true,
+		menu_title = "Berserker Hitscan Damage Boost % [autodetect]",
+		icon = "wolverine",
+		icon_rect = {1,7},
+		label = "Berserker",
+		buff_type = "buff",
+		value_type = "value",
+		source = "skill",
+		flash = true
+	},
+	["throwable_cooldown"] = { --perk deck ability cooldown timer; TODO? probably best to do for every individual one
+		icon = "grenade",
+		icon_rect = {1,7},
+		label = "Ability Cooldown",
+		buff_type = "debuff",
+		value_type = "timer",
+		source = "special",
+		flash = true
+	},
+	["bullet_storm"] = { --infinite ammo; DONE
+		icon = "ammo_reservoir",
+		icon_rect = {0,3},
+		label = "Bulletstorm",
+		buff_type = "buff",
+		value_type = "timer",
+		source = "skill",
+		flash = false	
+	},
+	["unseen_strike"] = { --show duration; TODO remove buff when cancelled
+		icon = "unseen_strike",
+		icon_rect = {1,7},
+		label = "Unseen Strike",
+		duration = 18, --debug purposes only; t is passed
+		buff_type = "buff",
+		value_type = "timer",
+		source = "skill",
+		flash = false
+	},
+	["overkill_damage_multiplier"] = { -- shotgun damage buff; anything below here is probably not done
+		icon = "overkill",
+		icon_rect = {1,7},
+		label = "Overkill",
+		buff_type = "buff",
+		value_type = "timer",
+		source = "skill",
+		flash = false
+	},
+	["bloodthirst_melee"] = { --gun kills increase melee damage stacks; TODO
+		disabled = true, --todo
+		icon = "bloodthirst", --assassin?
+		icon_rect = {1,7},
+		label = "Bloodthirst",
+		buff_type = "buff",
+		value_type = "value", --not sure
+		source = "skill",
+		flash = false
+	},
+	["bloodthirst_reload_speed"] = { --reload speed increase after melee; DONE
+		icon = "bloodthirst",
+		icon_rect = {1,7},
+		label = "Bloodthirst Aced",
+		buff_type = "buff",
+		value_type = "timer",
+		duration = 10,
+		source = "skill",
+		flash = false	
+	},
+	["team_damage_speed_multiplier_received"] = {
+		icon = "scavenger",
+		icon_rect = {10,9},
+		label = "Second Wind",
+		buff_type = "buff",
+		value_type = "timer",
+		duration = 5,
+		source = "skill",
+		flash = false
+	},
+	["damage_speed_multiplier"] = { --movespeed on armor break
+		icon = "scavenger",
+		icon_rect = {10,9},
+		label = "Second Wind",
+		buff_type = "buff",
+		value_type = "timer",
+		duration = 5,
+		source = "skill",
+		flash = false
+	},
+	["sixth_sense"] = { --mark while still; cooldown to next use; not sure
+		disabled = true,
+		icon = "chameleon",
+		icon_rect = {1,7},
+		label = "Sixth Sense",
+		buff_type = "buff",
+		value_type = "timer",
+		source = "skill",
+		flash = false
+	},
+	["up_you_go"] = { --dmg resist after revive? i might be confusing two buffs
+		duration = 10, --debug purposes only, as t is passed
+		icon = "up_you_go",
+		icon_rect = {1,7},
+		label = "Up You Go",
+		buff_type = "buff",
+		value_type = "timer",
+		source = "skill",
+		flash = false
+	},
+	["revive_damage_reduction"] = { 
+		icon = "up_you_go",
+		disabled = true,
+		icon_rect = {1,7},
+		label = "Combat Medic",
+		buff_type = "buff",
+		value_type = "timer",
+		duration = 5,
+		source = "skill",
+		flash = false
+	},
+	["running_from_death"] = { --reload + swap faster after revive
+		icon = "running_from_death",
+		icon_rect = {1,7},
+		label = "Running From Death",
+		buff_type = "buff",
+		value_type = "timer",
+		duration = 10,
+		source = "skill",
+		flash = false	
+	},
+	["running_from_death_aced"] = { --run faster after revive; not called?
+		icon = "running_from_death",
+		icon_rect = {1,7},
+		label = "Running From Death Aced",
+		buff_type = "buff",
+		value_type = "timer",
+		duration = 10,
+		source = "skill",
+		flash = true	
+	},
+	["trigger_happy"] = { --damage boost on pistol hit
+		icon = "trigger_happy",
+		icon_rect = {1,7},
+		label = "Trigger Happy",
+		buff_type = "buff",
+		value_type = "timer",
+		duration = 2, --4 aced
+		source = "skill",
+		flash = false
+	},
+	["desperado"] = { --accuracy boost on pistol hit
+		icon = "expert_handling",
+		icon_rect = {1,7},
+		label = "Desperado",
+		buff_type = "buff",
+		value_type = "timer",
+		duration = 10,
+		source = "skill",
+		flash = false
+	},
+	["partners_in_crime"] = { --move speed w/ hostage; todo
+		icon = "control_freak",
+		icon_rect = {1,7},
+		label = "Partners In Crime",
+		buff_type = "buff",
+		value_type = "status",
+		source = "skill",
+		flash = false
+	},
+	["partners_in_crime_aced"] = { --hp+ with hostage; todo
+		icon = "control_freak",
+		icon_rect = {1,7},
+		label = "Partners In Crime Aced",
+		buff_type = "buff",
+		value_type = "status",
+		source = "skill",
+		flash = false,
+	},
+	["single_shot_fast_reload"] = { --single headshot reload speed; DONE
+		icon = "speedy_reload",
+		icon_rect = {1,7},
+		label = "Aggressive Reload",
+		buff_type = "buff",
+		value_type = "timer",
+		duration = 4,
+		source = "skill",
+		flash = false
+	},
+	["reload_weapon_faster"] = { --revenant skill tree thing
+		disabled = true,
+		icon = "speedy_reload",
+		icon_rect = {1,7},
+		label = "reload_weapon_faster",
+		buff_type = "buff",
+		value_type = "timer",
+		duration = 4,
+		source = "skill",
+		flash = false
+	},
+	["swap_weapon_faster"] = { --revenant skill tree thing
+		disabled = true,
+		icon = "speedy_reload",
+		icon_rect = {1,7},
+		label = "swap_weapon_faster",
+		buff_type = "buff",
+		value_type = "timer",
+		duration = 4,
+		source = "skill",
+		flash = false
+	},
+	["revived_damage_resist"] = { --revenant skill tree thing
+		disabled = true,
+--		icon = "speedy_reload",
+		icon_rect = {1,7},
+		label = "swap_weapon_faster",
+		buff_type = "buff",
+		value_type = "timer",
+		duration = 4,
+		source = "skill",
+		flash = false
+	},
+	["increased_movement_speed"] = { --revenant skill tree thing
+		disabled = true,
+		icon = "running_from_death",
+		icon_rect = {1,7},
+		label = "Running From Death 2",
+		buff_type = "buff",
+		value_type = "timer",
+		duration = 4,
+		source = "skill",
+		flash = false
+	},
+	["lock_n_load"] = { --auto multikills reload speed from skilltree "lock n load"; DONE
+		icon = "shock_and_awe",
+		icon_rect = {1,7},
+		label = "Lock N Load",
+		buff_type = "buff",
+		value_type = "value",
+		source = "skill",
+		flash = false
+	},
+	["dmg_multiplier_outnumbered"] = { --underdog dmg boost; DONE
+		icon = "underdog",
+		icon_rect = {1,7},
+		label = "Underdog Basic",
+		buff_type = "buff",
+		value_type = "timer",
+		source = "skill",
+		flash = false
+	},
+	["dmg_dampener_outnumbered"] = { --underdog dmg resist; DONE
+		icon = "underdog",
+		icon_rect = {1,7},
+		label = "Underdog Aced",
+		buff_type = "buff",
+		value_type = "timer",
+		source = "skill",
+		flash = false
+	}, --todo stockholm syndrome aced charge
+	["dmg_dampener_close_contact"] = { --dmg resist; activates in conjuction with underdog but lasts 5 seconds??? ovk y u do dis
+		disabled = true,
+		icon = "underdog",
+		icon_rect = {1,7},
+		label = "I have no idea",
+		buff_type = "buff",
+		value_type = "timer",
+		source = "skill",
+		flash = false
+	},	
+	["dmg_dampener_outnumbered_strong"] = { --same as above, but aced
+		disabled = true,
+		icon = "underdog",
+		icon_rect = {1,7},
+		label = "I have no idea Aced",
+		buff_type = "buff",
+		value_type = "timer",
+		source = "skill",
+		flash = false
+	},
+	["combat_medic_damage_multiplier"] = {
+		disabled = true
+	},
+	["combat_medic_enter_steelsight_speed_multiplier"] = {
+		disabled = true
+	},
+	["first_aid_damage_reduction"] = { --120s 10% damage reduction from using fak/docbag
+		icon = "tea_time",
+		icon_rect = { 1,11 },
+		label = "Quick Fix Aced",
+		value_type = "timer",
+		source = "skill",
+		flash = false	
+	}
+}
+
+NobleHUD._active_buffs = {}
 
 NobleHUD._crosshair_override_data = {
 	rpg7 = {"rocket"},
@@ -2685,8 +3240,8 @@ function NobleHUD:CreateHUD(orig)
 	self:_create_weapons(hud)
 	self:_create_grenades(hud) --this refers to the element in the top left; either deployables or grenades may be displayed here
 	self:_create_ability(hud) --this refers to the element in the bottom left (above radar); either deployables or grenades may be displayed here
-	self:_create_objectives(hud) 
-	self:_create_ponr(hud) 
+	self:_create_objectives(hud)
+--	self:_create_assault(hud)
 	self:_create_interact(hud)
 	self:_create_crosshair(hud)
 	self:_create_compass(hud)
@@ -2839,18 +3394,19 @@ function NobleHUD:UpdateHUD(t,dt)
 		local inventory = player:inventory()
 		
 		
-		--hud assault state 
-		local assaultstate = managers.groupai:state()
-		local assaulttasks = assaultstate and assaultstate._task_data
-		local assaultdata = assaulttasks and assaulttasks.assault
-		local phase = assaultdata and assaultdata.phase
-		local phasename = self._assault_phases[phase]
-		if phase and not (phasename or assaultstate:whisper_mode()) then 
-			self:log("Did not find phasename for " .. tostring(phase),{color = Color.red})
-		elseif phasename then
-			self:SetAssaultPhase(managers.localization:text(phasename))
+		if Network:is_server() then
+			--hud assault state 
+			local assaultstate = managers.groupai:state()
+			local assaulttasks = assaultstate and assaultstate._task_data
+			local assaultdata = assaulttasks and assaulttasks.assault
+			local phase = assaultdata and assaultdata.phase
+			local phasename = self._assault_phases[phase]
+			if phase and not (phasename or assaultstate:whisper_mode()) then 
+				self:log("Did not find phasename for " .. tostring(phase),{color = Color.red})
+			elseif phasename then
+				self:SetAssaultPhase(phasename,true)
+			end
 		end
-		
 		
 		--close call medal stuff
 		if self:KillsCache("close_call") and player:character_damage():armor_ratio() >= 1 then 
@@ -3009,7 +3565,7 @@ function NobleHUD:UpdateHUD(t,dt)
 
 -- ************** RADAR	**************
 		if self:IsRadarEnabled() then --if radar enabled
-			local RADAR_SIZE = self:GetRadarScale() * 192 --todo scaleable panel from settings
+			local RADAR_SIZE = self:GetRadarScale() * 190 --todo scaleable panel from settings
 			local RADAR_PANEL_W = self._radar_panel:w()
 			local RADAR_PANEL_H = self._radar_panel:h()
 			local RADAR_DISTANCE_MID = self:GetRadarDistance() * 100
@@ -3115,7 +3671,7 @@ function NobleHUD:UpdateHUD(t,dt)
 								if blip_unit:movement() and blip_unit:movement():team() then 
 									blip_team = blip_unit:movement():team().id
 								end
-								if variant == "sentry" then
+								if data.variant == "sentry" then
 									if blip_team ~= "criminal1" then 
 										is_vehicle = true
 									end
@@ -5867,7 +6423,7 @@ function NobleHUD:_create_score(hud)
 		x = margin_m + hostages_panel:right(),
 		y = text_row_y_2,
 		color = self.color_data.hud_vitalsoutline_blue,
-		font = "fonts/font_eurostile_ext",
+		font = "fonts/testfont2", --"fonts/font_eurostile_ext",
 		font_size = font_size,
 		layer = 4
 	})
@@ -5875,9 +6431,9 @@ function NobleHUD:_create_score(hud)
 	local assault_phase_label = score_panel:text({
 		name = "assault_phase_label",
 		text = managers.localization:text("noblehud_hud_assault_phase_standby"),
-		align = "right",
-		x = -margin_m,
-		y = text_row_y_2,
+		align = "left",
+		x = margin_m + hostages_panel:right(),
+		y = subpanel_y,
 		color = self.color_data.hud_vitalsoutline_blue,
 		font = "fonts/font_eurostile_ext",
 		font_size = font_size,
@@ -5890,13 +6446,108 @@ function NobleHUD:_create_score(hud)
 		align = "right",
 		layer = 3,
 		x = -margin_m,
-		y = subpanel_y, --text_row_y_2 - (font_size + margin_s),
+		y = text_row_y_2, --  -(font_size + margin_s),
 		color = self.color_data.hud_vitalsoutline_blue,
 		font = "fonts/font_eurostile_ext",
 		font_size = font_size,
 		alpha = 1
 	})
-		
+	
+	local wave_label = score_panel:text({
+		name = "wave_label",
+		text = "",
+		align = "left",
+		x = margin_m + hostages_panel:right(),
+		y = subpanel_y + font_size - margin_s,
+		color = self.color_data.hud_vitalsoutline_blue,
+		font = "fonts/font_eurostile_ext",
+		font_size = font_size,
+		visible = managers.hud._hud_assault_corner:should_display_waves()
+	})
+	
+	local ponr_timer = score_panel:text({
+		name = "ponr_label",
+		text = utf8.to_upper(managers.localization:text("hud_assault_point_no_return_in")),
+		align = "center",
+		vertical = "top",
+		layer = 2,
+		color = Color.red,
+		font_size = 16,
+		font = tweak_data.hud.medium_font_noshadow,
+		visible = false
+	})
+	local ponr_timer = score_panel:text({
+		name = "ponr_timer",
+		text = "04:20",
+		align = "center",
+		vertical = "top",
+		y = ponr_timer:line_height(),
+		layer = 2,
+		color = Color.red,
+		font_size = 36,
+		font = tweak_data.hud.medium_font_noshadow,
+		visible = false
+	})
+	
+end
+
+function NobleHUD:ShowPONR(state)
+	if state ~= nil then 
+		self._score_panel:child("ponr_timer"):set_visible(state)
+		self._score_panel:child("ponr_label"):set_visible(state)
+	else
+		self._score_panel:child("ponr_timer"):show()
+		self._score_panel:child("ponr_label"):show()
+	end
+end
+
+function NobleHUD:SetPONR(t)
+	local danger_threshold = 10
+	t = math.floor(t)
+	local minutes = math.floor(t / 60)
+	local seconds = math.round(t - minutes * 60)
+	local text = (minutes < 10 and "0" .. minutes or minutes) .. ":" .. (seconds < 10 and "0" .. seconds or seconds)
+	self._score_panel:child("ponr_timer"):set_text(text)
+	self:AnimatePONRFlash(t <= danger_threshold)
+end
+
+function NobleHUD:AnimatePONRFlash(beep)
+	local ponr_text = self._score_panel:child("ponr_timer")
+	self:animate_stop(ponr_text)
+	ponr_text:set_font_size(24)
+	ponr_text:set_color(Color.red)
+	if beep then 
+		self:animate(ponr_text,"animate_killfeed_text_in",nil,0.5,24,self.color_data.hud_hint_orange,self.color_data.hud_hint_lightorange)
+	else
+		self:animate(ponr_text,"animate_killfeed_text_in",nil,0.5,24,Color.red,Color.white)
+	end
+end
+
+function NobleHUD:HidePONR()
+	self._score_panel:child("ponr_timer"):show()
+	self._score_panel:child("ponr_label"):show()
+end
+
+function NobleHUD:ShowWaveNumber(state) --unused
+	if state ~= nil then 
+		self._score_panel:child("wave_label"):set_visible(state)
+	else
+		self._score_panel:child("wave_label"):show()
+	end
+end
+
+function NobleHUD:SetWaveNumber(current,total)
+	local text = managers.localization:text("noblehud_hud_assault_wave_label")
+	if current then 
+		if total and total < math.huge and total ~= 0 then
+			text = text .. " " .. tostring(current) .. "/" .. tostring(total)
+		else
+			text = text .. " " .. tostring(current) 
+		end
+		self._score_panel:child("wave_label"):set_text(text)
+	else
+		self:log("Bad current wave num to SetWaveNumber(" .. tostring(current) .. "," .. tostring(total) .. ")",{color=Color.red})
+	end
 end
 
 function NobleHUD:SetHostages(text)
@@ -5920,11 +6571,14 @@ function NobleHUD:SetCableTies(text)
 	end
 end
 
-function NobleHUD:SetAssaultPhase(text)
+function NobleHUD:SetAssaultPhase(text,send_to_peers)
 	local assault_phase_label = self._score_panel:child("assault_phase_label")
-	if text and text ~= assault_phase_label:text() then 
-		assault_phase_label:set_text(text)
+	if text and managers.localization:text(text) ~= assault_phase_label:text() then 
+		assault_phase_label:set_text(managers.localization:text(text))
 		self:animate(assault_phase_label,"animate_killfeed_text_in",nil,0.3,20,self.color_data.hud_vitalsoutline_blue,self.color_data.hud_text_flash)
+		if send_to_peers then
+			LuaNetworking:SendToPeers(self.network_messages.sync_assault,text)
+		end
 	end
 end
 
@@ -6349,7 +7003,7 @@ function NobleHUD:_create_objectives(hud)
 		visible = false,
 		x = 0,
 		layer = 2,
-		color = Color.white,
+		color = self.color_data.hud_text,
 		font_size = tweak_data.hud.active_objective_title_font_size,
 		font = tweak_data.hud.medium_font_noshadow
 	})
@@ -6358,7 +7012,7 @@ function NobleHUD:_create_objectives(hud)
 		text = "CURRENT OBJECTIVE:",
 		align = "center",
 		layer = 2,
-		color = Color(0.66,0.66,0.66),
+		color = self.color_data.hud_objective_title_text,
 		alpha = 0,
 		font_size = tweak_data.hud.active_objective_title_font_size,
 		font = tweak_data.hud.medium_font_noshadow,
@@ -6370,7 +7024,7 @@ function NobleHUD:_create_objectives(hud)
 		layer = 1,
 		x = objectives_title:x() + shadow_offset,
 		y = objectives_title:y() + shadow_offset,
-		color = Color(0,0,0),
+		color = self.color_data.hud_objective_shadow_text,
 		alpha = 0,
 		font_size = tweak_data.hud.active_objective_title_font_size,
 		font = tweak_data.hud.medium_font_noshadow,
@@ -6386,7 +7040,7 @@ function NobleHUD:_create_objectives(hud)
 		y = (title_h / 2),
 		layer = 0,
 		blend_mode = "add",
-		color = Color.white,
+		color = self.color_data.hud_text,
 		alpha = 0
 	})
 	local objectives_label = objectives_panel:text({
@@ -6395,7 +7049,7 @@ function NobleHUD:_create_objectives(hud)
 		align = "center",
 		vertical = "bottom",
 		layer = 2,
-		color = Color.white,
+		color = self.color_data.hud_objective_label_text,
 		font_size = tweak_data.hud.active_objective_title_font_size * 1.15,
 		font = tweak_data.hud.medium_font_noshadow,
 		alpha = 0
@@ -6408,7 +7062,7 @@ function NobleHUD:_create_objectives(hud)
 		x = shadow_offset,
 		y = shadow_offset,
 		layer = 1,
-		color = Color.black,
+		color = self.color_data.hud_objective_shadow_text,
 		font_size = tweak_data.hud.active_objective_title_font_size * 1.15,
 		font = tweak_data.hud.medium_font_noshadow,
 		alpha = 0
@@ -6425,66 +7079,12 @@ function NobleHUD:_create_objectives(hud)
 		y = objectives_panel:h() - (objectives_label:line_height() / 2),
 		layer = 0,
 		blend_mode = "add",
-		color = Color.white,
+		color = self.color_data.hud_text,
 		alpha = 0
 	})
 	
 	self._objectives_panel = objectives_panel
 end
-
-function NobleHUD:_create_ponr(hud)
-	local ponr_panel = hud:panel({
-		name = "ponr_panel",
-		layer = 10,
-		visible = false
-	})
-	local ponr_text = ponr_panel:text({
-		name = "ponr_text",
-		text = "[POINT OF NO RETURN] 00:00",
-		align = "center",
-		vertical = "top",
-		layer = 2,
-		color = Color.red,
-		font_size = 24,
-		font = tweak_data.hud.medium_font_noshadow,
-		alpha = 1
-	})
-	self._ponr_panel = ponr_panel
-end
-
-function NobleHUD:ShowPONR()
-	self._ponr_panel:show()
-end
-
-function NobleHUD:SetPONR(t)
-	local ponr = self._ponr_panel
-	local danger_threshold = 10
-	t = math.floor(t)
-	local minutes = math.floor(t / 60)
-	local seconds = math.round(t - minutes * 60)
-	local text = (minutes < 10 and "0" .. minutes or minutes) .. ":" .. (seconds < 10 and "0" .. seconds or seconds)
-	ponr:child("ponr_text"):set_text(text) --todo add "point of no return" localized text
-	if t <= danger_threshold then
---		self:animate_color_flash(ponr,stuff)
-	end
-end
-
-function NobleHUD:AnimatePONRFlash(beep)
-	local ponr_text = self._ponr_panel:child("ponr_text")
-	self:animate_stop(ponr_text)
-	ponr_text:set_font_size(24)
-	ponr_text:set_color(Color.red)
-	if beep then 
-		self:animate(ponr_text,"animate_killfeed_text_in",nil,0.5,24,self.color_data.hud_hint_orange,self.color_data.hud_hint_lightorange)
-	else
-		self:animate(ponr_text,"animate_killfeed_text_in",nil,0.5,24,Color.red,Color.white)
-	end
-end
-
-function NobleHUD:HidePONR()
-	self._ponr_panel:hide()
-end
-
 
 function NobleHUD:AnimateShowObjective(data) --not an animate() function, but calls animate() 
 
@@ -6529,6 +7129,7 @@ function NobleHUD:AnimateShowObjective(data) --not an animate() function, but ca
 	objectives_label:set_font_size(0)
 	objectives_label:set_kern(kern)
 	objectives_label:set_alpha(1)
+	objectives_label:set_color(data.color or self.color_data.hud_objective_label_text)
 	objectives_label_shadow:set_font_size(0)
 	objectives_label_shadow:set_kern(kern)
 	objectives_label_shadow:set_alpha(1)
@@ -6628,9 +7229,12 @@ function NobleHUD:AddQueuedObjective(data)
 		self:log("NobleHUD:AddQueuedObjective(): I don't believe this. You come into my home and try to add an objective without an id?" )
 		return
 	end	
+	if data.text then 
+		self._cache.objectives[data.id] = data.text
+	end
 	
 	if data.mode == "remind" then 
-		data.text = self._objectives_panel:child("objectives_label"):text()
+		data.text = self._cache.objectives[data.id] or self._objectives_panel:child("objectives_label"):text()
 	end
 	
 	local added = false
@@ -6666,24 +7270,14 @@ function NobleHUD:PerformObjectiveFromQueue()
 		NobleHUD:SetObjectiveTitle(utf8.to_upper(managers.localization:text("noblehud_hud_objective_update")))
 	elseif mode == "complete" then
 		NobleHUD:SetObjectiveTitle(utf8.to_upper(managers.localization:text("noblehud_hud_objective_complete")))
+	elseif mode == "wave" then
+		NobleHUD:SetObjectiveTitle(utf8.to_upper(managers.localization:text("noblehud_hud_objective_wave")))
 	else
 		self:log("NobleHUD:AddQueuedObjective(): I don't believe this. You come into my home and try to add an objective without an objective_id? TWICE?")
 		table.remove(NobleHUD._queued_objectives,1)
 	end
 	
 	NobleHUD:AnimateShowObjective(data)
-end
-
-function NobleHUD:SetObjectiveLabel(label)
-	local progress = ""
-	if NobleHUD._cache.objective_progress and NobleHUD._cache.objective_total then
-		progress = string.gsub(" [$CURRENT/$TOTAL]","$CURRENT",data.current_amount,"$TOTAL",data.amount)
-	end
-	label = label .. progress
-	if alive(self._objectives_panel) then 
-		self._objectives_panel:child("objectives_label"):set_text(label)
-		self._objectives_panel:child("objectives_label_shadow"):set_text(label)
-	end
 end
 
 function NobleHUD:animate_objective_flash(o,t,dt,start_t,duration,font_size,kern)
@@ -8415,10 +9009,6 @@ end
 function NobleHUD:_create_buffs(hud) --buffs, cloned from khud (not implemented)
 	local buffs_panel = hud:panel({
 		name = "buffs_panel",
-		w = 300,
-		h = 300,
-		x = 600,
-		y = 600,
 		alpha = self:GetHUDAlpha()
 	})
 	local debug_buffs = buffs_panel:rect({
@@ -8429,7 +9019,43 @@ function NobleHUD:_create_buffs(hud) --buffs, cloned from khud (not implemented)
 end
 
 function NobleHUD:AddBuff(id,params)
+	local buff_data = self.buff_data
+	if not buff_data[id] then 
+		self:log("AddBuff(" .. tostring(id) .. "): Bad buff!",{color=Color.red})
+		return
+	elseif buff_data[id].disabled then 
+		self:log("AddBuff(" .. tostring(id) .. "): Buff is disabled!",{color=Color.red})
+		return
+	end
+	
+	--check validity of buff id and data
+	if self._active_buffs[id] then 
+		--refresh
+		self:SetBuff(id,params)
+	else
+		self._active_buffs[id] = params
+	end
+end
 
+function NobleHUD:RemoveBuff(id)
+	if self._active_buffs[id] then 
+		local panel = self._active_buffs[id].panel
+		if panel and alive(panel) then 
+			--todo animate fadeout
+			panel:parent():remove(panel)
+		end
+		self._active_buffs[id] = nil
+	end
+end
+
+
+function NobleHUD:SetBuff(id,params) --set existing buff panel information, but NOT position; position is handled in update
+	local panel = self._active_buffs[id].panel
+	if panel and alive(panel) then 
+		--set data here
+	else
+		self:RemoveBuff(id)
+	end
 end
 
 
@@ -8576,7 +9202,7 @@ end
 Hooks:Add("NetworkReceivedData", "noblehud_onreceiveluanetworkingmessage", function(sender, message, data)
 	if (message == NobleHUD.network_messages.sync_assault) then
 		if (sender == 1) and NobleHUD._assault_phases[data] then 
-			NobleHUD:SetAssaultPhase(managers.localization:text(NobleHUD._assault_phases[data]))
+			NobleHUD:SetAssaultPhase(managers.localization:text(NobleHUD._assault_phases[data]),false)
 		end
 	elseif (message == NobleHUD.network_messages.down_counter) then
 		--stuff
