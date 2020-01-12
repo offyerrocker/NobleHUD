@@ -3,20 +3,20 @@
 
 ***** TODO: *****
 	Notes:
-		DROP IN MENU
+	
+		
+	
 		--enemy turret is not vehicle sized on radar
 		--enemy swat van is not vehicle sized on radar, and seems to be elevated high above the player
 		--fix poorly positioned radar_far blips/increase size?
 		radar_far blips should not clip outside the radar panel
 		unique blip texture so that they're not blurry?
 		test vehicle detection on non-ghost mode
-	
-		-crash from assault (missing bgbox text_panel)
-	
-		hide popup if outside viewing angle
 		show other eq on radar? check slotmask 
+
+	
+		hide score popup if outside viewing angle
 		add shield sounds slider?
-		adjust overshield color to be more green (check MCC screenshots)
 		
 		
 		if radar disabled, hide radar and realign panels: ability panel down, cartographer text indicator left align
@@ -40,7 +40,6 @@
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER 
 
 		%% BUGS:
-			- abnormal gametypes like Safe House Raid, holdout/skirmish (unconfirmed), and crimespree have different objective styles
 			- initial ammo counts are weird
 			- remind objective has empty text
 			
@@ -50,7 +49,9 @@
 			- ADS should maintain mostly still reticle, unusable otherwise
 
 		%% FEATURES: %%
-			
+		* True ammo counter
+		* DROP IN MENU
+		
 		* Better player waypoints
 			
 			
@@ -73,8 +74,8 @@
 
 			
 	&& LOW PRIORITY FEATURES: &&
-		* Assault timer?
-		* Flash mission name at mission start?
+		* Adjust overshield color to be more green (check MCC screenshots)
+		* Flash mission name at mission start? (See mission/submission name in MCC screenshots)
 		
 		* Implement Auto-update from GitHub provider?
 		
@@ -110,7 +111,7 @@
 			* manually selectable 
 			* customizable based on type
 			* customizable alpha (master)
-			
+		* Assault timer? Nah Dom's got it covered in BAI
 		* Killfeed/JoyScore
 			* Record medals with score
 			* Show weapon icon (PLAYERNAME [WEAPON_ICON] ENEMYNAME) ?
@@ -150,13 +151,11 @@
 				* Left arrow rotates with distance?
 				* Left arrow is not colored (frame, circle, and altimeter are already colored)
 		* Radar
-			* Radar ghost effect
 			* Motion-based tracking
 			* Radar pulse when update?
 			* Different motion tracker icon or color for Team AI versus players
 			* Lower blip should be darker/lower opacity, instead of halo 3 style
 				* higher/lower radar blips should use darker colors (eg color * 0.5) rather than reducing alpha
-			* Make far blip more like reach's (size thing)
 
 
 		
@@ -7229,13 +7228,15 @@ function NobleHUD:AddQueuedObjective(data)
 		self:log("NobleHUD:AddQueuedObjective(): I don't believe this. You come into my home and try to add an objective without an id?" )
 		return
 	end	
-	if data.text then 
-		self._cache.objectives[data.id] = data.text
+	if data.mode == "remind" then 
+		local c = self._cache.objectives[data.id] or {text = ""}
+		data.current_amount = data.current_amount or c.current_amount
+		data.amount = data.amount or c.amount
+		data.text = data.text or c.text
+	elseif data.text then 
+		self._cache.objectives[data.id] = data
 	end
 	
-	if data.mode == "remind" then 
-		data.text = self._cache.objectives[data.id] or self._objectives_panel:child("objectives_label"):text()
-	end
 	
 	local added = false
 	

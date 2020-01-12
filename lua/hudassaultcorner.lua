@@ -68,8 +68,8 @@ function HUDAssaultCorner:_end_assault()
 				mode = "wave",
 				id = "noblehud_assault_wave",
 				color = self._current_assault_color,
-				amount = wave_current,
-				current_amount = wave_max,
+				amount = wave_max,
+				current_amount = wave_current,
 				text = self:wave_popup_string_end()
 			})
 		end
@@ -131,7 +131,7 @@ end
 
 function HUDAssaultCorner:set_buff_enabled(buff_name, enabled) --winters dmg resist buff for cops; other captains in resmod
 	self:log("ASSAULTCORNER: Buff enabled [" .. tostring(buff_name) .. "]: " .. tostring(enabled))
-	--self:AddBuff("phalanx")
+--	self:AddBuff("phalanx") --todo; this will display an icon 
 end
 
 function HUDAssaultCorner:sync_set_assault_mode(mode) --from host
