@@ -6,12 +6,9 @@
 	
 		
 	
-		--enemy turret is not vehicle sized on radar
-		--enemy swat van is not vehicle sized on radar, and seems to be elevated high above the player
 		--fix poorly positioned radar_far blips/increase size?
 		radar_far blips should not clip outside the radar panel
-		unique blip texture so that they're not blurry?
-		test vehicle detection on non-ghost mode
+		unique vehicle blip texture so that they're not blurry?
 		show other eq on radar? check slotmask 
 
 	
@@ -40,16 +37,13 @@
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER 
 
 		%% BUGS:
-			- initial ammo counts are weird
-			- remind objective has empty text
-			
+			- Teammate panel does not reset after teammate leaves
+			- Teammate grenade count does not sync beyond initial count
 			- hide HUD when in camera
 			- Rocket reticle will not proc???
-			- Swapping while aiming at an enemy or aiming at invalid ray (eg. empty/too far distance on ray such as on Lab Rats) keeps the crosshair color
 			- ADS should maintain mostly still reticle, unusable otherwise
 
 		%% FEATURES: %%
-		* True ammo counter
 		* DROP IN MENU
 		
 		* Better player waypoints
@@ -121,8 +115,6 @@
 			* Hero or assist for reviving teammates?
 			* Protector? hard to implement but not impossible
 			* Yoink?
-			* Headcase somehow?
-			* Reloading?
 
 		&& DECISIONS &&
 			* Should graze kills give sniper medals? currently, they don't
@@ -217,11 +209,6 @@ CODE:
 
 --reticle bloom
 	* standardize reticle subparts
---weapon
-	* weapon name popup (fadeout anim)
-	* weapon killcount
-* cached crosshair target (on change, apply color differences)
--- check dead/brain every frame
 
 --]]
 
@@ -229,6 +216,7 @@ _G.NobleHUD = {}
 
 NobleHUD.settings = {
 	debug = false,
+	safe_mode = false,
 	crosshair_enabled = true,
 	crosshair_bloom = true,
 	crosshair_shake = true,
@@ -252,6 +240,7 @@ NobleHUD.settings = {
 	interact_style = 1,
 	weapon_ammo_tick_full_alpha = 0.8,
 	weapon_ammo_tick_empty_alpha = 0.15,
+	weapon_ammo_real_counter = false,
 	master_hud_alpha = 0.9,
 	chat_autohide_timer = 3,
 	chat_autohide_mode = 1,
@@ -363,6 +352,11 @@ NobleHUD._announcer_path = ModPath .. "assets/snd/announcer/"
 NobleHUD._announcer_sound_source = nil
 NobleHUD._shield_sound_source = nil
 
+NobleHUD.fonts = {
+	eurostile_ext = "fonts/font_eurostile_ext",
+	eurostile_normal = "fonts/font_eurostile_normal"
+}
+
 NobleHUD._assault_phases = {
 	anticipation = "noblehud_hud_assault_phase_anticipation",
 	build = "noblehud_hud_assault_phase_build",
@@ -415,6 +409,26 @@ NobleHUD._RADAR_GHOST_FADEIN = 0.15
 NobleHUD._RADAR_GHOST_FADEOUT = 0.45
 NobleHUD._radar_ghost_t = 0
 
+local kills_cache_empty = {
+	multipliers = {
+		spree_all = 1,
+		multikill = 1,
+		spree_assist = 1,
+		spree_sword = 1
+	},
+	vehicle = 0,
+	vehicle_assist = 0,
+	close_call = false,
+	last_kill_t = 0,
+	spree_count = 0,
+	multi_count = 0,
+	melee = 0,
+	sniper = 0,
+	shotgun = 0,
+	saw = 0,
+	grenade = 0
+}
+
 NobleHUD._cache = { --buffer type deal, holds IMPORTANT THINGS tm
 	t = 0,
 	killer = {},
@@ -430,25 +444,9 @@ NobleHUD._cache = { --buffer type deal, holds IMPORTANT THINGS tm
 	sounds = {},
 	announcer_queue = {},
 	objectives = {},
-	kills = {
-		multipliers = {
-			spree_all = 1,
-			multikill = 1,
-			spree_assist = 1,
-			spree_sword = 1
-		},
-		close_call = false,
-		last_kill_t = 0,
-		spree_count = 0,
-		multi_count = 0,
-		melee = 0,
-		sniper = 0,
-		shotgun = 0,
-		saw = 0,
-		grenade = 0
-	},
-	crosshair_enemy = false -- enemy currently in sights; for dynamic crosshair color efficiency (unused)
+	kills = table.deep_map_copy(kills_cache_empty)
 }
+
 
 NobleHUD._delayed_callbacks = {}
 
@@ -2103,11 +2101,23 @@ NobleHUD._medal_data = {
 		show_text = true,
 		icon_xy = {5,1}
 	},
-	headcase = { --not implemented
+	headcase = {
 		name = "headcase",
 		sfx = false,
 		show_text = false,
 		icon_xy = {5,2}
+	},
+	reload_this = {
+		name = "reload_this",
+		sfx = false,
+		show_text = true,
+		icon_xy = {6,3}
+	},
+	moa = {
+		name = "moa",
+		sfx = false,
+		show_text = false,
+		icon_xy = {7,3}
 	},
 	pull = {
 		name = "pull",
@@ -2121,7 +2131,7 @@ NobleHUD._medal_data = {
 		show_text = true,
 		icon_xy = {5,4}
 	},
-	protector = { --not implemented
+	protector = { --not implemented; on res?
 		name = "protector",
 		sfx = false,
 		show_text = true,
@@ -2145,13 +2155,18 @@ NobleHUD._medal_data = {
 		show_text = false,
 		icon_xy = {5,8}
 	},
-	splatter = { --VERY not implemented (no sound or bitmap)
+	splatter = {
 		name = "splatter",
-		multiplier = 1.25,
-		disabled = true,
+		multiplier = 1,
 		sfx = false,
 		show_text = false,
-		icon_xy = {-1,-1}
+		icon_xy = {6,0}
+	},
+	wheelman = {
+		name = "wheelman",
+		show_text = false,
+		sfx = false,
+		icon_xy = {1,9}
 	},
 	last_man_standing = { --not implemented
 		name = "last_man",
@@ -2355,7 +2370,7 @@ NobleHUD._medal_data = {
 			icon_xy = {3,3}
 		}
 	},
-	spree_sword = { --not implemented
+	spree_sword = { --on saw kill
 		[5] = {
 			name = "spree_sword_1",
 			sfx = "spree_sword_1",
@@ -2438,58 +2453,90 @@ NobleHUD._medal_data = {
 			icon_xy = {4,6}
 		}
 	},
-	spree_splatter = { --not implemented
+	spree_splatter = {
 		[5] = {
 			name = "spree_splatter_1",
 			sfx = "spree_splatter_1",
+			show_text = true,
 			hold_sfx = true,
 			icon_xy = {4,7}
 		},
 		[10] = {
 			name = "spree_splatter_2",
 			sfx = "spree_splatter_2",
+			show_text = true,
 			hold_sfx = true,
 			icon_xy = {4,8}
 		},
 		[15] = {
 			name = "spree_splatter_3",
 			sfx = "spree_splatter_3",
+			show_text = true,
 			hold_sfx = true,
 			icon_xy = {4,9}
 		}
 	},
-	spree_wheelman = { --not implemented
-		[1] = {
-			name = "wheelman",
-			disabled = true,
-			show_text = false,
-			hold_sfx = true,
-			sfx = false,
-			icon_xy = {1,9}
-		},
-		[5] = { --couldn't find the icons for these
+	spree_wheelman = {
+		[5] = { --couldn't find the icons for these, but i know they exist somewhere
 			name = "spree_wheelman_1",
-			show_text = false,
-			disabled = true,
+			show_text = true,
 			hold_sfx = true,
 			sfx = "spree_wheelman_1",
 			icon_xy = {1,9}
 		},
 		[10] = {
 			name = "spree_wheelman_2",
-			disabled = true,
-			show_text = false,
+			show_text = true,
 			hold_sfx = true,
 			sfx = "spree_wheelman_2",
 			icon_xy = {1,9}
 		},
 		[15] = {
 			name = "spree_wheelman_3",
-			disabled = true,
-			show_text = false,
+			show_text = true,
 			hold_sfx = true,
 			sfx = "spree_wheelman_3",
 			icon_xy = {1,9}
+		}
+	},
+	spree_spawn = {
+		[5] = {
+			name = "spree_spawn_1",
+			sfx = "spree_spawn_1",
+			hold_sfx = false,
+			icon_xy = {6,4}
+		},
+		[10] = {
+			name = "spree_spawn_2",
+			sfx = "spree_spawn_2",
+			hold_sfx = false,
+			icon_xy = {6,5}
+		},
+		[15] = {
+			name = "spree_spawn_3",
+			sfx = "spree_spawn_3",
+			hold_sfx = false,
+			icon_xy = {6,6}
+		}
+	},
+	spree_hammer = {
+		[5] = {
+			name = "spree_hammer_1",
+			sfx = "spree_hammer_1",
+			hold_sfx = true,
+			icon_xy = {6,7}
+		},
+		[10] = {
+			name = "spree_hammer_2",
+			sfx = "spree_hammer_2",
+			hold_sfx = true,
+			icon_xy = {6,8}
+		},
+		[15] = {
+			name = "spree_hammer_3",
+			sfx = "spree_hammer_3",
+			hold_sfx = true,
+			icon_xy = {6,9}
 		}
 	}
 }
@@ -2507,6 +2554,10 @@ NobleHUD._animate_targets = {
 
 --]]
 }
+
+function NobleHUD:IsSafeMode()
+	return self.settings.safe_mode
+end
 
 --    UTILS
 local also_blt_log = false
@@ -2928,9 +2979,6 @@ end
 
 function NobleHUD:animate_scale(o,t,dt,start_t,duration,start_w,start_h,end_w,end_h,center_x,center_y)
 	duration = duration or 1
-	if center_x and center_y then 
-		o:set_center(center_x,center_y)
-	end
 	local ratio = math.pow((t - start_t) / duration,2)
 	if ratio >= 1 then 
 		if end_w then 
@@ -2939,6 +2987,9 @@ function NobleHUD:animate_scale(o,t,dt,start_t,duration,start_w,start_h,end_w,en
 		if end_h then 
 			o:set_h(end_h)
 		end
+		if center_x and center_y then 
+			o:set_center(center_x,center_y)
+		end
 		return true
 	else
 		if start_w and end_w then
@@ -2946,6 +2997,9 @@ function NobleHUD:animate_scale(o,t,dt,start_t,duration,start_w,start_h,end_w,en
 		end
 		if start_h and end_h then 
 			o:set_h(start_h + ((end_h - start_h) * ratio))
+		end
+		if center_x and center_y then 
+			o:set_center(center_x,center_y)
 		end
 	end
 end
@@ -3588,14 +3642,20 @@ function NobleHUD:UpdateHUD(t,dt)
 				local all_persons = World:find_units_quick("sphere",player_pos,RADAR_DISTANCE_MAX,managers.slot:get_mask("persons"))
 				for _,unit in pairs(all_persons) do 
 					if unit and alive(unit) then --dead people are already filtered out of World:find_units_quick()
-						local dis = mvector3.distance_sq(player_pos, unit:position())
-						if dis >= RADAR_DISTANCE_MAX_SQ then
-							--out of range; remove 
-							self:remove_radar_blip(unit)
+						if unit == player then 
+							if state._moving or player:movement():current_state_name() == "driving" then 
+--							if unit:movement():current_state():get_movement_state() ~= "crouching" then 
+								self:create_radar_blip(unit)
+							end
 						else
-							self:create_radar_blip(unit,"person") --todo animate fadein
+							local dis = mvector3.distance_sq(player_pos, unit:position())
+							if dis >= RADAR_DISTANCE_MAX_SQ then
+								--out of range; remove 
+								self:remove_radar_blip(unit)
+							else
+								self:create_radar_blip(unit,"person") --todo animate fadein
+							end
 						end
-					
 					else --no valid unit; this should never happen due to World:find_units_quick() filtering out invalid/dead units
 						self:remove_radar_blip(unit)
 					end
@@ -3603,15 +3663,28 @@ function NobleHUD:UpdateHUD(t,dt)
 				
 				local all_vehicles = World:find_units_quick("sphere",player_pos,RADAR_DISTANCE_MAX,managers.slot:get_mask("vehicles"))
 				for _,unit in pairs(all_vehicles) do 
-					if unit and alive(unit) then 
-						local dis = mvector3.distance_sq(player_pos,unit:position())
-						if dis >= RADAR_DISTANCE_MAX_SQ then 
-							self:remove_radar_blip(unit)
-						else
-							if unit:vehicle_driving() then 
-								self:create_radar_blip(unit,"vehicle")	
+					if unit and alive(unit) then
+						if unit:vehicle_driving() then 
+							if mvector3.distance_sq(player_pos,unit:position()) >= RADAR_DISTANCE_MAX_SQ then 
+								self:remove_radar_blip(unit)
 							else
-								self:create_radar_blip(unit,"fake_vehicle")
+								self:create_radar_blip(unit,"vehicle")
+							end
+						else 
+							local anim_body = unit:get_object(Idstring("anim_body"))
+							if alive(anim_body) then 
+								if mvector3.distance_sq(player_pos,anim_body:position()) >= RADAR_DISTANCE_MAX_SQ then 
+									self:remove_radar_blip(unit)
+								else
+									--if needed, get anim_body:oobb():center() ?
+									self:create_radar_blip(unit,"fake_vehicle")
+								end
+							else
+								if mvector3.distance_sq(player_pos,unit:position()) >= RADAR_DISTANCE_MAX_SQ then 
+									self:remove_radar_blip(unit)
+								else
+									self:create_radar_blip(unit,"fake_vehicle")
+								end
 							end
 						end
 					else
@@ -3666,6 +3739,19 @@ function NobleHUD:UpdateHUD(t,dt)
 					if blip_unit and alive(blip_unit) then
 						if ((data.variant == "person") or (data.variant == "sentry")) then
 							blip_pos = blip_unit:position()
+							if blip_unit == player then
+								if player:movement():current_state_name() == "driving" then  
+									--NOTHING' 
+								elseif state:get_movement_state() == "moving_crouching" then
+									if ((math.floor(t) % 2) == 0) or (math.random() > 0.5) then
+										--NOTHIN'
+									else
+										self:remove_radar_blip(blip_unit)										
+									end
+								elseif not state._moving then 
+									self:remove_radar_blip(blip_unit)
+								end
+							end
 							if blip_unit:character_damage() and not blip_unit:character_damage():dead() then 
 								if blip_unit:movement() and blip_unit:movement():team() then 
 									blip_team = blip_unit:movement():team().id
@@ -3687,6 +3773,7 @@ function NobleHUD:UpdateHUD(t,dt)
 --							blip_pos = blip_unit:oobb():center()
 							is_vehicle = true
 							local driving_state = blip_unit:vehicle_driving()
+							blip_pos = blip_unit:position()
 							if driving_state then 
 								if driving_state:num_players_inside() > 0 then 
 									blip_team = "criminal1"
@@ -3702,10 +3789,17 @@ function NobleHUD:UpdateHUD(t,dt)
 							end
 							blip_team = blip_team or "empty_vehicle"
 						elseif data.variant == "fake_vehicle" then 
+							blip_pos = blip_unit:position()
 --							blip_pos = blip_unit:oobb():center()
 							is_vehicle = true
 							if blip_unit:base() and blip_unit:base()._modules then 
 								blip_team = "law1"
+							end
+						
+							local anim_body = blip_unit:get_object(Idstring("anim_body"))
+							if anim_body then 
+								blip_pos = anim_body:position()
+								--if needed, get anim_body:oobb():center() ?
 							end
 							--things like cop cars or swat vans; not currently detected
 							blip_team = blip_team or "empty_vehicle"
@@ -3793,7 +3887,7 @@ function NobleHUD:UpdateHUD(t,dt)
 						blip_bitmap:set_alpha(blip_alpha)
 						blip_bitmap:set_rotation(blip_angle)
 						blip_bitmap:set_image(blip_image)
-						blip_bitmap:set_center(blip_x + (RADAR_PANEL_W / 2),blip_y + (RADAR_PANEL_H / 2))
+						blip_bitmap:set_center(blip_x + (RADAR_PANEL_W / 2),blip_y +(RADAR_SIZE / 2) + (RADAR_PANEL_H - RADAR_SIZE)) --(RADAR_PANEL_H / 2))
 						blip_bitmap:set_color(blip_color)
 						if blip_w then 
 							blip_bitmap:set_w(blip_w)
@@ -4017,6 +4111,8 @@ function NobleHUD:OnGameStateChanged(before_state,state)
 		hud:hide()
 	elseif GameStateFilters.waiting_for_players[state] or GameStateFilters.waiting_for_respawn[state] or GameStateFilters.waiting_for_spawn_allowed[state] then 
 		hud:hide()
+	elseif state == "ingame_access_camera" then 
+		hud:hide()
 	elseif GameStateFilters.any_ingame[state] then 
 		hud:show()
 	end
@@ -4031,6 +4127,7 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 --		self:AddMedal("grave")
 		return
 	end
+	headshot = headshot or attack_data.head_shot
 	local player_movement = player:movement()
 	local player_weapon = attack_data.weapon_unit
 	local weapon_base = alive(player_weapon) and player_weapon:base()
@@ -4041,23 +4138,23 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 	end
 	local player_state = managers.player:current_state()
 	local variant = attack_data.variant
-	local base = unit:base()
-	local movement = unit:movement()
+	local base = unit and unit:base()
+	local movement = unit and unit:movement()
 	local unit_type = base._tweak_table
 	local is_cop = CopDamage.is_cop(unit_type)
-	local unit_anim = unit.anim_data and unit:anim_data()
+	local unit_anim = unit and unit.anim_data and unit:anim_data()
+	local ext_anim = unit and unit:movement() and unit:movement()._ext_anim or {}
 
 	local player_guns = player:inventory():available_selections()
 	local primary_id = player_guns[1].unit:base():get_name_id()
 	local secondary_id = player_guns[2].unit:base():get_name_id()
 
 	
-	
 
 
 	local medal_multiplier = 1
 
-	if CopDamage.is_civilian(unit:base()._tweak_table) or managers.enemy:is_civilian(unit) then
+	if unit and (CopDamage.is_civilian(unit:base()._tweak_table) or managers.enemy:is_civilian(unit)) then
 		self:ClearKillsCache()
 		self:PlayAnnouncerSound("betrayal")
 		--no +1 kills for you, you murderer >:(
@@ -4099,18 +4196,25 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 			end
 		end
 		
+		if ext_anim.reload then 
+			self:AddMedal("reload_this")
+		end
+		
+		
 		if weapon_base and weapon_base.thrower_unit then
 			if variant == "explosion" then 
 				local ptd = tweak_data.blackmarket.projectiles[player_weapon_id]
 				if ptd and ptd.is_a_grenade then
 					self:AddMedal("spree_grenade",self:KillsCache("grenade",1))
 				end
-			--	return
 			end
 		elseif variant == "bullet" then 
-			local head = attack_data.head_shot
-			if head then
-				self:AddMedal("headshot")
+			if headshot then
+				if ext_anim.sprint then 
+					self:AddMedal("headcase")
+				else
+					self:AddMedal("headshot")
+				end
 				medal_multiplier = medal_multiplier * self:GetMedalMultiplier("headshot")
 			end
 			local is_sniper,is_shotgun,is_saw		
@@ -4128,7 +4232,7 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 			end
 			
 			if is_sniper then 
-				if head then 
+				if headshot then 
 					self:AddMedal("sniper")
 				end
 				self:AddMedal("spree_sniper",self:KillsCache("sniper",1))
@@ -4143,9 +4247,10 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 			end
 			
 
-		elseif variant == "melee" then 
-			self:KillsCache("melee",1)
+		elseif variant == "melee" then
+			local melee_count = self:KillsCache("melee",1)
 			self:AddMedal("pummel")
+			self:AddMedal("spree_hammer",melee_count)
 				
 			if attack_data.cool then 
 				self:AddMedal("assassination")
@@ -4156,11 +4261,9 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 			end
 		elseif variant == "graze" then 
 			--nothing special
-		end
---		self:log(tostring(action_type))
-		
-		if action_type == "reload" then  --this is not correct, idk how to measure is reloading state yet
-			--self:AddMedal("reload_this") --haven't added assets for it yet lol
+		elseif variant == "vehicle" then 
+			NobleHUD:AddMedal("splatter")
+			NobleHUD:AddMedal("spree_splatter",NobleHUD:KillsCache("vehicle",1))
 		end
 		
 		local multikill_count = 1
@@ -4225,6 +4328,8 @@ function NobleHUD:GetMedalMultiplier(category,current_tier)
 end
 
 function NobleHUD:ClearKillsCache()
+	NobleHUD._cache.kills = table.deep_map_copy(kills_cache_empty)
+--[[
 	self._cache.kills = {
 		spree_all_mul = 1,
 		multi_mul = 1,
@@ -4240,6 +4345,21 @@ function NobleHUD:ClearKillsCache()
 		saw = 0,
 		grenade = 0
 	}
+	--]]
+end
+
+function NobleHUD:OnTeammateKill(player_unit)
+
+	--if player_unit is in your car, give wheelman medal
+	local peer_id = alive(player_unit) and managers.criminals:character_peer_id_by_unit(player_unit)
+	local vehicle = peer_id and managers.player:get_vehicle_for_peer(peer_id) or {}
+	local my_vehicle = managers.player:get_vehicle()
+	if alive(vehicle.vehicle_unit) and vehicle.vehicle_unit == my_vehicle.vehicle_unit then
+		if my_vehicle and my_vehicle.seat == "driver" then 
+			NobleHUD:AddMedal("wheelman")
+			NobleHUD:AddMedal("spree_wheelman",NobleHUD:KillsCache("vehicle_assist",1))
+		end
+	end
 end
 
 function NobleHUD:LoadXAudioSounds()
@@ -4383,7 +4503,7 @@ function NobleHUD:_create_weapons(hud)
 --			x = weapon_icon:right() - 12,
 			color = self.color_data.white,
 			alpha = 0.66,
-			font = "fonts/font_eurostile_ext",
+			font = self.fonts.eurostile_ext,
 			font_size = 16,
 			layer = 6
 		})
@@ -4395,7 +4515,7 @@ function NobleHUD:_create_weapons(hud)
 			color = self.color_data.white,
 --			x = -24,
 --			alpha = 0.5,
-			font = "fonts/font_eurostile_ext",
+			font = self.fonts.eurostile_ext,
 			font_size = 24,
 			layer = 6
 		})
@@ -4767,6 +4887,9 @@ function NobleHUD:animate_switch_weapon_in(o)
 
 end
 	
+function NobleHUD:UseWeaponRealAmmoCounter()
+	return self.settings.weapon_ammo_real_counter
+end	
 	
 --		FLOATING MAG INDICATOR
 
@@ -5446,7 +5569,7 @@ function NobleHUD:_create_grenades(hud)
 			align = "right",
 			color = Color.white,
 --			visible = false,
-			font = "fonts/font_eurostile_ext",
+			font = self.fonts.eurostile_ext,
 			font_size = 24
 		})
 		local grenade_outline = panel:bitmap({
@@ -5649,7 +5772,7 @@ function NobleHUD:_create_ability(hud) --armor ability slot?
 			vertical = "bottom",
 			layer = 5,
 			color = Color.white,
-			font = "fonts/font_eurostile_ext",
+			font = self.fonts.eurostile_ext,
 			font_size = 24
 		})
 		return ability_outline,ability_fill,ability_icon,ability_label
@@ -6270,7 +6393,7 @@ function NobleHUD:_create_score(hud)
 		color = Color.white,
 		x = -margin_s,
 		y = score_banner_large:y() + margin_s,
-		font = "fonts/font_eurostile_ext",
+		font = self.fonts.eurostile_ext,
 		font_size = font_size,
 		layer = 5
 	})
@@ -6300,7 +6423,7 @@ function NobleHUD:_create_score(hud)
 		vertical = "bottom",
 		y = margin_s,
 		color = self.color_data.hud_vitalsoutline_blue,
-		font = "fonts/font_eurostile_ext",
+		font = self.fonts.eurostile_ext,
 		font_size = font_size,
 		layer = 4
 	})
@@ -6358,7 +6481,7 @@ function NobleHUD:_create_score(hud)
 		vertical = "bottom",
 		y = margin_s,
 		color = self.color_data.hud_vitalsoutline_blue,
-		font = "fonts/font_eurostile_ext",
+		font = self.fonts.eurostile_ext,
 		font_size = font_size,
 		layer = 4
 	})
@@ -6400,7 +6523,7 @@ function NobleHUD:_create_score(hud)
 		vertical = "bottom",
 		y = margin_s,
 		color = self.color_data.hud_vitalsoutline_blue,
-		font = "fonts/font_eurostile_ext",
+		font = self.fonts.eurostile_ext,
 		font_size = font_size,
 		layer = 4
 	})
@@ -6422,7 +6545,7 @@ function NobleHUD:_create_score(hud)
 		x = margin_m + hostages_panel:right(),
 		y = text_row_y_2,
 		color = self.color_data.hud_vitalsoutline_blue,
-		font = "fonts/testfont2", --"fonts/font_eurostile_ext",
+		font = self.fonts.eurostile_ext, --"fonts/font_eurostile_ext",
 		font_size = font_size,
 		layer = 4
 	})
@@ -6434,7 +6557,7 @@ function NobleHUD:_create_score(hud)
 		x = margin_m + hostages_panel:right(),
 		y = subpanel_y,
 		color = self.color_data.hud_vitalsoutline_blue,
-		font = "fonts/font_eurostile_ext",
+		font = self.fonts.eurostile_ext,
 		font_size = font_size,
 		layer = 4
 	})
@@ -6447,7 +6570,7 @@ function NobleHUD:_create_score(hud)
 		x = -margin_m,
 		y = text_row_y_2, --  -(font_size + margin_s),
 		color = self.color_data.hud_vitalsoutline_blue,
-		font = "fonts/font_eurostile_ext",
+		font = self.fonts.eurostile_ext,
 		font_size = font_size,
 		alpha = 1
 	})
@@ -6459,7 +6582,7 @@ function NobleHUD:_create_score(hud)
 		x = margin_m + hostages_panel:right(),
 		y = subpanel_y + font_size - margin_s,
 		color = self.color_data.hud_vitalsoutline_blue,
-		font = "fonts/font_eurostile_ext",
+		font = self.fonts.eurostile_ext,
 		font_size = font_size,
 		visible = managers.hud._hud_assault_corner:should_display_waves()
 	})
@@ -7803,7 +7926,7 @@ function NobleHUD:_create_radar(hud)
 		text = "25m",
 		color = self.color_data.hud_vitalsoutline_blue,
 		layer = 2,
-		font = "fonts/font_eurostile_ext",
+		font = self.fonts.eurostile_ext,
 		font_size = 16,
 		align = "left",
 --		y = -16, --equal to font size
@@ -7825,12 +7948,12 @@ function NobleHUD:create_radar_blip(u,variant)
 		
 	if ((variant == "person") or (variant == "sentry")) then
 		if (not (alive(u) and u:movement() and u:movement():team())) or ((not u:character_damage()) or u:character_damage():dead()) then 
-			self:log("Error: No unit for create_radar_blip()!",{color = Color.red})
+			self:log("Error: No " .. tostring(variant) .. " unit for create_radar_blip()!",{color = Color.red})
 			return
 		end
 	elseif variant == "vehicle" then 
 		if not (alive(u) and u:vehicle_driving()) then 
-			self:log("Error: No unit for create_radar_blip()!",{color = Color.red})
+			self:log("Error: No vehicle unit for create_radar_blip()!",{color = Color.red})
 			return
 		end
 	end
@@ -7839,10 +7962,8 @@ function NobleHUD:create_radar_blip(u,variant)
 		return self._radar_blips[u:key()]
 	end
 		
-	local blip_texture = "guis/textures/radar_blip"
 	local team
 	if variant == "vehicle" then 
-		blip_texture = "guis/textures/radar_blip" --vehicle blip texture
 		local driving_state = u:vehicle_driving()
 		if driving_state then 
 			if driving_state:num_players_inside() > 0 then 
@@ -7866,16 +7987,12 @@ function NobleHUD:create_radar_blip(u,variant)
 	elseif variant == "fake_vehicle" then 
 		if u:base() and u:base()._modules then 
 			team = "law1"
-			blip_texture = "guis/textures/radar_blip" --vehicle blip texture
 		end
 		team = team or "empty_vehicle"
 	--things like cop cars or swat vans; not currently detected
 	elseif variant == "sentry" then
 		team = u:movement():team().id
-		blip_texture = "guis/textures/radar_blip" --vehicle blip texture
 		if team == "criminal1" then 
-			blip_texture = "guis/textures/radar_blip" --normal blip texture
-			--don't be huge vehicle indicator, actually
 		end
 	else
 --		blip_texture = "guis/textures/radar_blip"
@@ -7884,7 +8001,7 @@ function NobleHUD:create_radar_blip(u,variant)
 
 	local blip_bitmap = self._radar_panel:bitmap({
 		name = "blip_" .. tostring(u:key()),
-		texture = blip_texture,
+		texture = "guis/textures/radar_blip",
 		layer = 4,
 		color = self:get_blip_color_by_team(team),
 		blend_mode = "add",
@@ -7899,7 +8016,6 @@ function NobleHUD:create_radar_blip(u,variant)
 		unit = u,
 		variant = variant
 	}
-	
 	
 	self._radar_blips[u:key()] = blip_data
 	return blip_data
@@ -8007,10 +8123,10 @@ function NobleHUD:_create_cartographer(hud)
 	})
 	local area_label = cartographer_panel:text({
 		name = "area_label",
-		text = "",
+		text = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
 		color = self.color_data.hud_vitalsoutline_blue,
 		layer = 2,
-		font = "fonts/font_eurostile_ext",
+		font = self.fonts.eurostile_ext or self.fonts.eurostile_normal,
 		font_size = 16,
 		align = "left",
 		vertical = "bottom",
@@ -9409,6 +9525,17 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		NobleHUD:SaveSettings()
 	end
 
+	MenuCallbackHandler.callback_noblehud_set_radar_style = function(self,item)
+		NobleHUD.settings.radar_style = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end	
+	
+	MenuCallbackHandler.callback_noblehud_set_radar_scale = function(self,item)
+		NobleHUD.settings.radar_scale = tonumber(item:value())
+--		set radar size here
+		NobleHUD:SaveSettings()
+	end	
+	
 	MenuCallbackHandler.callback_noblehud_set_radar_distance = function(self,item)
 		NobleHUD.settings.radar_distance = tonumber(item:value())
 		NobleHUD:SetRadarDistance(NobleHUD.settings.radar_distance)
@@ -9421,7 +9548,10 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		NobleHUD.settings.floating_ammo_enabled = item:value() == "on"
 		NobleHUD:SaveSettings()
 	end
-	
+	MenuCallbackHandler.callback_noblehud_set_weapon_ammo_real_counter_enabled = function(self,item)
+		NobleHUD.settings.weapon_ammo_real_counter = item:value() == "on"
+		NobleHUD:SaveSettings()
+	end
 	MenuCallbackHandler.noblehud_weapons_options_close = function(self)
 		--NobleHUD:SaveSettings()
 	end

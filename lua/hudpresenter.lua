@@ -1,3 +1,4 @@
+
 function HUDPresenter:present(params)
 --	self:log("Presenting: title: " .. tostring(params.title) .. " | text: " .. tostring(params.text) .. " | sound: " .. tostring(params.event))
 	if params.text then 

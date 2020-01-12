@@ -7,6 +7,14 @@
 	"items" : [
 		{
 			"type" : "toggle",
+			"id" : "id_noblehud_set_weapon_ammo_real_counter_enabled",
+			"title" : "noblehud_set_weapon_ammo_real_counter_enabled_title",
+			"description" : "noblehud_set_weapon_ammo_real_counter_enabled_desc",
+			"callback" : "callback_noblehud_set_weapon_ammo_real_counter_enabled",
+			"value" : "weapon_ammo_real_counter"
+		},
+		{
+			"type" : "toggle",
 			"id" : "id_noblehud_set_floating_ammo_enabled",
 			"title" : "noblehud_set_floating_ammo_enabled_title",
 			"description" : "noblehud_set_floating_ammo_enabled_desc",

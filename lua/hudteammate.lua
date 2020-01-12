@@ -247,37 +247,36 @@ Hooks:PostHook(HUDTeammate,"set_absorb_active","noblehud_set_absorb",function(se
 end)
 
 Hooks:PostHook(HUDTeammate,"set_grenades","noblehud_set_grenades",function(self,data)
-	if PlayerBase.USE_GRENADES then
-		if self._main_player then
-
+	if self._main_player then
+		if PlayerBase.USE_GRENADES then
 			NobleHUD:_set_grenades(data)
-		else
-			NobleHUD:log("set_grenades(" .. NobleHUD.table_concat(data,"|","=") .. ")")
-			local icon, texture_rect = tweak_data.hud_icons:get_icon_data(data.icon, {
-				0,
-				0,
-				32,
-				32
-			})
-			
-			local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
-			if teammate_panel then 
-				local subpanel = teammate_panel:child("grenade_subpanel")
-				subpanel:show()
+		end
+	else
+		NobleHUD:log("set_grenades(" .. NobleHUD.table_concat(data,"|","=") .. ")")
+		local icon, texture_rect = tweak_data.hud_icons:get_icon_data(data.icon, {
+			0,
+			0,
+			32,
+			32
+		})
+		
+		local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
+		if teammate_panel then 
+			local subpanel = teammate_panel:child("grenade_subpanel")
+			subpanel:show()
 				
-				local grenade_icon = subpanel:child("grenade_icon")
-				grenade_icon:set_image(icon,unpack(texture_rect))
-				local grenade_label = subpanel:child("grenade_label")
-				local color = NobleHUD.color_data.hud_vitalsoutline_blue
-				if data.amount then
-					grenade_label:set_text(data.amount)
-					if data.amount == 0 then 
-						color = NobleHUD.color_data.hud_vitalsfill_blue
-					end
+			local grenade_icon = subpanel:child("grenade_icon")
+			grenade_icon:set_image(icon,unpack(texture_rect))
+			local grenade_label = subpanel:child("grenade_label")
+			local color = NobleHUD.color_data.hud_vitalsoutline_blue
+			if data.amount then
+				grenade_label:set_text(data.amount)
+				if data.amount == 0 then 
+					color = NobleHUD.color_data.hud_vitalsfill_blue
 				end
-				grenade_icon:set_color(color)
-				grenade_label:set_color(color)
 			end
+			grenade_icon:set_color(color)
+			grenade_label:set_color(color)
 		end
 	end
 end)
@@ -448,8 +447,19 @@ Hooks:PostHook(HUDTeammate,"set_ammo_amount_by_type","noblehud_set_ammo",functio
 		return
 	end
 	local slot = (type == "primary" and 2) or (type == "secondary" and 1)
-	NobleHUD:_set_weapon_reserve(slot,math.max(current_left - current_clip,current_left))
-	NobleHUD:_set_weapon_mag(slot,current_clip,max_clip)
+	
+	if NobleHUD:UseWeaponRealAmmoCounter() then 
+		local total_left = math.max(0,current_left,current_left - current_clip)
+--			if current_clip <= math.round(max_clip / 4) and current_clip ~= 0 then
+		
+		NobleHUD:_set_weapon_mag(slot,current_clip)
+		NobleHUD:_set_weapon_reserve(slot,total_left)
+	else
+		NobleHUD:_set_weapon_reserve(slot,math.max(current_left,0))
+		NobleHUD:_set_weapon_mag(slot,current_clip,max_clip)
+	end
+	
+
 --	NobleHUD:SetFloatingAmmo(current_clip,max_clip)
 
 end)

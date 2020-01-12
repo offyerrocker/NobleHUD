@@ -14,6 +14,30 @@
 			"value" : "radar_enabled"
 		},
 		{
+			"type" : "multiple_choice",
+			"id" : "id_noblehud_set_radar_style",
+			"title" : "noblehud_set_radar_style_title",
+			"description" : "noblehud_set_radar_style_desc",
+			"callback" : "callback_noblehud_set_radar_style",
+			"items" : [
+				"noblehud_radar_style_perfect",
+				"noblehud_radar_style_classic"
+			],
+			"value" : "radar_style"
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_radar_scale",
+			"title" : "noblehud_set_radar_scale_title",
+			"description" : "noblehud_set_radar_scale_desc",
+			"callback" : "callback_noblehud_set_radar_scale",
+			"value" : "radar_scale",
+			"default_value" : 1,
+			"min" : 0.01,
+			"max" : 2,
+			"step" : 0.01
+		},
+		{
 			"type" : "slider",
 			"id" : "id_noblehud_set_radar_distance",
 			"title" : "noblehud_set_radar_distance_title",

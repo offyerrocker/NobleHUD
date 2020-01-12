@@ -2,7 +2,11 @@ Hooks:PostHook(HUDHeistTimer,"init","noblehud_heisttimer_init",function(self,hud
 	self._timer_text:hide()
 end)
 
-function HUDHeistTimer:set_time(time)
+local orig_set_time = HUDHeistTimer.set_time
+function HUDHeistTimer:set_time(time,...)
+	if NobleHUD:IsSaveMode() then 
+		return orig_set_time(self,time,...)
+	end
 	local inverted = false
 
 	if time < 0 then

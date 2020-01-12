@@ -19,11 +19,10 @@ end
 
 function HUDAssaultCorner:show_casing(mode)
 
-	NobleHUD:log("Showing casing mode " .. tostring(mode))
+	NobleHUD:log("Casing mode: " .. tostring(mode),{color=Color.yellow})
 	if mode == "civilian" then 
 		NobleHUD:SetAssaultPhase(managers.localization:text("civilian"),false)
 	else
-		NobleHUD:log("Casing mode: " .. tostring(mode),{color=Color.yellow})
 --		NobleHUD:SetAssaultPhase("Casing")--managers.localization:text(""))	
 	end
 	self:_end_assault()
@@ -130,7 +129,7 @@ function HUDAssaultCorner:_hide_hostages()
 end
 
 function HUDAssaultCorner:set_buff_enabled(buff_name, enabled) --winters dmg resist buff for cops; other captains in resmod
-	self:log("ASSAULTCORNER: Buff enabled [" .. tostring(buff_name) .. "]: " .. tostring(enabled))
+	NobleHUD:log("ASSAULTCORNER: Buff enabled [" .. tostring(buff_name) .. "]: " .. tostring(enabled))
 --	self:AddBuff("phalanx") --todo; this will display an icon 
 end
 

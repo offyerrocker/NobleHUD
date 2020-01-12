@@ -43,7 +43,9 @@ end)
 
 local orig_receive_message = HUDChat.receive_message
 function HUDChat:receive_message(name,message,color,icon,...)
-	
+	if NobleHUD:IsSaveMode() then 
+		return orig_receive_message(self,name,message,color,icon,...)
+	end
 	if NobleHUD:IsChatNotificationSoundEnabled() then
 		local notif_sfx = NobleHUD.chat_notification_sounds[NobleHUD:GetChatNotificationSound()]
 		if managers.player:local_player() then
