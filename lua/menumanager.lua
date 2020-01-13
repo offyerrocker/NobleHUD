@@ -3,8 +3,11 @@
 
 ***** TODO: *****
 	Notes:
-	
 		
+		--tabscreen should be created (and referenced) by teammate panel id, not peer_id
+		--
+--todo remove clantag
+--todo remove doubled letters
 	
 		--fix poorly positioned radar_far blips/increase size?
 		radar_far blips should not clip outside the radar panel
@@ -2013,6 +2016,9 @@ NobleHUD._medal_end_y = 400
 
 NobleHUD._medal_atlas = "guis/textures/medal_atlas"
 
+NobleHUD._MIN_CALLSIGN_LEN = 3
+NobleHUD._MAX_CALLSIGN_LEN = 4
+
 NobleHUD._medal_data = {
 	first = { --not implemented
 		name = "first",
@@ -2774,19 +2780,123 @@ function NobleHUD.make_compact_number(num,scale,places)
 	return str or string.format("%." .. scale .. "f",num)
 end
 
-function NobleHUD:make_callsign_name(original_name,max_len,character)
-	local name = original_name
+function NobleHUD:make_callsign_name(raw_name,min_len,max_len,fallback_character_name)
+	local blacklisted_prefixes = {
+		["the"] = true,
+		["a"] = true,
+		["an"] = true --sorry if "an" is just your first name
+	}
+	local function validity_check(s,skip_length_check) 
+		return s and ((string.len(tostring(s)) >= min_len) or skip_length_check)
+	end
+
+	local best_word = ""
+	local condensed = ""
+	local result = ""
+	local anid = "" --alphanumeric id
+	local word_number = 1
+	local first_word
+	local prev_word_number = 1
+	local prev_word
+	local missing_characters = 0
+	for raw_word in string.gmatch(raw_name,"%w+") do 
+		local word = string.gsub(raw_word,"%W","")
+		local word_len = string.len(word) 
+		if word_len <= 0 then 
+			--YOU GET NOTHING
+		else
+			if not best_word then 
+				best_word = word
+			else
+				local best_len = string.len(best_word)
+				
+				if string.find(string.sub(word,1,1),"%a") then 
+					if best_len >= max_len then 
+					else
+					end
+					best_word = best_word or word
+				elseif (string.match(word,"%a+") == word) then
+					
+				end
+			end
+			if missing_characters > 0 then 
+				local ramen_len = math.min(math.max(1,missing_characters),word_len)
+				missing_characters = missing_characters - ramen_len
+				anid = anid .. string.sub(word,1,ramen_len)
+			end
+			if word_number == 1 then 
+				first_word = word
+			end
+			if word_number == 1 and blacklisted_prefixes[string.lower(word)] then
+
+			else
+				condensed = condensed .. word
+				if string.match(word,"%d+") then --found digit to use as callsign
+					local anid_s,anid_e = string.find(word,"%d+")
+					local anid_word = string.sub(word,anid_s,anid_e)
+					local anid_len = string.len(anid_word)
+					if anid_len and anid_len > 0 then --should be a given
+						if anid_len >= max_len then
+							anid = string.sub(anid_word,1,max_len)
+						elseif anid_len <= min_len then --too short; add to anid if possible
+							local max_missing = max_len - anid_len
+							local min_missing = max_len - anid_len
+							
+							if anid_s == 1 then 
+								local donor
+								local wn
+								if first_word and string.len(first_word) >= 1 then --pull from first word
+									wn = 1
+									donor = first_word
+								elseif prev_word and string.len(prev_word) >= 1 then --pull from previous word
+									donor = prev_word
+									wn = prev_word_number
+								end
+								if donor then
+									local s_offset = 0
+									if wn == word_number then 
+										s_offset = anid_e
+										anid = anid_word .. string.sub(donor,1 + s_offset,max_missing + s_offset)
+									else
+										anid = string.sub(donor,1,max_missing) .. anid_word
+									end
+								else
+									--guess i'll die
+								end
+							else
+								--if anid_e == word_len 
+								anid = string.sub(word,1,math.min(max_missing,anid_s - 1)) .. anid_word
+							
+							end
+						end
+					end
+				end
+			end
+		end
+		prev_word = word
+		prev_word_number = word_number
+		word_number = word_number + 1
+	end
+	if string.len(condensed) < min_len then 
+		result = string.gsub(raw_name,"%W","")
+	else
+		result = condensed
+	end
 	
---	name = string.sub(name,string.find(name,"%w"))
+	result = string.sub(result,1,max_len)
 	
---    s = "Deadline is 30/05/1999, firm"
- --   date = "%d%d/%d%d/%d%d%d%d"
-  --  print(string.sub(s, string.find(s, date)))   --> 30/05/1999
-	
-	
-	
---	name = string.gsub(name,"-","")
-	
+
+	if string.len(result) < min_len then 
+		result = string.sub(raw_name,1,max_len)
+	end
+	if validity_check(anid) then 
+		result = anid
+	elseif validity_check(result) then
+	else
+		result = string.sub(fallback_character_name,1,max_len)
+	end
+	result = string.upper(result)
+	return result
 end
 
 function NobleHUD.to_camelcase(s)
@@ -7897,6 +8007,17 @@ function NobleHUD:_set_scoreboard_kills(peer_id,num_kills)
 	end
 end
 
+function NobleHUD:ShowTabscreen(state)
+	if state ~= nil then 
+		self._tabscreen:set_visible(state)
+	else
+		self._tabscreen:show()
+	end
+end
+
+function NobleHUD:HideTabscreen()
+	self._tabscreen:hide()
+end
 
 --		RADAR
 
@@ -8123,7 +8244,7 @@ function NobleHUD:_create_cartographer(hud)
 	})
 	local area_label = cartographer_panel:text({
 		name = "area_label",
-		text = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+		text = "", --"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
 		color = self.color_data.hud_vitalsoutline_blue,
 		layer = 2,
 		font = self.fonts.eurostile_ext or self.fonts.eurostile_normal,

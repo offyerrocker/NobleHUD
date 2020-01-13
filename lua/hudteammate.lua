@@ -14,10 +14,17 @@ end)
 
 Hooks:PostHook(HUDTeammate,"set_name","noblehud_setteammatename",function(self,player_name)
 	if HUDManager.PLAYER_PANEL ~= self._id then 
-		NobleHUD:_set_teammate_name(self._id,player_name)
+		local character_data = managers.criminals._characters[self._id]
+		local character_name = character_data and character_data.name
+		local callsign = NobleHUD:make_callsign_name(player_name,NobleHUD._MIN_CALLSIGN_LEN,NobleHUD._MAX_CALLSIGN_LEN,character_name)
+		NobleHUD:_set_tabscreen_teammate_name(self._peer_id or self._id or 5,player_name)
+		NobleHUD:_set_teammate_name(self._id,callsign)
 	end
 end)
 
+Hooks:PostHook(HUDTeammate,"remove_panel","noblehud_teammate_remove_panel",function(self,weapons_panel)
+	--!
+end)
 
 
 Hooks:PostHook(HUDTeammate,"set_cable_ties_amount","noblehud_setcabletiesamount",function(self,amount)
@@ -247,39 +254,59 @@ Hooks:PostHook(HUDTeammate,"set_absorb_active","noblehud_set_absorb",function(se
 end)
 
 Hooks:PostHook(HUDTeammate,"set_grenades","noblehud_set_grenades",function(self,data)
-	if self._main_player then
-		if PlayerBase.USE_GRENADES then
+	if PlayerBase.USE_GRENADES then
+		if self._main_player then
 			NobleHUD:_set_grenades(data)
-		end
-	else
-		NobleHUD:log("set_grenades(" .. NobleHUD.table_concat(data,"|","=") .. ")")
-		local icon, texture_rect = tweak_data.hud_icons:get_icon_data(data.icon, {
-			0,
-			0,
-			32,
-			32
-		})
-		
-		local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
-		if teammate_panel then 
-			local subpanel = teammate_panel:child("grenade_subpanel")
-			subpanel:show()
-				
-			local grenade_icon = subpanel:child("grenade_icon")
-			grenade_icon:set_image(icon,unpack(texture_rect))
-			local grenade_label = subpanel:child("grenade_label")
-			local color = NobleHUD.color_data.hud_vitalsoutline_blue
-			if data.amount then
-				grenade_label:set_text(data.amount)
-				if data.amount == 0 then 
-					color = NobleHUD.color_data.hud_vitalsfill_blue
+		else
+			NobleHUD:log("set_grenades(" .. NobleHUD.table_concat(data,"|","=") .. ")")
+			local icon, texture_rect = tweak_data.hud_icons:get_icon_data(data.icon, {
+				0,
+				0,
+				32,
+				32
+			})
+			
+			local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
+			if teammate_panel then 
+				local subpanel = teammate_panel:child("grenade_subpanel")
+				subpanel:show()
+					
+				local grenade_icon = subpanel:child("grenade_icon")
+				grenade_icon:set_image(icon,unpack(texture_rect))
+				local grenade_label = subpanel:child("grenade_label")
+				local color = NobleHUD.color_data.hud_vitalsoutline_blue
+				if data.amount then
+					grenade_label:set_text(data.amount)
+					if data.amount == 0 then 
+						color = NobleHUD.color_data.hud_vitalsfill_blue
+					end
 				end
+				grenade_icon:set_color(color)
+				grenade_label:set_color(color)
 			end
-			grenade_icon:set_color(color)
-			grenade_label:set_color(color)
 		end
 	end
 end)
+
+
+Hooks:PostHook(HUDTeammate,"set_grenades_amount","noblehud_set_grenades_amount",function(self,data)
+	if self._main_player then 
+		NobleHUD:_set_grenades_amount(data.amount)		
+	else
+		local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
+		local subpanel = teammate_panel and teammate_panel:child("grenade_subpanel")
+		local grenade_label = subpanel and subpanel:child("grenade_label")
+		if data.amount and alive(grenade_label) then 
+			if data.amount <= 0 then 
+				grenade_label:set_color(Color(0.5,0.5,0.5))
+			else
+				grenade_label:set_color(Color.white)
+			end
+			grenade_label:set_text(data.amount)
+		end
+	end
+end)
+
 		--[[
 managers.hud:set_teammate_grenades(2,{icon = "frag_grenade",amount = 9})
 managers.hud:set_deployable_equipment(2,{icon = "frag_grenade",amount = 9})
@@ -407,12 +434,6 @@ Hooks:PostHook(HUDTeammate,"set_grenades","noblehud_set_grenades",function(self,
 end)
 --]]
 
-Hooks:PostHook(HUDTeammate,"set_grenades_amount","noblehud_set_grenades_amount",function(self,data)
-	if not self._main_player then 
-		return
-	end
-	NobleHUD:_set_grenades_amount(data.amount)
-end)
 
 Hooks:PostHook(HUDTeammate,"set_weapon_selected","noblehud_set_weapon_selected",function(self,id)
 	if not self._main_player then
@@ -752,5 +773,6 @@ Hooks:PostHook(HUDTeammate,"set_ability_radial","khud_set_ability_radial",functi
 end)
 
 Hooks:PostHook(HUDTeammate,"set_name","noblehud_set_teammate_name",function(self,name)
-	NobleHUD:_set_tabscreen_teammate_name(self._peer_id or self._id or 5,name)
+	
+	NobleHUD:_set_tabscreen_teammate_name(self._peer_id or self._id or 5,callsign)
 end)

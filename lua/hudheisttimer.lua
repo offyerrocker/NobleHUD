@@ -4,7 +4,7 @@ end)
 
 local orig_set_time = HUDHeistTimer.set_time
 function HUDHeistTimer:set_time(time,...)
-	if NobleHUD:IsSaveMode() then 
+	if NobleHUD:IsSafeMode() then 
 		return orig_set_time(self,time,...)
 	end
 	local inverted = false

@@ -50,39 +50,39 @@
 			"script_path" : "lua/hudchat.lua"
 		},
 		{
-			"hook_id": "lib/managers/hud/hudpresenter",
-			"script_path": "lua/hudpresenter.lua"
+			"hook_id" : "lib/managers/hud/hudpresenter",
+			"script_path" : "lua/hudpresenter.lua"
 		},
 		{
-			"hook_id": "lib/managers/hud/hudassaultcorner",
-			"script_path": "lua/hudassaultcorner.lua"
+			"hook_id" : "lib/managers/hud/hudassaultcorner",
+			"script_path" : "lua/hudassaultcorner.lua"
 		},
 		{
-			"hook_id": "lib/managers/hud/hudheisttimer",
-			"script_path": "lua/hudheisttimer.lua"
+			"hook_id" : "lib/managers/hud/hudheisttimer",
+			"script_path" : "lua/hudheisttimer.lua"
 		},
 		{
-			"hook_id": "lib/managers/hud/hudinteraction",
-			"script_path": "lua/hudinteraction.lua"
+			"hook_id" : "lib/managers/hud/hudinteraction",
+			"script_path" : "lua/hudinteraction.lua"
 		},
 		{
-			"hook_id": "lib/managers/statisticsmanager",
-			"script_path": "lua/statisticsmanager.lua"
+			"hook_id" : "lib/managers/hud/newhudstatsscreen",
+			"script_path" : "lua/newhudstatsscreen.lua"
 		},
 		{
-			"hook_id": "lib/units/beings/player/states/playerstandard",
+			"hook_id" : "lib/units/beings/player/states/playerstandard",
 			"script_path": "lua/playerstandard.lua"
 		},
 		{
-			"hook_id": "lib/units/weapons/newraycastweaponbase",
+			"hook_id" : "lib/units/weapons/newraycastweaponbase",
 			"script_path": "lua/newraycastweaponbase.lua"
 		},
 		{
-			"hook_id": "lib/units/enemies/cop/copdamage",
+			"hook_id" : "lib/units/enemies/cop/copdamage",
 			"script_path": "lua/copdamage.lua"
 		},
 		{
-			"hook_id": "lib/units/weapons/raycastweaponbase",
+			"hook_id" : "lib/units/weapons/raycastweaponbase",
 			"script_path": "lua/raycastweaponbase.lua"
 		},
 		{
