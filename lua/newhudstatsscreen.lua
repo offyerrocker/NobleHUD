@@ -11,7 +11,8 @@ Hooks:PostHook(HUDStatsScreen,"recreate_right","noblehud_hudstats_recreateright"
 end)
 
 function HUDStatsScreen:show()
-	NobleHUD:ShowTabscreen()
+	NobleHUD:AnimateShowTabscreen()
+--	NobleHUD:ShowTabscreen()
 --[[
 	self:recreate_left()
 	self:recreate_right()
@@ -36,7 +37,8 @@ function HUDStatsScreen:show()
 end
 
 function HUDStatsScreen:hide()
-	NobleHUD:HideTabscreen()
+	NobleHUD:AnimateHideTabscreen()
+--	NobleHUD:HideTabscreen()
 	--[[
 	local left_panel = self._left
 	local right_panel = self._right

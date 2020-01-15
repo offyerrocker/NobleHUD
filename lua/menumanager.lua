@@ -3,12 +3,16 @@
 
 ***** TODO: *****
 	Notes:
-		
+		--HIGH SCORES
+			- convert scores to credits after each run; add "purchaseable" items for credits
 		--tabscreen should be created (and referenced) by teammate panel id, not peer_id
+		
+		--move scoreboard based on score, not peerid?
 		--
+		
 --todo remove clantag
 --todo remove doubled letters
-	
+		-PONR label goes where "BONUS ROUND" was in reach?
 		--fix poorly positioned radar_far blips/increase size?
 		radar_far blips should not clip outside the radar panel
 		unique vehicle blip texture so that they're not blurry?
@@ -80,8 +84,6 @@
 		* Organize color data
 			- All HUD elements should be the same blue color
 			- Ability circle needs a baked-blue asset
-		* Queue objective activities rather than stopping current
-		* Tab should refresh view_timer or call remind objective
 		* Auntie dot
 			* Subtitles: Auntie dot voice lines with associated queues (requires vo assets/updated asset dump)
 			* background non-lit grid should probably be invisible, or flicker to invisible after flickering off
@@ -8006,14 +8008,24 @@ function NobleHUD:_set_scoreboard_character(peer_id,character_id)
 --	local character_icon = tweak_data.blackmarket:get_character_icon(character)
 end
 
-function NobleHUD:_set_scoreboard_kills(peer_id,num_kills)
+function NobleHUD:_set_scoreboard_kills(panel_id,num_kills)
 	
 	
-	if (peer_id and managers.network:session():peer(peer_id)) then
-		local player_box = self._tabscreen:child("scoreboard"):child("player_box_" .. peer_id)
+	local player_box = self._tabscreen:child("scoreboard"):child("player_box_" .. tostring(panel_id))
 
-		player_box:child("kills_box"):child("kills_label"):set_text(NobleHUD.special_chars.skull .. tostring(num_kills or 0))
-	end
+	player_box:child("kills_box"):child("kills_label"):set_text(NobleHUD.special_chars.skull .. tostring(num_kills or 0))
+
+end
+
+function NobleHUD:AnimateShowTabscreen()
+--	self._tabscreen:set_alpha(0)
+	self:ShowTabscreen()
+	self:animate(self._tabscreen,"animate_fadein",nil,0.5,self:GetHUDAlpha())
+end
+
+function NobleHUD:AnimateHideTabscreen()
+	self:ShowTabscreen()
+	self:animate(self._tabscreen,"animate_fadeout",self:HideTabscreen(),0.5,self._tabscreen:alpha())
 end
 
 function NobleHUD:ShowTabscreen(state)
