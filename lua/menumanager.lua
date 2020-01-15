@@ -228,6 +228,7 @@ NobleHUD.settings = {
 	crosshair_stability = 100,
 	crosshair_static_color = {1,0,0},
 	radar_enabled = true,
+	score_display_mode = 1,
 	medals_enabled = true,
 	popup_style = 1,
 	popups_enabled = true,
@@ -3318,6 +3319,10 @@ function NobleHUD:IsChatNotificationIconEnabled()
 	return self.settings.chat_notification_sound_enabled
 end
 
+function NobleHUD:GetScoreDisplayMode()
+	return tonumber(self.settings.score_display_mode)
+end
+
 
 		--SET SETTINGS
 function NobleHUD:SetCrosshairEnabled(enabled)
@@ -3630,8 +3635,10 @@ function NobleHUD:UpdateHUD(t,dt)
 			end
 		end
 		
-		
-		
+		if self:GetScoreDisplayMode() == 2 then 
+	--managers.localization:text("hud_day_payout", {				MONEY = managers.experience:cash_string(managers.money:get_potential_payout_from_current_stage())			})	
+			self:SetScoreLabel(managers.experience:cash_string(managers.money:get_potential_payout_from_current_stage()))
+		end
 		
 		--killfeed stuff
 		local KILLFEED_LIFETIME = 5
@@ -6837,7 +6844,9 @@ function NobleHUD:TallyScore(data,unit,medal_multiplier)
 			self:CreateScorePopup(localized_unitname,score,unit)
 		end
 		self:AddScore(score)
-		self:SetScoreLabel(NobleHUD.make_nice_number(self._cache.score_session))
+		if self:GetScoreDisplayMode() == 1 then
+			self:SetScoreLabel(NobleHUD.make_nice_number(self._cache.score_session))
+		end
 	else
 		--unit is worth no score, or unit name is wrong
 	end
@@ -9593,6 +9602,12 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 
 
 --SCORE
+	
+
+	MenuCallbackHandler.callback_noblehud_set_score_display_mode = function(self,item)
+		NobleHUD.settings.score_display_mode = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end	
 	
 	MenuCallbackHandler.callback_noblehud_set_popups_enabled = function(self,item)
 		NobleHUD.settings.popups_enabled = item:value() == "on"

@@ -114,6 +114,10 @@
 	"noblehud_set_popup_duration_desc" : "The number of seconds before a popup disappears.",
 	"noblehud_set_popup_font_size_title" : "Popup Font Size",
 	"noblehud_set_popup_font_size_desc" : "The size of the popup text.",
+	"noblehud_score_display_mode_take" : "Heist Payout",
+	"noblehud_score_display_mode_points" : "Kills Score",
+	"noblehud_set_score_display_mode_title" : "Score Display",
+	"noblehud_set_score_display_mode_desc" : "Choose what shows in the score display (bottom right).",
 		
 		
 	"noblehud_hud_objective_activate" : "Current Objective:",
