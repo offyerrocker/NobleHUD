@@ -10,6 +10,7 @@
 		--move scoreboard based on score, not peerid?
 		--
 		
+		
 --todo remove clantag
 --todo remove doubled letters
 		-PONR label goes where "BONUS ROUND" was in reach?
@@ -135,7 +136,6 @@
 		* Visual ammo counter is out of control for large-mag weapons
 			* Mag count is kind of hard to see, might want to have an option to make the big number the mag
 			* Above x bullets should just be a bar tbh
-			* Saw should use a radial meter
 			* Realign bullet tick alignments
 		* Reticle/Weapon stuff
 			* DMR should be scaled down ever so slightly
@@ -260,8 +260,10 @@ NobleHUD.settings = {
 	shield_low_threshold = 0.3,
 	shield_charge_sound_enabled = true,
 	shield_low_sound_enabled = true,
-	shield_empty_sound_enabled = true
+	shield_empty_sound_enabled = true,
+	unusual = 1
 }
+
 
 NobleHUD.chat_notification_sounds = {
 	"advance.ogg",
@@ -3325,6 +3327,16 @@ function NobleHUD:GetScoreDisplayMode()
 	return tonumber(self.settings.score_display_mode)
 end
 
+function NobleHUD:VerifyUnusual()
+	local unusual = self.settings.unusual
+	local valid = {}
+	if not valid[unusual] then 
+		self.settings.unusual = 0
+		self:SaveSettings()
+		return false
+	end
+	return unusual
+end
 
 		--SET SETTINGS
 function NobleHUD:SetCrosshairEnabled(enabled)
@@ -4727,8 +4739,25 @@ function NobleHUD:_create_ammo_ticks(weapon)
 		visible = false,
 		alpha = 0.3
 	})
+
+	local function create_ammo_radial()
+		local ammo_radial = panel:bitmap({
+			name = "ammo_radial",
+			render_template = "VertexColorTexturedRadial",
+			texture = texture,
+			texture_rect = texture_rect,
+			w = 32,--texture_data.icon_w,
+			h = 32,--texture_data.icon_h,
+			layer = 2,
+			color = Color.white,
+			alpha = 1
+		})
 	
-	if texture_data.use_bar then 
+--		if alive(weapon_panel:child("mag_label")) then 
+--			weapon_panel:child("mag_label"):show()
+--		end
+	end
+	local function create_ammo_bar()
 		local ammo_bar = panel:bitmap({
 			name = "ammo_bar",
 			texture = texture,
@@ -4751,19 +4780,13 @@ function NobleHUD:_create_ammo_ticks(weapon)
 		})
 		ammo_bar:set_y(panel:h() - ammo_bar:h())
 		ammo_bg:set_y(panel:h() - ammo_bg:h())
-	elseif texture_data.use_radial then 
-		local ammo_radial = panel:bitmap({
-			name = "ammo_radial",
-			render_template = "VertexColorTexturedRadial",
-			texture = texture,
-			texture_rect = texture_rect,
-			w = 32,--texture_data.icon_w,
-			h = 32,--texture_data.icon_h,
-			layer = 2,
-			color = Color.white,
-			alpha = 1
-		})
-	else
+		
+		if alive(weapon_panel:child("mag_label")) then 
+			weapon_panel:child("mag_label"):show()
+		end
+	end
+	
+	local function create_ammo_ticks()
 		local row = 1
 		local column = 1
 		for i = 1,clip_max do 
@@ -4790,6 +4813,26 @@ function NobleHUD:_create_ammo_ticks(weapon)
 			ammo_icon:set_y(panel:h() - (row * (margin_h + icon_h))) --from bottom
 			column = column + 1
 		end
+	end
+
+	if texture_data.use_radial then 
+		create_ammo_radial()
+	elseif texture_data.use_bar then 
+		create_ammo_bar()
+	else
+		local t_w = texture_data.icon_w
+		local t_h = texture_data.icon_h
+		
+		local a_w = weapon_panel:w()
+		local a_h = weapon_panel:h()
+		
+		self:log("Creating default ammo panel... " .. self.table_concat({clip_max = clip_max, t_w = t_w, t_h = t_h, a_w = a_w, a_h = a_h},",","=") .. "  |  " .. tostring(clip_max * (t_w * t_h + margin_w)) .. "  |  " .. tostring(a_w * a_h))
+		if (clip_max * t_w * t_h) > (a_w * a_h) * 0.15 then --roughly, above this percentage, ammo ticks would obscure the ammo counter text
+			create_ammo_bar()
+		else
+			create_ammo_ticks()
+		end
+	
 	end
 		
 	return panel
@@ -4855,7 +4898,7 @@ function NobleHUD:_set_weapon_mag(slot,amount,max_amount)
 --depletes toward the left
 		ammo_bar:set_texture_rect(0,0,bar_w * ratio,bar_h)
 		ammo_bar:set_w(bar_w * ratio)
-		--ammo_bar:set_x(bar_w * (1-ratio))
+		--ammo_bar:set_x(bar_w * (1  -ratio))
 		--ammo_bar:set_w(bar_w * amount/max_amount)
 	elseif alive(ammo_radial) then 
 		ammo_radial:set_color(Color(ratio,max_amount,0))

@@ -469,15 +469,14 @@ Hooks:PostHook(HUDTeammate,"set_ammo_amount_by_type","noblehud_set_ammo",functio
 	end
 	local slot = (type == "primary" and 2) or (type == "secondary" and 1)
 	
+	NobleHUD:_set_weapon_mag(slot,current_clip,max_clip)
 	if NobleHUD:UseWeaponRealAmmoCounter() then 
-		local total_left = math.max(0,current_left,current_left - current_clip)
+		local total_left = math.max(0,current_left - current_clip)
 --			if current_clip <= math.round(max_clip / 4) and current_clip ~= 0 then
 		
-		NobleHUD:_set_weapon_mag(slot,current_clip)
 		NobleHUD:_set_weapon_reserve(slot,total_left)
 	else
 		NobleHUD:_set_weapon_reserve(slot,math.max(current_left,0))
-		NobleHUD:_set_weapon_mag(slot,current_clip,max_clip)
 	end
 	
 
