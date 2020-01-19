@@ -509,7 +509,7 @@ NobleHUD._bullet_textures = {
 	},
 	flamethrower = {
 		use_bar = true,
-		texture = "guis/textures/ammo_flame",
+		texture = "guis/textures/test_blur_df" or "guis/textures/ammo_flame",
 		texture_rect_DISABLED = {
 			1,2,3,4
 		},
@@ -524,7 +524,7 @@ NobleHUD._bullet_textures = {
 	},
 	minigun = {
 		use_bar = true,
-		texture = "guis/textures/bullet_tick" or "guis/textures/ammo_minigun",
+		texture = "guis/textures/test_blur_df" or "guis/textures/bullet_tick" or "guis/textures/ammo_minigun",
 		texture_rect_DISABLED = {
 			1,2,3,4
 		},
@@ -4820,6 +4820,8 @@ function NobleHUD:_create_ammo_ticks(weapon)
 	elseif texture_data.use_bar then 
 		create_ammo_bar()
 	else
+		
+
 		local t_w = texture_data.icon_w
 		local t_h = texture_data.icon_h
 		
@@ -4827,7 +4829,7 @@ function NobleHUD:_create_ammo_ticks(weapon)
 		local a_h = weapon_panel:h()
 		
 		self:log("Creating default ammo panel... " .. self.table_concat({clip_max = clip_max, t_w = t_w, t_h = t_h, a_w = a_w, a_h = a_h},",","=") .. "  |  " .. tostring(clip_max * (t_w * t_h + margin_w)) .. "  |  " .. tostring(a_w * a_h))
-		if (clip_max * t_w * t_h) > (a_w * a_h) * 0.15 then --roughly, above this percentage, ammo ticks would obscure the ammo counter text
+		if (clip_max * t_w * t_h) > (a_w * a_h) * 0.15 and (texture_data.use_bar ~= false) then --roughly, above this percentage, ammo ticks would obscure the ammo counter text
 			create_ammo_bar()
 		else
 			create_ammo_ticks()
@@ -7634,6 +7636,7 @@ function NobleHUD:_create_tabscreen(hud)
 	})
 	self._tabscreen = tabscreen
 	
+	
 	local v_margin = 2
 	
 	--todo get settings
@@ -7972,6 +7975,59 @@ function NobleHUD:_create_tabscreen(hud)
 		create_player_box(i)
 	end
 	
+	
+--[[
+	local blur_box = tabscreen:bitmap({
+	
+	})
+	
+	local bodybags_text
+	
+	local cs_level_label = managers.localization:text("menu_cs_level", {level = managers.experience:cash_string(managers.crime_spree:server_spree_level(), "")})
+
+	local job_chain = managers.job:current_job_chain_data()
+	local day = managers.job:current_stage()
+	local days = job_chain and #job_chain or 0
+	local day_title =managers.localization:to_upper_text("hud_days_title", {
+		DAY = day,
+		DAYS = days
+	})
+	
+	local ghostable_icon = managers.job:is_level_ghostable(managers.job:current_level_id())
+	local is_whisper_mode = managers.groupai and managers.groupai:state():whisper_mode()
+	local ghost_color = is_whisper_mode and Color.white or tweak_data.screen_colors.important_1
+	local ghost = placer:add_right(self._left:bitmap({
+		texture = "guis/textures/pd2/cn_minighost",
+		name = "ghost_icon",
+		h = 16,
+		blend_mode = "add",
+		w = 16,
+		color = ghost_color
+	}))
+	
+	
+	
+	local job_stars = managers.job:current_job_stars()
+	local difficulty_stars = managers.job:current_difficulty_stars()
+	local payout = managers.localization:text("hud_day_payout", {MONEY = managers.experience:cash_string(managers.money:get_potential_payout_from_current_stage())})
+	local active_objectives = managers.objectives:get_active_objectives() --data.text, data.description
+	--buffs/debuffs?
+
+	local mandatory_bags_data = managers.loot:get_mandatory_bags_data()
+	local mandatory_amount = mandatory_bags_data and mandatory_bags_data.amount
+	local secured_amount = managers.loot:get_secured_mandatory_bags_amount()
+	local bonus_amount = managers.loot:get_secured_bonus_bags_amount()
+	
+	local secured_bags_money = managers.experience:cash_string(managers.money:get_secured_mandatory_bags_money() + managers.money:get_secured_bonus_bags_money())
+
+	local instant_cash = managers.experience:cash_string(managers.loot:get_real_total_small_loot_value())
+	
+	
+	
+	local track_now_playing
+	local achievement_list --or mutators list
+	
+--]]	
 	
 end
 
@@ -9304,6 +9360,13 @@ end
 
 
 --things below this line aren't implemented yet
+
+
+--		WAITING
+
+function NobleHUD:_create_waiting(hud)
+	local waiting_panel
+end
 
 
 --		BUFFS
