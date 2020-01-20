@@ -3,9 +3,8 @@
 
 ***** TODO: *****
 	Notes:
-		--lmg does not update ammo count until done
-	
-	
+		teammate infamy spade appears in waypoint
+		player icon does not update
 	
 		--HIGH SCORES
 			- convert scores to credits after each run; add "purchaseable" items for credits
@@ -3613,7 +3612,7 @@ function NobleHUD:OnLoaded()
 --layout hud stuff
 	self:_sort_teammates()
 	if managers.hud:script("guis/mask_off_hud") then 
-		if alive(managers.hud:script("guis/mask_off_hud")) and alive(managers.hud:script("guis/mask_off_hud"):child("mask_on_text")) then
+		if alive(managers.hud:script("guis/mask_off_hud").panel) and alive(managers.hud:script("guis/mask_off_hud").panel:child("mask_on_text")) then
 			managers.hud:script("guis/mask_off_hud").panel:child("mask_on_text"):set_text("")
 		end
 	end
@@ -8399,6 +8398,12 @@ function NobleHUD:AnimateHideTabscreen()
 --	self:animate(self._tabscreen,"animate_fadeout",callback(NobleHUD,NobleHUD,"HideTabscreen"),0.25,self._tabscreen:alpha())
 end
 
+function NobleHUD:SetTeammatePing(id,ping)
+	local player_box = self._tabscreen:child("scoreboard"):child("player_box_" .. id)
+	if alive(player_box) then
+		player_box:child("ping_box"):child("ping_label"):set_text(ping)
+	end
+end
 
 function NobleHUD:animate_show_tabscreen(o,t,dt,start_t,duration,end_alpha,...)
 	for _,child in pairs(self._ws:panel():children()) do 
