@@ -10,9 +10,6 @@
 		--move scoreboard based on score, not peerid?
 		--
 		
-		- 
-		
-		
 --todo remove clantag
 --todo remove doubled letters
 		-PONR label goes where "BONUS ROUND" was in reach?
@@ -138,6 +135,7 @@
 		* Visual ammo counter is out of control for large-mag weapons
 			* Mag count is kind of hard to see, might want to have an option to make the big number the mag
 			* Above x bullets should just be a bar tbh
+			* Saw should use a radial meter
 			* Realign bullet tick alignments
 		* Reticle/Weapon stuff
 			* DMR should be scaled down ever so slightly
@@ -159,25 +157,29 @@
 
 		
 	&& CREATE ASSETS: &&
+			- Plasma Pistol
+			- Minigun
+			- Flamethrower
+		-- HUD waypoints
+			- dotchevron (EG o> KAT) 
+			- Plasma Repeater
+				* Circle
+				* Four arrows (single texture)
 
+
+			
 		-- Firemode indicator
 		-- Crosshair textures
 			- REMAKE ROCKET RETICLE
-			- Minigun
-			- Plasma Rifle/Repeater
-				* Circle
-				* Four arrows (single texture)
-			- Plasma Pistol
 			- Chevron
 			- Needler
 			- Rocket
 			- Spiker
-			- Flamethrower
 			- Plasma Launcher
 			- Beam Launcher
 			- Target Designator
 
-		-- Ammo type tick variant textures
+		-- [LOW PRIORITY] Ammo type tick variant textures
 			- DMR
 			- AR
 			- Pistol
@@ -186,10 +188,6 @@
 			- Car
 			- Saw
 			- Shotgun (rename)
-
-		-- HUD waypoints
-			- dotchevron (EG o> KAT) 
-			
 --grenade/ability outline (baked blue color for vertex radial render template)
 		-- Replacement tube for auntie dot
 --score banner (tiny beveled corner)
@@ -262,10 +260,8 @@ NobleHUD.settings = {
 	shield_low_threshold = 0.3,
 	shield_charge_sound_enabled = true,
 	shield_low_sound_enabled = true,
-	shield_empty_sound_enabled = true,
-	unusual = 1
+	shield_empty_sound_enabled = true
 }
-
 
 NobleHUD.chat_notification_sounds = {
 	"advance.ogg",
@@ -511,7 +507,7 @@ NobleHUD._bullet_textures = {
 	},
 	flamethrower = {
 		use_bar = true,
-		texture = "guis/textures/test_blur_df" or "guis/textures/ammo_flame",
+		texture = "guis/textures/ammo_flame",
 		texture_rect_DISABLED = {
 			1,2,3,4
 		},
@@ -526,7 +522,7 @@ NobleHUD._bullet_textures = {
 	},
 	minigun = {
 		use_bar = true,
-		texture = "guis/textures/test_blur_df" or "guis/textures/bullet_tick" or "guis/textures/ammo_minigun",
+		texture = "guis/textures/bullet_tick" or "guis/textures/ammo_minigun",
 		texture_rect_DISABLED = {
 			1,2,3,4
 		},
@@ -1135,8 +1131,8 @@ NobleHUD.buff_data = {
 NobleHUD._active_buffs = {}
 
 NobleHUD._crosshair_override_data = {
-	rpg7 = {single = "rocket", auto = "rocket", burst = "rocket"},
-	ray = {single = "rocket", auto = "rocket", burst = "rocket"}
+	rpg7 = {"rocket"},
+	ray = {"rocket"}
 }
 
 NobleHUD._crosshair_textures = { --organized by reach crosshairs
@@ -1152,7 +1148,23 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 				--main
 			else
 				bitmap:set_center(c_x + (math.sin(angle) * distance),c_y - (math.cos(angle) * distance))
+--				bitmap:set_x(c_x + (math.sin(angle) * distance))
+--				bitmap:set_y(c_y - (math.cos(angle) * distance))
 			end
+			--[[
+			local w = crosshair_data.w or 4
+			local h = crosshair_data.h or 16
+			if index == 2 then 
+				bitmap:set_y(c_y - (distance * (1 + bloom)) + - (h / 2))
+			elseif index == 3 then 
+				bitmap:set_x(c_x + (distance * (1 + bloom)))
+			elseif index == 4 then
+				bitmap:set_y(c_y + (distance * (1 + bloom)))
+			elseif index == 5 then 
+				bitmap:set_x(c_x - (distance * (1 + bloom)) + - (w / 2))
+			end
+			--]]
+--			bitmap:set_center(NobleHUD._crosshair_panel:w()/2,NobleHUD._crosshair_panel:h()/2)
 		end,
 		parts = {
 			{
@@ -1195,49 +1207,16 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 			}
 		}
 	},
-	dmr = { --circle; four circle subquadrants
+	smg = {
 		bloom_func = function(index,bitmap,data)
 			local bloom = data.bloom
-			local max_distance = 32
-			if index == 1 then 
-				bitmap:set_alpha(0.75 - bloom)
-			elseif index == 2 then 
-				bitmap:set_size(16 + (max_distance * bloom),16 + (max_distance * bloom))
-				bitmap:set_rotation(bloom * 90)
-			end
-			bitmap:set_center(NobleHUD._crosshair_panel:w()/2,NobleHUD._crosshair_panel:h()/2)
-		end,
-		parts = {
-			{
-				is_center = true,
-				texture = "guis/textures/dmr_crosshair_1",
-				w = 32,
-				h = 32
-			},
-			{
-				is_center = true,
-				texture = "guis/textures/dmr_crosshair_2",
-				w = 16,
-				h = 16
-			}
-		}
-	},
-	smg = {
-		bloom_func = function(index,bitmap,data) 
-		--not sure what to do for the bloom, since the SMG was not in reach, 
-		--and other games do not feature reticle bloom.
-		--this one's a bit of a placeholder.
-		--in fact, i don't even like it that much. it's TOO bloom-y. no bloom for you.
-
-			local bloom = data.bloom 
 			local crosshair_data = data.crosshair_data and data.crosshair_data.parts[index] or {}
-			local distance = (crosshair_data.distance or 16) * (1 + (bloom * 1.5))
+			local distance = (crosshair_data.distance or 16) * (1 + (bloom * 3))
 			local angle = crosshair_data.angle or crosshair_data.rotation or 60
 			local c_x = NobleHUD._crosshair_panel:w()/2
 			local c_y = NobleHUD._crosshair_panel:h()/2
 			bitmap:set_size((crosshair_data.w or 1) * (1 + bloom),(crosshair_data.h or 1) * (1 + bloom))
 			bitmap:set_center(c_x + (math.sin(angle) * distance),c_y - (math.cos(angle) * distance))
-			
 		end,
 		parts = {
 			{
@@ -1267,6 +1246,33 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 				h = 8,
 				distance = 16,
 				rotation = 270
+			}
+		}
+	},
+	dmr = { --circle; four circle subquadrants
+		bloom_func = function(index,bitmap,data)
+			local bloom = data.bloom
+			local max_distance = 32
+			if index == 1 then 
+				bitmap:set_alpha(0.75 - bloom)
+			elseif index == 2 then 
+				bitmap:set_size(16 + (max_distance * bloom),16 + (max_distance * bloom))
+				bitmap:set_rotation(bloom * 90)
+			end
+			bitmap:set_center(NobleHUD._crosshair_panel:w()/2,NobleHUD._crosshair_panel:h()/2)
+		end,
+		parts = {
+			{
+				is_center = true,
+				texture = "guis/textures/dmr_crosshair_1",
+				w = 32,
+				h = 32
+			},
+			{
+				is_center = true,
+				texture = "guis/textures/dmr_crosshair_2",
+				w = 16,
+				h = 16
 			}
 		}
 	},
@@ -1389,8 +1395,8 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 			{
 				is_center = true,
 				texture = "guis/textures/rocket_crosshair",
-				w = 48,
-				h = 48
+				w = 8,
+				h = 8
 			}
 		}
 	},
@@ -1418,6 +1424,7 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 		parts = {
 			{
 				texture = "guis/textures/plasma_crosshair_1",
+				texture_rect = {0,0,4,8},
 				w = 6,
 				h = 12,
 				distance = 16,
@@ -1425,6 +1432,7 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 			},
 			{
 				texture = "guis/textures/plasma_crosshair_1",
+				texture_rect = {0,0,4,8},
 				w = 6,
 				h = 12,
 				distance = 16,
@@ -1432,6 +1440,7 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 			},
 			{
 				texture = "guis/textures/plasma_crosshair_1",
+				texture_rect = {0,0,4,8},
 				w = 6,
 				h = 12,
 				distance = 16,
@@ -1443,6 +1452,7 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 		parts = {
 			{
 				texture = "guis/textures/plasma_crosshair_1",
+				texture_rect = {0,0,4,8},
 				w = 6,
 				h = 16,
 				distance = 16,
@@ -1450,6 +1460,7 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 			},
 			{
 				texture = "guis/textures/plasma_crosshair_1",
+				texture_rect = {0,0,4,8},
 				w = 6,
 				h = 16,
 				distance = 16,
@@ -1457,6 +1468,7 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 			},
 			{
 				texture = "guis/textures/plasma_crosshair_1",
+				texture_rect = {0,0,4,8},
 				w = 6,
 				h = 16,
 				distance = 16,
@@ -1464,6 +1476,7 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 			},
 			{
 				texture = "guis/textures/plasma_crosshair_1",
+				texture_rect = {0,0,4,8},
 				w = 6,
 				h = 16,
 				distance = 16,
@@ -1490,11 +1503,13 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 				is_center = true,
 				alpha = 0.6,
 				texture = "guis/textures/plasma_crosshair_2",
+				texture_rect = {0,0,4,8},
 				w = 36,
 				h = 36
 			},
 			{
 				texture = "guis/textures/plasma_crosshair_1",
+				texture_rect = {0,0,4,8},
 				w = 4,
 				h = 12,
 				distance = 12,
@@ -1502,6 +1517,7 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 			},
 			{
 				texture = "guis/textures/plasma_crosshair_1",
+				texture_rect = {0,0,4,8},
 				w = 4,
 				h = 12,
 				distance = 12,
@@ -1509,6 +1525,7 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 			},
 			{
 				texture = "guis/textures/plasma_crosshair_1",
+				texture_rect = {0,0,4,8},
 				w = 4,
 				h = 12,
 				distance = 12,
@@ -1516,6 +1533,7 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 			},
 			{
 				texture = "guis/textures/plasma_crosshair_1",
+				texture_rect = {0,0,4,8},
 				w = 4,
 				h = 12,
 				distance = 12,
@@ -1537,29 +1555,33 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 		parts = {
 			{
 				texture = "guis/textures/plasma_crosshair_1",
+				texture_rect = {0,0,4,8},
 				w = 4,
-				h = 8,
+				h = 4,
 				distance = 10,
 				rotation = 180
 			},
 			{
 				texture = "guis/textures/plasma_crosshair_1",
+				texture_rect = {0,0,4,8},
 				w = 4,
-				h = 8,
+				h = 4,
 				distance = 10,
 				rotation = 270
 			},
 			{
 				texture = "guis/textures/plasma_crosshair_1",
+				texture_rect = {0,0,4,8},
 				w = 4,
-				h = 8,
+				h = 4,
 				distance = 10,
 				rotation = 0
 			},
 			{
 				texture = "guis/textures/plasma_crosshair_1",
+				texture_rect = {0,0,4,8},
 				w = 4,
-				h = 8,
+				h = 4,
 				distance = 10,
 				rotation = 90
 			}
@@ -1583,62 +1605,7 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 			}
 		}
 	},
-	needle_rifle = {
-		bloom_func = function(index,bitmap,data)
-			local crosshair_data = data.crosshair_data and data.crosshair_data.parts[index] or {}
-			local angle = crosshair_data.angle or crosshair_data.rotation or 60
-			local c_x = NobleHUD._crosshair_panel:w()/2
-			local c_y = NobleHUD._crosshair_panel:h()/2
-			local bloom = data.bloom
-			if index == 1 then 
-				--main
-				bitmap:set_size((crosshair_data.w or 1) * (1 + bloom),(crosshair_data.h or 1) * (1 + bloom))
-				bitmap:set_center(NobleHUD._crosshair_panel:w()/2,NobleHUD._crosshair_panel:h()/2)
-			else
-				bloom = data.bloom * 1.5
-				local distance = (crosshair_data.distance or 10) * (1 + bloom)
-				bitmap:set_center(c_x + (math.sin(angle) * distance),c_y - (math.cos(angle) * distance))
-			end
-		end,
-		parts = {
-			{
-				is_center = true,
-				alpha = 0.75,
-				texture = "guis/textures/nrif_crosshair_1",
-				w = 6,
-				h = 6
-			},
-			{
-				texture = "guis/textures/nrif_crosshair_2",
-				w = 12,
-				h = 6,
-				distance = 8,
-				rotation = 0
-			},
-			{
-				texture = "guis/textures/nrif_crosshair_2",
-				w = 12,
-				h = 6,
-				distance = 8,
-				rotation = 90
-			},
-			{
-				texture = "guis/textures/nrif_crosshair_2",
-				w = 12,
-				h = 6,
-				distance = 8,
-				rotation = 180
-			},
-			{
-				texture = "guis/textures/nrif_crosshair_2",
-				w = 12,
-				h = 6,
-				distance = 8,
-				rotation = 270
-			}
-		}
-	},
-	beam_rifle = {
+	beam_rifle = { --two hemispheres
 		parts = {
 			{
 				texture = "guis/textures/sword_crosshair",
@@ -3414,16 +3381,6 @@ function NobleHUD:GetScoreDisplayMode()
 	return tonumber(self.settings.score_display_mode)
 end
 
-function NobleHUD:VerifyUnusual()
-	local unusual = self.settings.unusual
-	local valid = {}
-	if not valid[unusual] then 
-		self.settings.unusual = 0
-		self:SaveSettings()
-		return false
-	end
-	return unusual
-end
 
 		--SET SETTINGS
 function NobleHUD:SetCrosshairEnabled(enabled)
@@ -4826,8 +4783,31 @@ function NobleHUD:_create_ammo_ticks(weapon)
 		visible = false,
 		alpha = 0.3
 	})
-
-	local function create_ammo_radial()
+	
+	if texture_data.use_bar then 
+		local ammo_bar = panel:bitmap({
+			name = "ammo_bar",
+			texture = texture,
+			texture_rect = texture_rect,
+			w = texture_data.icon_w,
+			h = texture_data.icon_h,
+			layer = 2,
+			color = self.color_data.hud_weapon_color,
+			alpha = 1
+		})
+		local ammo_bg = panel:bitmap({
+			name = "ammo_bar",
+			texture = texture,
+			texture_rect = texture_rect,
+			w = texture_data.icon_w,
+			h = texture_data.icon_h,
+			layer = 1,
+			color = Color(0,0.3,0.7),
+			alpha = 0.3
+		})
+		ammo_bar:set_y(panel:h() - ammo_bar:h())
+		ammo_bg:set_y(panel:h() - ammo_bg:h())
+	elseif texture_data.use_radial then 
 		local ammo_radial = panel:bitmap({
 			name = "ammo_radial",
 			render_template = "VertexColorTexturedRadial",
@@ -4839,51 +4819,7 @@ function NobleHUD:_create_ammo_ticks(weapon)
 			color = Color.white,
 			alpha = 1
 		})
-	
---		if alive(weapon_panel:child("mag_label")) then 
---			weapon_panel:child("mag_label"):show()
---		end
-	end
-	local function create_ammo_bar(use_generic_bar)
-		local _texture = texture
-		local _rect = texture_rect
-		local _w = texture_data.icon_w
-		local _h = texture_data.icon_h
-		if use_generic_bar then 
-			_texture = "guis/textures/test_blur_df"
-			_rect = nil
-			_w = 100
-			_h = 8
-		end
-		local ammo_bar = panel:bitmap({
-			name = "ammo_bar",
-			texture = _texture,
-			texture_rect = _rect,
-			w = _w,
-			h = _h,
-			layer = 2,
-			color = self.color_data.hud_weapon_color,
-			alpha = 1
-		})
-		local ammo_bg = panel:bitmap({
-			name = "ammo_bar",
-			texture = _texture,
-			texture_rect = _rect,
-			w = _w,
-			h = _h,
-			layer = 1,
-			color = Color(0,0.3,0.7),
-			alpha = 0.3
-		})
-		ammo_bar:set_y(panel:h() - ammo_bar:h())
-		ammo_bg:set_y(panel:h() - ammo_bg:h())
-		
-		if alive(weapon_panel:child("mag_label")) then 
-			weapon_panel:child("mag_label"):show()
-		end
-	end
-	
-	local function create_ammo_ticks()
+	else
 		local row = 1
 		local column = 1
 		for i = 1,clip_max do 
@@ -4910,28 +4846,6 @@ function NobleHUD:_create_ammo_ticks(weapon)
 			ammo_icon:set_y(panel:h() - (row * (margin_h + icon_h))) --from bottom
 			column = column + 1
 		end
-	end
-
-	if texture_data.use_radial then 
-		create_ammo_radial()
-	elseif texture_data.use_bar then 
-		create_ammo_bar()
-	else
-		
-
-		local t_w = texture_data.icon_w
-		local t_h = texture_data.icon_h
-		
-		local a_w = weapon_panel:w()
-		local a_h = weapon_panel:h()
-		
---		self:log("Creating default ammo panel... " .. self.table_concat({clip_max = clip_max, t_w = t_w, t_h = t_h, a_w = a_w, a_h = a_h},",","=") .. "  |  " .. tostring(clip_max * (t_w * t_h + margin_w)) .. "  |  " .. tostring(a_w * a_h))
-		if (clip_max * t_w * t_h) > (a_w * a_h) * 0.15 and (texture_data.use_bar ~= false) then --roughly, above this percentage, ammo ticks would obscure the ammo counter text
-			create_ammo_bar(true)
-		else
-			create_ammo_ticks()
-		end
-	
 	end
 		
 	return panel
@@ -4997,7 +4911,7 @@ function NobleHUD:_set_weapon_mag(slot,amount,max_amount)
 --depletes toward the left
 		ammo_bar:set_texture_rect(0,0,bar_w * ratio,bar_h)
 		ammo_bar:set_w(bar_w * ratio)
-		--ammo_bar:set_x(bar_w * (1  -ratio))
+		--ammo_bar:set_x(bar_w * (1-ratio))
 		--ammo_bar:set_w(bar_w * amount/max_amount)
 	elseif alive(ammo_radial) then 
 		ammo_radial:set_color(Color(ratio,max_amount,0))
@@ -5375,10 +5289,32 @@ end
 
 --todo user prefs
 function NobleHUD:_get_crosshair_type_from_weapon_base(base,fire_mode)
+--	if true then return "dmr" end
+--	local categories = weapon and weapon:base() and weapon:base():categories()
+--		if weapon:is_category(cat) then 
+	--todo determine whether to use AR type or DMR type
+		--firemode?
+		--rof? 
+		--accuracy?
+		--[[
+	local player = managers.player:local_player() 
+	local inventory = player:inventory()
+	local weapons = inventory:available_selections()
+	base = base or (weapons[slot] and weapons[slot].unit:base())
+	--]]
 	if not base then 
 		self:log("ERROR: _get_crosshair_type_from_weapon_base(" .. concat({base,slot},",") .. "): bad base/slot")
 		return
 	end
+	local tweakdata = base:weapon_tweak_data()
+	
+	local override = self._crosshair_override_data[weapon_id]
+	local override_result = override and crosshair_from_category(override,fire_mode)
+	if override_result then 
+		return override_result
+	end
+	
+	local categories = base:categories()
 	local function crosshair_from_category(cat,mode)
 		if cat == "assault_rifle" then 
 			if mode == "single" then
@@ -5388,7 +5324,7 @@ function NobleHUD:_get_crosshair_type_from_weapon_base(base,fire_mode)
 			end
 		elseif cat == "smg" then 
 			if mode == "single" then 
-				return "needle_rifle"
+				return "dmr"
 			else
 				return "smg"
 			end
@@ -5413,19 +5349,9 @@ function NobleHUD:_get_crosshair_type_from_weapon_base(base,fire_mode)
 		elseif cat == "bow" then 
 			return "plasma_pistol"
 		elseif cat == "xbow" then 
-			return "focus_rifle"
+			return "plasma_launcher" or "beam_rifle"
 		end		
-	end	
-	local tweakdata = base:weapon_tweak_data()
-	
-	local weapon_id = base:get_name_id() or ""
-	if self._crosshair_override_data[weapon_id] then 
-		if self._crosshair_override_data[weapon_id][fire_mode] then	
-			return self._crosshair_override_data[weapon_id][fire_mode]
-		end
 	end
-	
-	local categories = base:categories()
 
 	if base:gadget_overrides_weapon_functions() then 
 		
@@ -5657,7 +5583,7 @@ if true then return end
 	end
 end
 
-function NobleHUD:is_weapon_crosshair_override_present(id) --not used
+function NobleHUD:is_weapon_crosshair_override_present(id)
 	return self._crosshair_override_data[id]
 end
 
@@ -7721,7 +7647,6 @@ function NobleHUD:_create_tabscreen(hud)
 	})
 	self._tabscreen = tabscreen
 	
-	
 	local v_margin = 2
 	
 	--todo get settings
@@ -8061,59 +7986,6 @@ function NobleHUD:_create_tabscreen(hud)
 	end
 	
 	
---[[
-	local blur_box = tabscreen:bitmap({
-	
-	})
-	
-	local bodybags_text
-	
-	local cs_level_label = managers.localization:text("menu_cs_level", {level = managers.experience:cash_string(managers.crime_spree:server_spree_level(), "")})
-
-	local job_chain = managers.job:current_job_chain_data()
-	local day = managers.job:current_stage()
-	local days = job_chain and #job_chain or 0
-	local day_title =managers.localization:to_upper_text("hud_days_title", {
-		DAY = day,
-		DAYS = days
-	})
-	
-	local ghostable_icon = managers.job:is_level_ghostable(managers.job:current_level_id())
-	local is_whisper_mode = managers.groupai and managers.groupai:state():whisper_mode()
-	local ghost_color = is_whisper_mode and Color.white or tweak_data.screen_colors.important_1
-	local ghost = placer:add_right(self._left:bitmap({
-		texture = "guis/textures/pd2/cn_minighost",
-		name = "ghost_icon",
-		h = 16,
-		blend_mode = "add",
-		w = 16,
-		color = ghost_color
-	}))
-	
-	
-	
-	local job_stars = managers.job:current_job_stars()
-	local difficulty_stars = managers.job:current_difficulty_stars()
-	local payout = managers.localization:text("hud_day_payout", {MONEY = managers.experience:cash_string(managers.money:get_potential_payout_from_current_stage())})
-	local active_objectives = managers.objectives:get_active_objectives() --data.text, data.description
-	--buffs/debuffs?
-
-	local mandatory_bags_data = managers.loot:get_mandatory_bags_data()
-	local mandatory_amount = mandatory_bags_data and mandatory_bags_data.amount
-	local secured_amount = managers.loot:get_secured_mandatory_bags_amount()
-	local bonus_amount = managers.loot:get_secured_bonus_bags_amount()
-	
-	local secured_bags_money = managers.experience:cash_string(managers.money:get_secured_mandatory_bags_money() + managers.money:get_secured_bonus_bags_money())
-
-	local instant_cash = managers.experience:cash_string(managers.loot:get_real_total_small_loot_value())
-	
-	
-	
-	local track_now_playing
-	local achievement_list --or mutators list
-	
---]]	
-	
 end
 
 function NobleHUD:_set_tabscreen_teammate_name(id,name)
@@ -8204,49 +8076,12 @@ end
 function NobleHUD:AnimateShowTabscreen()
 --	self._tabscreen:set_alpha(0)
 	self:ShowTabscreen()
-
-	self:animate(self._tabscreen,"animate_show_tabscreen",nil,0.25,self:GetHUDAlpha())
---	self:animate(self._tabscreen,"animate_fadein",nil,0.25,self:GetHUDAlpha())
---	self:animate(self._ws:panel(),"animate_fadeout",nil,0.25,self._ws:panel():alpha())
+	self:animate(self._tabscreen,"animate_fadein",nil,0.5,self:GetHUDAlpha())
 end
 
 function NobleHUD:AnimateHideTabscreen()
 	self:ShowTabscreen()
-	self:animate(self._tabscreen,"animate_hide_tabscreen",callback(NobleHUD,NobleHUD,"HideTabscreen"),0.25,self._tabscreen:alpha())
---	self:animate(self._ws:panel(),"animate_fadein",nil,0.25,1)
---	self:animate(self._tabscreen,"animate_fadeout",callback(NobleHUD,NobleHUD,"HideTabscreen"),0.25,self._tabscreen:alpha())
-end
-
-
-function NobleHUD:animate_show_tabscreen(o,t,dt,start_t,duration,end_alpha,...)
-	for _,child in pairs(self._ws:panel():children()) do 
-		if child:name() == "crosshair_panel" then 
-			self:animate_fadeout(child,t,dt,start_t,duration,self:GetCrosshairAlpha(),...)
-		elseif child:name() == "stamina_panel" then 
-			child:hide()
-		elseif child:name() ~= "tabscreen" then 
-			self:animate_fadeout(child,t,dt,start_t,duration,1,...)
-		end
-	end
-	if self:animate_fadein(o,t,dt,start_t,duration,end_alpha,...) then 
-		return true
-	end
-end
-
-function NobleHUD:animate_hide_tabscreen(o,t,dt,start_t,duration,from_alpha,...)
-	for _,child in pairs(self._ws:panel():children()) do 
-	
-		if child:name() == "crosshair_panel" then 
-			self:animate_fadein(child,t,dt,start_t,duration,self:GetCrosshairAlpha(),...)
-		elseif child:name() == "stamina_panel" then 
-			child:show()
-		elseif child:name() ~= "tabscreen" then 
-			self:animate_fadein(child,t,dt,start_t,duration,1,...)
-		end
-	end
-	if self:animate_fadeout(o,t,dt,start_t,duration,from_alpha,...) then 
-		return true
-	end
+	self:animate(self._tabscreen,"animate_fadeout",self:HideTabscreen(),0.5,self._tabscreen:alpha())
 end
 
 function NobleHUD:ShowTabscreen(state)
@@ -9482,13 +9317,6 @@ end
 
 
 --things below this line aren't implemented yet
-
-
---		WAITING
-
-function NobleHUD:_create_waiting(hud)
-	local waiting_panel
-end
 
 
 --		BUFFS

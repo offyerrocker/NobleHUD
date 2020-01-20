@@ -1,8 +1,10 @@
 <mod name="Noble HUD" author="Offyerrocker" global_key="NobleHUD" color="Color(0.6,0.9,1)" >
 	<AssetUpdates id="26100" version="0.7b" provider="modworkshop" install_directory = "mods/NobleHUD/" version_is_number="false"/>
 	<AddFiles directory="assets">
-		<!-- <font path="fonts/eurostile_normal" load = "true"/> -->
-		 <!--<texture path="fonts/eurostile_normal" load = "true"/> -->
+		<!-- <font load = "true" path="fonts/font_eurostile_normal" unload="false" /> -->
+		<!-- <texture path="fonts/font_eurostile_normal"/> -->
+		<texture path="guis/textures/waypoint_chevron"/>
+		<texture path="guis/textures/waypoint_circle"/>
 		<texture path="guis/textures/skull_phalanx"/>
 		<texture path="guis/textures/medal_atlas"/>
 		<texture path="guis/textures/helper_tube"/>
@@ -26,7 +28,14 @@
 		<texture path="guis/textures/radar_blip_low"/>
 		<texture path="guis/textures/crosshair_circle_64"/>
 		<texture path="guis/textures/crosshair_circle_128"/>
+		<texture path="guis/textures/nrif_crosshair_1"/>
+		<texture path="guis/textures/nrif_crosshair_2"/>
+		<texture path="guis/textures/plasma_crosshair_1"/>
+		<texture path="guis/textures/plasma_crosshair_2"/>
 		<texture path="guis/textures/pis_crosshair_1"/>
+		<texture path="guis/textures/flame_crosshair"/>
+		<texture path="guis/textures/trt_crosshair"/>
+		<texture path="guis/textures/smg_crosshair"/>
 		<texture path="guis/textures/ar_crosshair_1"/>
 		<texture path="guis/textures/ar_crosshair_2"/>
 		<texture path="guis/textures/dmr_crosshair_1"/>
