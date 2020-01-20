@@ -13,11 +13,26 @@ Hooks:PostHook(HUDTeammate,"set_callsign","noblehud_setteammatecallsign",functio
 end)
 
 Hooks:PostHook(HUDTeammate,"set_name","noblehud_setteammatename",function(self,player_name)
-	if HUDManager.PLAYER_PANEL ~= self._id then 
-		local character_data = managers.criminals._characters[self._id]
-		local character_name = character_data and character_data.name
+	NobleHUD:_set_tabscreen_teammate_name(self._id or 5,player_name)
+	if HUDManager.PLAYER_PANEL == self._id then 
+		NobleHUD:_set_main_player_indicator(self._id)
+		NobleHUD:_set_scoreboard_character(self._id,managers.network:session():local_peer():id())
+--		NobleHUD:_set_teammate_name(self._id,NobleHUD:GetCallsign())
+		NobleHUD:_set_tabscreen_teammate_callsign(self._id,NobleHUD:GetCallsign())
+	else
+		local character_name  --managers.criminals:character_name_by_panel_id(self._id)
+		for id, data in pairs(managers.criminals._characters or {}) do 
+			if data.taken and data.data.panel_id == panel_id then 
+				character_name = data.name
+				if data.peer_id then 
+					NobleHUD:_set_scoreboard_character(self._id,data.peer_id,character_name)
+				else
+					NobleHUD:_set_scoreboard_character(self._id,nil,character_name)
+				end
+				break
+			end
+		end
 		local callsign = NobleHUD:make_callsign_name(player_name,NobleHUD._MIN_CALLSIGN_LEN,NobleHUD._MAX_CALLSIGN_LEN,character_name)
-		NobleHUD:_set_tabscreen_teammate_name(self._peer_id or self._id or 5,player_name)
 		NobleHUD:_set_teammate_name(self._id,callsign)
 	end
 end)

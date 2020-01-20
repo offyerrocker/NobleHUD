@@ -37,8 +37,8 @@ function HUDManager:_add_name_label(data,...)
 	local panel = hud.panel:panel({name = "name_label" .. id})
 
 --
-	local indicator_w = 24
-	local indicator_h = 48
+	local indicator_w = 16
+	local indicator_h = 32
 	local center_x = (panel:w() - indicator_w) / 2
 	local debug_rect = panel:rect({
 		name = "debug test",
@@ -78,8 +78,9 @@ function HUDManager:_add_name_label(data,...)
 		h = indicator_w,
 		alpha = 1
 	})
-	_G.derpaherp = _G.derpaherp or {}
-	_G.derpaherp[id] = halo_waypoint 
+--debug stuff pls ignore
+--	NobleHUD.derpaherp = NobleHUD.derpaherp or {}
+--	NobleHUD.derpaherp[id] = halo_waypoint 
 --
 
 	local radius = 24
@@ -189,6 +190,10 @@ function HUDManager:align_teammate_name_label(panel, interact, ...)
 	if NobleHUD:IsSafeMode() then 
 		return orig_align(self,panel,interact,...)
 	end
+	local halo = panel:child("halo_waypoint")
+	if not alive(halo) then 
+		return orig_align(self,panel,interact,...)
+	end
 	local double_radius = interact:radius() * 2
 	local text = panel:child("text")
 	local action = panel:child("action")
@@ -200,7 +205,6 @@ function HUDManager:align_teammate_name_label(panel, interact, ...)
 	local _, _, cw, ch = cheater:text_rect()
 
 --
-	local halo = panel:child("halo_waypoint")
 	halo:set_x(double_radius + 4) -- (halo:w() / 2) + 4)
 --	
 	
@@ -231,7 +235,7 @@ function HUDManager:align_teammate_name_label(panel, interact, ...)
 	end
 --
 	halo:set_y(text:y())
---	halo:set_x((panel:w() + halo:w()) / 2)
+--
 	if bag_number then
 		bag_number:set_bottom(text:bottom() - 1)
 		panel:set_w(panel:w() + bag_number:w() + bag:w() + 8)

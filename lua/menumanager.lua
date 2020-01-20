@@ -3,6 +3,10 @@
 
 ***** TODO: *****
 	Notes:
+		--lmg does not update ammo count until done
+	
+	
+	
 		--HIGH SCORES
 			- convert scores to credits after each run; add "purchaseable" items for credits
 		--tabscreen should be created (and referenced) by teammate panel id, not peer_id
@@ -162,20 +166,14 @@
 
 		-- Firemode indicator
 		-- Crosshair textures
-			- REMAKE ROCKET RETICLE
-			- Minigun
-			- Plasma Rifle/Repeater
-				* Circle
-				* Four arrows (single texture)
-			- Plasma Pistol
 			- Chevron
 			- Needler
-			- Rocket
 			- Spiker
-			- Flamethrower
 			- Plasma Launcher
 			- Beam Launcher
 			- Target Designator
+			- Fuel Rod Cannon
+			- Plasma Cannon (Mounted)
 
 		-- Ammo type tick variant textures
 			- DMR
@@ -187,9 +185,6 @@
 			- Saw
 			- Shotgun (rename)
 
-		-- HUD waypoints
-			- dotchevron (EG o> KAT) 
-			
 --grenade/ability outline (baked blue color for vertex radial render template)
 		-- Replacement tube for auntie dot
 --score banner (tiny beveled corner)
@@ -263,6 +258,7 @@ NobleHUD.settings = {
 	shield_charge_sound_enabled = true,
 	shield_low_sound_enabled = true,
 	shield_empty_sound_enabled = true,
+	--callsign_string = "S117", --automatically randomly generated
 	unusual = 1
 }
 
@@ -1655,7 +1651,7 @@ NobleHUD._radar_blips = {}
 NobleHUD._random_chars = {}
 
 for cat,s in pairs({
-	letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+	letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
 	numbers = "1234567890",
 	characters = "-=!@#%$^&*()_+{}:|<>?[];,/"
 }) do 
@@ -3425,6 +3421,13 @@ function NobleHUD:VerifyUnusual()
 	return unusual
 end
 
+function NobleHUD:GetCallsign(peer_id)
+	if peer_id then 
+		--todo
+	end
+	return self.settings.callsign_string
+end
+
 		--SET SETTINGS
 function NobleHUD:SetCrosshairEnabled(enabled)
 	self.crosshair_enabled = enabled
@@ -3610,7 +3613,9 @@ function NobleHUD:OnLoaded()
 --layout hud stuff
 	self:_sort_teammates()
 	if managers.hud:script("guis/mask_off_hud") then 
-		managers.hud:script("guis/mask_off_hud").panel:hide()
+		if alive(managers.hud:script("guis/mask_off_hud")) and alive(managers.hud:script("guis/mask_off_hud"):child("mask_on_text")) then
+			managers.hud:script("guis/mask_off_hud").panel:child("mask_on_text"):set_text("")
+		end
 	end
 end
 
@@ -5413,7 +5418,7 @@ function NobleHUD:_get_crosshair_type_from_weapon_base(base,fire_mode)
 		elseif cat == "bow" then 
 			return "plasma_pistol"
 		elseif cat == "xbow" then 
-			return "focus_rifle"
+			return "plasma_rifle"
 		end		
 	end	
 	local tweakdata = base:weapon_tweak_data()
@@ -5440,7 +5445,7 @@ function NobleHUD:_get_crosshair_type_from_weapon_base(base,fire_mode)
 			end
 		end
 	end
-	return "plasma_pistol"
+	return "plasma_rifle"
 end
 
 function NobleHUD:create_modepanel(slot,slotpanel,mode) --not actually used
@@ -6534,7 +6539,11 @@ function NobleHUD:_set_teammate_name(i,player_name)
 		self:log("ERROR: _add_teammate panel(" .. tostring(i) .. "): Panel does not exist")
 		return
 	end
+	self:_set_tabscreen_teammate_callsign(i,player_name)
 end
+
+
+
 
 function NobleHUD:_init_teammate(i,panel,is_player,width)
 	if not self._teammates_panel then return end
@@ -7128,7 +7137,12 @@ function NobleHUD:set_mission_name(level_name)
 	local player_box = self._tabscreen:child("scoreboard")
 	local difficulty_index = managers.job:current_difficulty_stars()
 	player_box:child("title_box"):child("title_label"):set_text(level_name .. " /// " .. string.rep(self.special_chars.skull .. " ",difficulty_index))
-	player_box:child("title_box"):child("title_label_2"):set_text(utf8.to_upper(Global.game_settings.difficulty))
+--	player_box:child("title_box"):child("title_label_2"):set_text(utf8.to_upper(Global.game_settings.difficulty))
+end
+
+function NobleHUD:set_mission_day(text)
+	local player_box = self._tabscreen:child("scoreboard")	
+	player_box:child("title_box"):child("title_label_2"):set_text(text)
 end
 
 function NobleHUD:_set_mission_name(text)
@@ -7728,7 +7742,7 @@ function NobleHUD:_create_tabscreen(hud)
 	local downs_w = 24
 	local icon_w = 32
 	local name_w = 256
-	local kills_w = 50
+	local callsign_w = 50
 	local score_w = 50
 	local ping_w = 64
 	local ping_bitmap_w = 6
@@ -7741,7 +7755,7 @@ function NobleHUD:_create_tabscreen(hud)
 	
 	local player_box_x = 32
 --	local player_box_y = 100
-	local player_box_w = downs_w + kills_w + icon_w + name_w + score_w + ping_w
+	local player_box_w = downs_w + callsign_w + icon_w + name_w + score_w + ping_w
 	local player_box_h = all_box_h
 	local font_size = 24
 	local scoreboard_w = 600
@@ -7758,7 +7772,9 @@ function NobleHUD:_create_tabscreen(hud)
 		visible = false,
 		alpha = 0.2
 	})
-	scoreboard:set_center(hud:w()/2,hud:h()/2)
+	scoreboard:set_x((hud:w() - scoreboard:w()) / 2)
+	scoreboard:set_y(all_box_h * 1.5) --margin from top of screen
+--	scoreboard:set_center(hud:w()/2,hud:h()/2)
 	
 	local title_box = scoreboard:panel({
 		name = "title_box",
@@ -7785,17 +7801,26 @@ function NobleHUD:_create_tabscreen(hud)
 		layer = 2
 	})
 	local _,_,_w,_ = title_label:text_rect()
+	
+	local job_chain = managers.job:current_job_chain_data()
+	local day = managers.job:current_stage()
+	local days = job_chain and #job_chain or 0
 	local title_label_2 = title_box:text({
 		name = "title_label_2",
-		text = "",
-		align = "left",
+		text = managers.localization:to_upper_text("hud_days_title", {
+			DAY = day,
+			DAYS = days
+		}),
+		align = "right",
 		vertical = "center",
-		x = title_label:x() + _w,
+		x = -4,
+--		x = title_label:x() + _w,
 		color = Color(0.5,0.5,0.5),
 		font = tweak_data.hud_players.ammo_font,
 		font_size = font_size,
 		layer = 2
 	})
+
 	
 	
 	local header_box = scoreboard:panel({
@@ -7830,7 +7855,7 @@ function NobleHUD:_create_tabscreen(hud)
 	local teamname_box = header_box:panel({
 		name = "teamname_box",
 		x = player_box_x,
-		w = kills_w + icon_w + name_w + score_w
+		w = callsign_w + icon_w + name_w + score_w
 	})
 	local teamname_bg = teamname_box:rect({
 		name = "teamname_bg",
@@ -7850,7 +7875,7 @@ function NobleHUD:_create_tabscreen(hud)
 	
 	local teamscore_box = header_box:panel({
 		name = "teamname_box",
-		x = player_box_x + downs_w + icon_w + name_w + kills_w,
+		x = player_box_x + downs_w + icon_w + name_w + callsign_w,
 		w = score_w,
 		layer = 2
 	})
@@ -7877,16 +7902,16 @@ function NobleHUD:_create_tabscreen(hud)
 		w = indicator_w,
 		h = all_box_h
 	})
-	local function create_player_box (peer_id)
-		local peer_color = tweak_data.chat_colors[peer_id] or Color.red
-		local peer_color_2 = (peer_color * brightness):with_alpha(1) or tweak_data.preplanning_peer_colors[peer_id]
+	local function create_player_box (id)
+		local peer_color = tweak_data.chat_colors[3] or Color.red --temp
+		local peer_color_2 = (peer_color * brightness):with_alpha(1) or tweak_data.preplanning_peer_colors[3]
 		--kills, icon, playername, character, kills/score, ping (visual)
 		local player_box = scoreboard:panel({
-			name = "player_box_" .. tostring(peer_id),
+			name = "player_box_" .. tostring(id),
 			w = player_box_w,
 			h = player_box_h,
 			x = player_box_x,
-			y = (header_box:bottom() + v_margin) + ((v_margin + player_box_h) * (peer_id - 1)),
+			y = (header_box:bottom() + v_margin) + ((v_margin + player_box_h) * (id - 1)),
 			layer = 1
 		})
 		local debug_playerbox = player_box:rect({
@@ -7907,10 +7932,13 @@ function NobleHUD:_create_tabscreen(hud)
 			layer = 2,
 			color = Color(0.3,0.3,0.3)
 		})
+		
+		local downs_texture,downs_rect = tweak_data.hud_icons:get_icon_data("csb_lives")
 		local downs_bitmap = downs_box:bitmap({
 			name = "downs_bitmap",
 			layer = 3,
-			texture = "guis/textures/health_cross",
+			texture = downs_texture, --"guis/textures/health_cross",
+			texture_rect = downs_rect,
 			y = (all_box_h - downs_w) / 2,
 			w = downs_w,
 			h = downs_w,
@@ -7938,16 +7966,21 @@ function NobleHUD:_create_tabscreen(hud)
 			color = peer_color
 		})
 		
+		--[[
 		local peer = peer_id and managers.network:session():peer(peer_id)
 		local pfp
 		if peer then 
 			Steam:friend_avatar(2, peer:user_id(), function (img) pfp = img end)
 		end
 		
+		--]]
+		
+		local icon_texture,icon_rect = tweak_data.hud_icons:get_icon_data("pd2_question")
 		local icon_bitmap = icon_box:bitmap({
 			name = "icon_bitmap",
 			layer = 3,
-			texture = pfp or "guis/textures/radar_blip_high",
+			texture = icon_texture,
+			texture_rect = icon_rect,
 			w = icon_w,
 			h = icon_w
 		})
@@ -7980,20 +8013,20 @@ function NobleHUD:_create_tabscreen(hud)
 			layer = 3
 		})
 		
-		local kills_box = player_box:panel({
-			name = "kills_box",
+		local callsign_box = player_box:panel({
+			name = "callsign_box",
 			layer = 2,
-			w = kills_w,
+			w = callsign_w,
 			x = name_box:right()
 		})
-		local kills_bg = kills_box:rect({
-			name = "kills_bg",
+		local callsign_bg = callsign_box:rect({
+			name = "callsign_bg",
 			layer = 2,
 			color = peer_color
 		})
-		local kills_label = kills_box:text({
-			name = "kills_label",
-			text = "0",
+		local callsign_label = callsign_box:text({
+			name = "callsign_label",
+			text = "S117",
 			align = "center",
 			vertical = "center",
 			font = tweak_data.hud_players.ammo_font,
@@ -8001,11 +8034,13 @@ function NobleHUD:_create_tabscreen(hud)
 			layer = 3
 		})
 		
+		
+		
 		local score_box = player_box:panel({
 			name = "score_box",
 			layer = 2,
 			w = score_w,
-			x = kills_box:right()
+			x = callsign_box:right()
 		})
 		local score_bg = score_box:rect({
 			name = "score_bg",
@@ -8051,9 +8086,6 @@ function NobleHUD:_create_tabscreen(hud)
 			x = ping_bitmap_w + (ping_w / 20),
 			layer = 4
 		})
-		if peer_id == managers.network:session():local_peer():id() then 
-			player_indicator:set_y(player_box:y())
-		end
 	end
 	
 	for i=1,4 do 
@@ -8061,10 +8093,129 @@ function NobleHUD:_create_tabscreen(hud)
 	end
 	
 	
+	local music_box = tabscreen:panel({
+		name = "music_box",
+		y = 0,
+		w = tabscreen:w(),
+		h = 30
+	})
+	local music_bg = music_box:rect({
+		name = "music_bg",
+		visible = true,
+		color = Color.red,
+		alpha = 0.1
+	})
+	local music_label = music_box:text({
+		name = "music_label",
+		text = "NOW PLAYING: Megalovania (Sans Undertale) (Revolver Ocelot)",
+		align = "center",
+		vertical = "center",
+		x = 32,
+		font = tweak_data.hud_players.ammo_font,
+		font_size = 16,
+		layer = 4
+	})
+	local music_texture,music_rect = tweak_data.hud_icons:get_icon_data("jukebox_playing_icon")
+	local music_icon = music_box:bitmap({
+		name = "music_icon",
+		layer = 3,
+		texture = music_texture,
+		texture_rect = music_rect,
+		w = 16,
+		h = 16
+	})
+	
+	
+	local mission_box = tabscreen:panel({
+		name = "mission_box",
+		x = 16,
+		y = 16,
+		w = 256,
+		h = tabscreen:h()
+	})
+	mission_box:set_h(tabscreen:h() - (mission_box:y() + 16))
+	
+	local mission_bg = mission_box:rect({
+		name = "mission_bg",
+		layer = -3,
+		color = self.color_data.normal
+	})
+	local mission_ghostable_icon = mission_box:bitmap({
+		texture = "guis/textures/pd2/cn_minighost",
+		name = "ghost_icon",
+		h = 16,
+		x = 16,
+		blend_mode = "add",
+		w = 16,
+		layer = 10,
+		color = self.color_data.haunted
+	})
+	local mission_title = mission_box:text({
+		name = "mission_title",
+		text = "MISSION STATUS",
+		y = 0,
+		align = "center",
+		font = tweak_data.hud_players.ammo_font,
+		font_size = 32,
+		layer = 4
+	})
+	local mission_bags_label = mission_box:text({
+		name = "mission_bags_label",
+		text = "10/10 (+1) bags",
+		y = 36,
+		font = tweak_data.hud_players.ammo_font,
+		font_size = 24,
+		layer = 4
+	})
+	local mission_bags_money_label = mission_box:text({
+		name = "mission_bags_money_label",
+		text = "Looted value: $192,135,123",
+		y = 60,
+		font = tweak_data.hud_players.ammo_font,
+		font_size = 24,
+		layer = 4
+	})
+	local mission_instant_cash_label = mission_box:text({
+		name = "mission_instant_cash_label",
+		text = "Instant Cash: $123,000",
+		y = 84,
+		font = tweak_data.hud_players.ammo_font,
+		font_size = 24,
+		layer = 4
+	})
+	
+	
+	local right_box_w = 300
+	--can be achievements or mutators
+	local right_box = tabscreen:panel({
+		name = "right_box",
+		w = right_box_w,
+		h = tabscreen:h(),
+		x = tabscreen:w() - right_box_w,
+		y = 0
+	})
+	local right_label = right_box:text({
+		name = "right_label",
+		text = "Tracked Achievements",
+		y = 16,
+		align = "center",
+		font = tweak_data.hud_players.ammo_font,
+		font_size = 32,
+		layer = 4
+	})
+	local right_bg = right_box:rect({
+		name = "right_bg",
+		color = Color.yellow,
+		alpha = 0.1
+	})
+	
+	
 --[[
 	local blur_box = tabscreen:bitmap({
 	
 	})
+	
+	
 	
 	local bodybags_text
 	
@@ -8114,12 +8265,29 @@ function NobleHUD:_create_tabscreen(hud)
 	
 --]]	
 	
+	
+	
+end
+
+function NobleHUD:_set_tabscreen_teammate_callsign(id,callsign)
+	local player_box = self._tabscreen:child("scoreboard"):child("player_box_" .. id)
+	if alive(player_box) then
+		player_box:child("callsign_box"):child("callsign_label"):set_text(callsign)
+	end
 end
 
 function NobleHUD:_set_tabscreen_teammate_name(id,name)
 	local player_box = self._tabscreen:child("scoreboard"):child("player_box_" .. id)
 	if alive(player_box) then
 		player_box:child("name_box"):child("name_label"):set_text(name)
+	end
+end
+
+function NobleHUD:_set_main_player_indicator(id)
+	local scoreboard = self._tabscreen:child("scoreboard")
+	local player_box = scoreboard:child("player_box_" .. tostring(id))
+	if alive(player_box) then
+		scoreboard:child("player_indicator"):set_y(player_box:y())
 	end
 end
 
@@ -8155,13 +8323,13 @@ function NobleHUD:update_characters()
 			elseif v.peer_id then 
 				peer_id = v.peer_id
 			end
-			self:_set_scoreboard_character(peer_id,name)
+--			self:_set_scoreboard_character(peer_id,name)
 		end
 	end
 end
 
-function NobleHUD:_set_scoreboard_character(peer_id,character_id)
-	local player_box = self._tabscreen:child("scoreboard"):child("player_box_" .. peer_id)
+function NobleHUD:_set_scoreboard_character(id,peer_id,character_id)
+	local player_box = self._tabscreen:child("scoreboard"):child("player_box_" .. tostring(id))
 	
 	
 	if alive(player_box) then 
@@ -8169,7 +8337,13 @@ function NobleHUD:_set_scoreboard_character(peer_id,character_id)
 		local mask_id = tweak_data.blackmarket.masks.character_locked[managers.criminals.convert_old_to_new_character_workname(character_id)]
 		local mask_icon = tweak_data.blackmarket:get_mask_icon(mask_id)
 		
+		local color_1 = tweak_data.chat_colors[5]
+		local color_2 = (color_1 * 0.8):with_alpha(1)
+		
 		if (peer_id and managers.network:session():peer(peer_id)) then
+			color_1 = tweak_data.chat_colors[peer_id]
+			color_2 = (color_1 * 0.8):with_alpha(1)
+			
 			local player_icon = icon_box:child("icon_bitmap")
 			
 			local peer = managers.network:session():peer(peer_id)
@@ -8184,10 +8358,18 @@ function NobleHUD:_set_scoreboard_character(peer_id,character_id)
 					end
 				)
 			end
+			
 		else
-			icon_box:child("icon_bitmap"):set_image(mask_icon)
-			player_box:child("name_box"):child("name_label"):set_text(managers.localization:text("menu_" .. character_id))
+			if mask_icon then 
+				icon_box:child("icon_bitmap"):set_image(mask_icon)
+			end
+			if character_id then 
+				player_box:child("name_box"):child("name_label"):set_text(managers.localization:text("menu_" .. character_id))
+			end
 		end
+		icon_box:child("icon_bg"):set_color(color_1)
+		player_box:child("callsign_box"):child("callsign_bg"):set_color(color_1)
+		player_box:child("name_box"):child("name_bg"):set_color(color_2)
 	end
 --	local character_icon = tweak_data.blackmarket:get_character_icon(character)
 end
@@ -8225,7 +8407,7 @@ function NobleHUD:animate_show_tabscreen(o,t,dt,start_t,duration,end_alpha,...)
 		elseif child:name() == "stamina_panel" then 
 			child:hide()
 		elseif child:name() ~= "tabscreen" then 
-			self:animate_fadeout(child,t,dt,start_t,duration,1,...)
+			self:animate_fadeout(child,t,dt,start_t,duration,child:alpha(),...)
 		end
 	end
 	if self:animate_fadein(o,t,dt,start_t,duration,end_alpha,...) then 
@@ -9723,6 +9905,11 @@ function NobleHUD:LoadSettings()
 			self.settings[k] = v
 		end
 	else
+		self:SaveSettings()
+	end
+
+	if not self.settings.callsign_string then 
+		self.settings.callsign_string = string.upper(self.random_character(true,false,false)) .. string.format("%03d",math.random(1000) - 1)
 		self:SaveSettings()
 	end
 end
