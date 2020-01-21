@@ -3,68 +3,31 @@
 
 ***** TODO: *****
 	Notes:
-		teammate infamy spade appears in waypoint
-		player icon does not update
-	
-		--HIGH SCORES
-			- convert scores to credits after each run; add "purchaseable" items for credits
-		--tabscreen should be created (and referenced) by teammate panel id, not peer_id
-		
-		--move scoreboard based on score, not peerid?
-		--
-		
-		- 
-		
-		
---todo remove clantag
---todo remove doubled letters
-		-PONR label goes where "BONUS ROUND" was in reach?
-		--fix poorly positioned radar_far blips/increase size?
-		radar_far blips should not clip outside the radar panel
-		unique vehicle blip texture so that they're not blurry?
-		show other eq on radar? check slotmask 
-
-	
-		hide score popup if outside viewing angle
-		add shield sounds slider?
-		
-		
-		if radar disabled, hide radar and realign panels: ability panel down, cartographer text indicator left align
-		
-		parse team name + color from message
-		send assault phase
-	
-		standardize HUD style data for any given panel eg. ponr font size
-		
-		slider setting for popup_fadeout_time
-
-		check for mag count above max --> bar
-		covenant weapon overheat meter? 
-
-		todo grenade cooldown animation circles
-		todo shield damage chunking
 
 
 	&&& HIGH PRIORITY: &&&
-			
+		* DROP IN MENU
+		
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER 
+		* Layout HUD on disabling radar
+				* if radar disabled, hide radar and realign panels: ability panel down, cartographer text indicator left align
+
 
 		%% BUGS:
+			- hide score popup if outside viewing angle (place outside hud)
+			- callsign is not being used when not host?
 			- Teammate panel does not reset after teammate leaves
 			- Teammate grenade count does not sync beyond initial count
 			- hide HUD when in camera
-			- Rocket reticle will not proc???
 			- ADS should maintain mostly still reticle, unusable otherwise
 
 		%% FEATURES: %%
-		* DROP IN MENU
-		
-		* Better player waypoints
-			
-			
+			* Tab screen
+				--tabscreen should be created (and referenced) by teammate panel id, not peer_id
+					* function to get panel id from peerid and vice versa
+				--move scoreboard based on score, not peerid?
 			* Teammates panel
-				-circleplus/character name
-					- center to subpanel
+					- center vertically to subpanel
 				-player name
 					* player names are often too long. :(
 				- equipment
@@ -74,17 +37,25 @@
 					- Blink on shields depleted?
 				- ammo?
 				- downs?
-			* Tab menu
 			* Mod options
+				* Weapon panel option for type/reticle presets
+				* Slider setting for popup_fadeout_time
 				* Placement and Scaling
 				* Keybinds for Safety etc
-
+				* Add shield sounds slider
 			
 	&& LOW PRIORITY FEATURES: &&
+		* Sync data:
+			send team name + color
+			send assault phase
+			send downs
+		* Show other things, such as equipment, on radar? check slotmask 
 		* Adjust overshield color to be more green (check MCC screenshots)
 		* Flash mission name at mission start? (See mission/submission name in MCC screenshots)
-		
-		* Implement Auto-update from GitHub provider?
+				
+		* HIGH SCORES
+			- Convert scores to credits after each run; add "purchaseable" items for credits
+			- Unusual effects? On-death SFX (grunt birthday party?)
 		
 		* Apply update opacity for all elements from menu
 		* Organize color data
@@ -131,17 +102,21 @@
 			* Should graze kills give sniper medals? currently, they don't
 			
 	&& BEAUTIFY EXISTING: &&
+		* Standardize HUD style data for any given panel eg. ponr font size; this will facilitate adding scaling and movement later on
+		* Shield damage chunking
+		* PONR label goes where "BONUS ROUND" was in reach
+			* Flash as countdown enabled
+		* Callsign generator
+			* remove clantag
+			* remove doubled letters
 		* Carry indicator is kind of hard to see
 		* Grenade/Ability
+			* Grenade cooldown animation circles
 			* Ability circle reduces with active ability time
 			* Ability activation animation
 			* Ability circle color should be colored blue by default
 			* Counter is unreadable- needs shadow or better placement
 				* shadow is better, to show during flashbangs
-		* Visual ammo counter is out of control for large-mag weapons
-			* Mag count is kind of hard to see, might want to have an option to make the big number the mag
-			* Above x bullets should just be a bar tbh
-			* Realign bullet tick alignments
 		* Reticle/Weapon stuff
 			* DMR should be scaled down ever so slightly
 			* Streamline like the whole code process, it's unreadable
@@ -152,7 +127,9 @@
 				* Right arrow should do something
 				* Left arrow rotates with distance?
 				* Left arrow is not colored (frame, circle, and altimeter are already colored)
-		* Radar
+		* Radar	
+			* radar_far blips should not clip outside the radar panel
+			* Unique vehicle blip asset texture so that they're not blurry?
 			* Motion-based tracking
 			* Radar pulse when update?
 			* Different motion tracker icon or color for Team AI versus players
@@ -169,12 +146,13 @@
 			- Needler
 			- Spiker
 			- Plasma Launcher
-			- Beam Launcher
+			- Beam Rifle
 			- Target Designator
 			- Fuel Rod Cannon
 			- Plasma Cannon (Mounted)
 
 		-- Ammo type tick variant textures
+			- Weapon Overheat meter? (Reach)
 			- DMR
 			- AR
 			- Pistol
@@ -322,6 +300,10 @@ NobleHUD.color_data = {
 	hud_buff_negative = Color("FF2E2E"),
 	hud_buff_neutral = Color.white,
 	hud_buff_positive = Color.blue,
+	hud_latency_low = Color(0,1,0),
+	hud_latency_medium = Color(1,1,0),
+	hud_latency_high = Color(1,0,0),
+	hud_latency_unbearable = Color(1,0.5,0.5),
 	normal = Color("B2B2B2"), --grey
 	unique = Color("FFD700"), --yellow 
 	vintage = Color("476291"), --desat navy ish
@@ -436,6 +418,9 @@ local kills_cache_empty = {
 
 NobleHUD._cache = { --buffer type deal, holds IMPORTANT THINGS tm
 	t = 0,
+	callsigns = {
+		--76561198025511599 = "B025" --example callsign storage
+	},
 	killer = {},
 	score_timer_mult = 1,
 	score_popups_count = 0,
@@ -3420,9 +3405,12 @@ function NobleHUD:VerifyUnusual()
 	return unusual
 end
 
-function NobleHUD:GetCallsign(peer_id)
+function NobleHUD:GetCallsign(peer_id) --synced/saved, manually selected callsigns only
 	if peer_id then 
-		--todo
+		local peer = managers.network:session():peer(peer_id)
+		if peer then 
+			return self._cache.callsigns[peer:user_id()]
+		end
 	end
 	return self.settings.callsign_string
 end
@@ -3707,7 +3695,13 @@ function NobleHUD:UpdateHUD(t,dt)
 			end
 		end		
 		
-		
+		--ping update
+		for _,data in pairs(managers.criminals._characters) do 
+			if data.peer_id and managers.network:session() and managers.network:session():peer(data.peer_id) then
+				self:SetTeammatePing(data.data and data.data.panel_id,managers.network:session():peer(data.peer_id):qos().ping)
+			end
+		end
+			
 		--shield sfx (loop)
 		local player_armor_max = player_damage:_max_armor()
 		if player_armor_max > 0 and self._shield_sound_source and not self._shield_sound_source:is_closed() then
@@ -6646,9 +6640,9 @@ function NobleHUD:_create_score(hud)
 	local score_label = score_panel:text({
 		name = "score_label",
 		text = "0",
-		align = "right",
+		align = "left", --!
 		color = Color.white,
-		x = -margin_s,
+		x = score_banner_large:x() + margin_s,
 		y = score_banner_large:y() + margin_s,
 		font = self.fonts.eurostile_ext,
 		font_size = font_size,
@@ -6691,11 +6685,12 @@ function NobleHUD:_create_score(hud)
 --			64,
 --			64
 --		},
-	local revives_texture,revives_rect = tweak_data.hud_icons:get_icon_data("csb_lives")
+
+--	local revives_texture,revives_rect = tweak_data.hud_icons:get_icon_data("csb_lives")
 	local revives_icon = revives_panel:bitmap({
 		name = "revives_icon",
-		texture = revives_texture,
-		texture_rect = revives_rect,
+		texture = "guis/textures/lives_icon",-- revives_texture,
+--		texture_rect = revives_rect,
 		color = self.color_data.hud_vitalsoutline_blue,
 		w = subpanel_w,
 		h = subpanel_w,
@@ -7932,11 +7927,12 @@ function NobleHUD:_create_tabscreen(hud)
 			color = Color(0.3,0.3,0.3)
 		})
 		
-		local downs_texture,downs_rect = tweak_data.hud_icons:get_icon_data("csb_lives")
+--		local downs_texture,downs_rect = tweak_data.hud_icons:get_icon_data("csb_lives")
 		local downs_bitmap = downs_box:bitmap({
 			name = "downs_bitmap",
 			layer = 3,
-			texture = downs_texture, --"guis/textures/health_cross",
+			texture = "guis/textures/lives_icon",
+--			texture = downs_texture, --"guis/textures/health_cross",
 			texture_rect = downs_rect,
 			y = (all_box_h - downs_w) / 2,
 			w = downs_w,
@@ -8068,16 +8064,16 @@ function NobleHUD:_create_tabscreen(hud)
 			visible = false --debug only; should be hidden
 		})
 		local ping_bitmap = ping_box:bitmap({
-			name = "icon_bitmap",
+			name = "ping_bitmap",
 			layer = 3,
 			texture = "guis/textures/test_blur_df",
 			w = ping_bitmap_w,
 			h = player_box_h,
-			color = Color.green
+			color = self.color_data.hud_latency_low
 		})
 		local ping_label = ping_box:text({
 			name = "ping_label",
-			text = math.random(100) .. "ms",
+			text = "-", --math.random(100) .. " ms",
 			align = "left",
 			vertical = "bottom",
 			font = tweak_data.hud_players.ammo_font,
@@ -8098,12 +8094,27 @@ function NobleHUD:_create_tabscreen(hud)
 		w = tabscreen:w(),
 		h = 30
 	})
-	local music_bg = music_box:rect({
+	local music_bg = music_box:gradient({
 		name = "music_bg",
-		visible = true,
-		color = Color.red,
-		alpha = 0.1
+		valign = "grow",
+		layer = -5,
+--		blend_mode = "add",
+		w = music_box:w(),
+		h = music_box:h(),
+		gradient_points = {
+			0,
+			Color(0,0,0):with_alpha(0), --argb
+			0.33,
+			self.color_data.strange,
+			0.5,
+			self.color_data.collector,
+			0.66,
+			self.color_data.strange,
+			1,
+			Color(0,0,0):with_alpha(0)
+		}
 	})
+	
 	local music_label = music_box:text({
 		name = "music_label",
 		text = "NOW PLAYING: Megalovania (Sans Undertale) (Revolver Ocelot)",
@@ -8120,9 +8131,12 @@ function NobleHUD:_create_tabscreen(hud)
 		layer = 3,
 		texture = music_texture,
 		texture_rect = music_rect,
+		y = (music_box:h() - 16) / 2,
 		w = 16,
 		h = 16
 	})
+	local music_x,_,music_w,_ = music_label:text_rect()
+	music_icon:set_x(((tabscreen:w() - music_w) / 2) - music_icon:w())
 	
 	
 	local mission_box = tabscreen:panel({
@@ -8139,16 +8153,6 @@ function NobleHUD:_create_tabscreen(hud)
 		layer = -3,
 		color = self.color_data.normal
 	})
-	local mission_ghostable_icon = mission_box:bitmap({
-		texture = "guis/textures/pd2/cn_minighost",
-		name = "ghost_icon",
-		h = 16,
-		x = 16,
-		blend_mode = "add",
-		w = 16,
-		layer = 10,
-		color = self.color_data.haunted
-	})
 	local mission_title = mission_box:text({
 		name = "mission_title",
 		text = "MISSION STATUS",
@@ -8157,6 +8161,17 @@ function NobleHUD:_create_tabscreen(hud)
 		font = tweak_data.hud_players.ammo_font,
 		font_size = 32,
 		layer = 4
+	})
+	local mission_ghostable_icon = mission_box:bitmap({
+		name = "mission_ghostable_icon",
+		texture = "guis/textures/pd2/cn_minighost",
+		h = 16,
+		x = mission_title:right(),
+		blend_mode = "add",
+		visible = true,
+		w = 16,
+		layer = 5,
+		color = self.color_data.haunted
 	})
 	local mission_bags_label = mission_box:text({
 		name = "mission_bags_label",
@@ -8178,6 +8193,36 @@ function NobleHUD:_create_tabscreen(hud)
 		name = "mission_instant_cash_label",
 		text = "Instant Cash: $123,000",
 		y = 84,
+		font = tweak_data.hud_players.ammo_font,
+		font_size = 24,
+		layer = 4
+	})
+	local mission_payout_total = mission_box:text({
+		name = "mission_payout_total",
+		text = "Heist Payout: $123,045",
+		y = 108,
+		font = tweak_data.hud_players.ammo_font,
+		font_size = 24,
+		layer = 4
+	})
+	
+	local bodybags_texture,bodybags_rect = tweak_data.hud_icons:get_icon_data("pd2_bodybag")
+	local bodybags_icon = mission_box:bitmap({
+		name = "bodybags_icon",
+		texture = bodybags_texture,
+		texture_rect = bodybags_rect,
+		w = 24,
+		h = 24,
+		x = 0,
+		y = 108 + 24,
+		layer = 5,
+		color = self.color_data.haunted
+	})
+	local bodybags_label = mission_box:text({
+		name = "bodybags_label",
+		text = "2",
+		x = bodybags_icon:w() + 4,
+		y = bodybags_icon:y(),
 		font = tweak_data.hud_players.ammo_font,
 		font_size = 24,
 		layer = 4
@@ -8208,7 +8253,7 @@ function NobleHUD:_create_tabscreen(hud)
 		alpha = 0.1
 	})
 	
-	
+
 --[[
 	local blur_box = tabscreen:bitmap({
 	
@@ -8305,7 +8350,9 @@ function NobleHUD:SetTeamName(name,color)
 	local header_box = scoreboard:child("header_box")
 	local teamname_box = header_box:child("teamname_box")
 	local teamname_label = teamname_box:child("teamname_label")
-	teamname_label:set_text(name)
+	if name then 
+		teamname_label:set_text(name)
+	end
 	if color then 
 		teamname_box:child("teamname_bg"):set_color(color)
 --		teamname_label:set_color(color)
@@ -8399,9 +8446,36 @@ function NobleHUD:AnimateHideTabscreen()
 end
 
 function NobleHUD:SetTeammatePing(id,ping)
-	local player_box = self._tabscreen:child("scoreboard"):child("player_box_" .. id)
+	ping = tonumber(ping)
+	local player_box = id and self._tabscreen:child("scoreboard"):child("player_box_" .. id)
 	if alive(player_box) then
-		player_box:child("ping_box"):child("ping_label"):set_text(ping)
+		local ping_box = player_box:child("ping_box")
+		ping_box:child("ping_label"):set_text(((ping and tostring(ping) .. " ms")) or "-")
+		local ping_h_max = player_box:h()
+		if ping then 
+			local ping_h = ping_h_max
+			local color = self.color_data.hud_latency_low
+			local LATENCY_THRESHOLD_LOW = 200
+			local LATENCY_THRESHOLD_MEDIUM = 500
+			local LATENCY_THRESHOLD_HIGH = 1000
+			
+			if ping < LATENCY_THRESHOLD_LOW then 
+				ping_h = ping_h_max * 0.25
+				color = self.color_data.hud_latency_low
+			elseif ping < LATENCY_THRESHOLD_MEDIUM then 
+				ping_h = ping_h_max * 0.50
+				color = self.color_data.hud_latency_medium
+			elseif ping < LATENCY_THRESHOLD_HIGH then 
+				ping_h = ping_h_max * 0.75
+				color = self.color_data.hud_latency_high
+			else
+				ping_h = ping_h_max * 1
+				color = self.color_data.hud_latency_unbearable
+			end
+			local ping_bitmap = ping_box:child("ping_bitmap")
+			ping_bitmap:set_color(color)
+			ping_bitmap:set_h(ping_h)
+		end
 	end
 end
 
@@ -9881,11 +9955,23 @@ Hooks:Add("NetworkReceivedData", "noblehud_onreceiveluanetworkingmessage", funct
 	elseif (message == NobleHUD.network_messages.down_counter) then
 		--stuff
 	elseif (message == NobleHUD.network_messages.sync_callsign) then
+		
 		--stuff
 	elseif (message == NobleHUD.network_messages.sync_teamname) then
 		if sender == 1 then
 			--parse color and data from this mess
-			--NobleHUD:SetTeamName(data)
+			local teamdata = string.split(data,":")
+			local team_name,team_color
+			if teamdata and #teamdata >= 1 then 
+				team_name = teamdata[1]
+				local r = tonumber(teamdata[2] or "")
+				local g = tonumber(teamdata[3] or "")
+				local b = tonumber(teamdata[4] or "")
+				if r and g and b then 
+					team_color = Color(r,g,b):with_alpha(1)
+				end
+				NobleHUD:SetTeamName(team_name,team_color)
+			end
 		end
 	end
 end)

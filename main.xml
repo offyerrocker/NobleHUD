@@ -46,6 +46,6 @@
 		<texture path="guis/textures/grenadelauncher_crosshair_2"/>
 		<texture path="guis/textures/teammate_nameplate_vacant"/>
 		<texture path="guis/textures/teammate_nameplate"/>
-		<texture path="guis/textures/health_cross"/>
+		<texture path="guis/textures/lives_icon"/>
 	</AddFiles>
 </mod>

@@ -22,7 +22,7 @@ function HUDManager:_add_name_label(data,...)
 	local peer_id = nil
 	local is_husk_player = data.unit:base().is_husk_player
 
-
+	
 	if is_husk_player then
 		peer_id = data.unit:network():peer():id()
 		local level = data.unit:network():peer():level()
@@ -33,7 +33,7 @@ function HUDManager:_add_name_label(data,...)
 			data.name = data.name .. " (" .. experience .. ")"
 		end
 	end
-
+--	NobleHUD:log("Is husk player? " .. tostring(is_husk_player) .. " and peer_id is " .. tostring(peer_id) .. " and level is " .. tostring(level) .. " and rank is " .. tostring(rank))
 	local panel = hud.panel:panel({name = "name_label" .. id})
 
 --
@@ -115,6 +115,8 @@ function HUDManager:_add_name_label(data,...)
 		font_size = 16, --tweak_data.hud.name_label_font_size,
 		color = crim_color
 	})
+	local _,_,tw,_ = text:text_rect()
+	text:set_x(halo_waypoint:x() - (tw / 2))
 	local bag = panel:bitmap({
 		name = "bag",
 		layer = 0,
@@ -166,7 +168,8 @@ function HUDManager:_add_name_label(data,...)
 			w = 16,
 			layer = 0,
 			texture = infamy_icon,
-			color = crim_color
+			color = crim_color,
+			visible = false
 		})
 	end
 
@@ -205,7 +208,7 @@ function HUDManager:align_teammate_name_label(panel, interact, ...)
 	local _, _, cw, ch = cheater:text_rect()
 
 --
-	halo:set_x(double_radius + 4) -- (halo:w() / 2) + 4)
+	halo:set_x(double_radius + 8) -- (halo:w() / 2) + 4)
 --	
 	
 	panel:set_size(math.max(tw, cw) + 4 + double_radius, math.max(th + ah + ch, double_radius))
@@ -224,8 +227,8 @@ function HUDManager:align_teammate_name_label(panel, interact, ...)
 	bag:set_top(text:top() + 4)
 	interact:set_position(0, text:top())
 
+--[[
 	local infamy = panel:child("infamy")
-
 	if infamy then
 		panel:set_w(panel:w() + infamy:w())
 		text:set_size(panel:size())
@@ -233,6 +236,7 @@ function HUDManager:align_teammate_name_label(panel, interact, ...)
 		infamy:set_top(text:top())
 		text:set_x(double_radius + 4 + infamy:w())
 	end
+	--]]
 --
 	halo:set_y(text:y())
 --
