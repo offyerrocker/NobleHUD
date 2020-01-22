@@ -319,7 +319,7 @@ NobleHUD.color_data = {
 	solar = Color("E1834F"), --orange
 	arc = Color("6F8EA2"), --powder blue
 	common = Color("43734B"), --moderately green
-	rare = Color("547C96"), --blue; lighter than vintage
+	rare = Color("5076a3"), --blue; lighter than vintage
 	legendary = Color("522F65"), --purple; lighter than unusual
 	exotic = Color("CEAE33") --(bright lemony yellow)
 }
