@@ -3,7 +3,7 @@
 
 ***** TODO: *****
 	Notes:
-
+-test has font with managers.dyn_resource:has_resource(Idstring("scene"), Idstring("core/environments/skies/" .. sky .. "/" .. sky), managers.dyn_resource.DYN_RESOURCES_PACKAGE)
 
 	&&& HIGH PRIORITY: &&&
 		* DROP IN MENU
