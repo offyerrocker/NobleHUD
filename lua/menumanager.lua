@@ -38,7 +38,6 @@
 				- ammo?
 				- downs?
 			* Mod options
-				* Weapon panel option for type/reticle presets
 				* Slider setting for popup_fadeout_time
 				* Placement and Scaling
 				* Keybinds for Safety etc
@@ -3660,6 +3659,7 @@ function NobleHUD:CreateHUD(orig)
 	self:_create_stamina(hud)
 	self:_create_tabscreen(hud)
 	self:_create_floating_ammo(hud)
+	self:_create_waiting(hud)
 	
 	local chat_x,chat_y = self:GetChatPanelXY()
 	managers.hud._hud_chat._panel:set_x(chat_x)
@@ -7960,7 +7960,7 @@ function NobleHUD:_create_tabscreen(hud)
 		alpha = 1
 	})
 	self._tabscreen = tabscreen
-	
+	local h_margin = 8
 	
 	local v_margin = 2
 	
@@ -8173,7 +8173,7 @@ function NobleHUD:_create_tabscreen(hud)
 		})
 		local downs_label = downs_box:text({
 			name = "downs_label",
-			text = "3",
+			text = "",
 			align = "center",
 			vertical = "center",
 			font = tweak_data.hud_players.ammo_font,
@@ -8231,7 +8231,7 @@ function NobleHUD:_create_tabscreen(hud)
 		})
 		local name_label = name_box:text({
 			name = "name_label",
-			text = "Player " .. tostring(peer_id),
+			text = "Empty Slot",
 			align = "left",
 			vertical = "center",
 			x = name_w / 20,
@@ -8253,7 +8253,7 @@ function NobleHUD:_create_tabscreen(hud)
 		})
 		local callsign_label = callsign_box:text({
 			name = "callsign_label",
-			text = "S117",
+			text = "-",
 			align = "center",
 			vertical = "center",
 			font = tweak_data.hud_players.ammo_font,
@@ -8305,7 +8305,7 @@ function NobleHUD:_create_tabscreen(hud)
 		})
 		local ping_label = ping_box:text({
 			name = "ping_label",
-			text = "-", --math.random(100) .. " ms",
+			text = "", --math.random(100) .. " ms",
 			align = "left",
 			vertical = "bottom",
 			font = tweak_data.hud_players.ammo_font,
@@ -8358,8 +8358,17 @@ function NobleHUD:_create_tabscreen(hud)
 		layer = 4
 	})
 	local music_texture,music_rect = tweak_data.hud_icons:get_icon_data("jukebox_playing_icon")
-	local music_icon = music_box:bitmap({
-		name = "music_icon",
+	local music_icon_left = music_box:bitmap({
+		name = "music_icon_left",
+		layer = 3,
+		texture = music_texture,
+		texture_rect = music_rect,
+		y = (music_box:h() - 16) / 2,
+		w = 16,
+		h = 16
+	})
+	local music_icon_right = music_box:bitmap({
+		name = "music_icon_right",
 		layer = 3,
 		texture = music_texture,
 		texture_rect = music_rect,
@@ -8368,7 +8377,8 @@ function NobleHUD:_create_tabscreen(hud)
 		h = 16
 	})
 	local music_x,_,music_w,_ = music_label:text_rect()
-	music_icon:set_x(((tabscreen:w() - music_w) / 2) - music_icon:w())
+	music_icon_left:set_x(((tabscreen:w() - music_w) / 2))
+	music_icon_right:set_x(((tabscreen:w() + music_w) / 2))
 	
 	
 	local mission_box = tabscreen:panel({
@@ -8408,6 +8418,7 @@ function NobleHUD:_create_tabscreen(hud)
 	local mission_bags_label = mission_box:text({
 		name = "mission_bags_label",
 		text = "10/10 (+1) bags",
+		x = h_margin,
 		y = 36,
 		font = tweak_data.hud_players.ammo_font,
 		font_size = 24,
@@ -8416,6 +8427,7 @@ function NobleHUD:_create_tabscreen(hud)
 	local mission_bags_money_label = mission_box:text({
 		name = "mission_bags_money_label",
 		text = "Looted value: $192,135,123",
+		x = h_margin,
 		y = 60,
 		font = tweak_data.hud_players.ammo_font,
 		font_size = 24,
@@ -8424,6 +8436,7 @@ function NobleHUD:_create_tabscreen(hud)
 	local mission_instant_cash_label = mission_box:text({
 		name = "mission_instant_cash_label",
 		text = "Instant Cash: $123,000",
+		x = h_margin,
 		y = 84,
 		font = tweak_data.hud_players.ammo_font,
 		font_size = 24,
@@ -8432,6 +8445,7 @@ function NobleHUD:_create_tabscreen(hud)
 	local mission_payout_total = mission_box:text({
 		name = "mission_payout_total",
 		text = "Heist Payout: $123,045",
+		x = h_margin,
 		y = 108,
 		font = tweak_data.hud_players.ammo_font,
 		font_size = 24,
@@ -8445,7 +8459,7 @@ function NobleHUD:_create_tabscreen(hud)
 		texture_rect = bodybags_rect,
 		w = 24,
 		h = 24,
-		x = 0,
+		x = h_margin,
 		y = 108 + 24,
 		layer = 5,
 		color = self.color_data.haunted
@@ -8481,8 +8495,8 @@ function NobleHUD:_create_tabscreen(hud)
 	})
 	local right_bg = right_box:rect({
 		name = "right_bg",
-		color = Color.yellow,
-		alpha = 0.1
+		color = Color(0.4,0.4,0.4),
+		alpha = 1
 	})
 	
 
@@ -9980,7 +9994,51 @@ end
 --		WAITING
 
 function NobleHUD:_create_waiting(hud)
-	local waiting_panel
+	local waiting_panel = hud:panel({
+		name = "waiting_panel",
+		w = 200,
+		h = 48,
+		layer = 10,
+		visible = true -- false 
+	})
+	
+	local waiting_icon = waiting_panel:bitmap({
+		name = "waiting_icon",
+		texture = "guis/textures/pd2/hud_icon_objectivebox",
+		x = 0,
+		y = 0,
+		w = 24,
+		h = 24,
+		layer = 0,
+		visible = true,
+		blend_mode = "normal",
+		halign = "left",
+		valign = "top"
+	})
+	local waiting_text = waiting_panel:text({
+		name = "waiting_text",
+		text = "butt butt butt butt butt",
+		font_size = tweak_data.hud_players.name_size,
+		font = tweak_data.hud_players.name_font
+	})
+	
+	local waiting_blur = waiting_panel:bitmap({
+		name = "waiting_blur",
+		texture = "guis/textures/test_blur_df",
+		layer = -1,
+		render_template = "VertexColorTexturedBlur3D",
+		valign = "grow"		
+	})
+	
+	local waiting_bg = waiting_panel:rect({
+		name = "waiting_bg",
+		visible = false,
+		layer = -2,
+		color = Color(0.5,0.5,0.5),
+		alpha = 0.8
+	})
+	
+	NobleHUD._waiting_panel = waiting_panel
 end
 
 

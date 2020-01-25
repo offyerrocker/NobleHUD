@@ -88,8 +88,19 @@ Hooks:PostHook(HUDStatsScreen,"recreate_left","noblehud_hudstats_recreateleft",f
 			
 		end
 	end
-	
 	--local active_objectives = managers.objectives:get_active_objectives() --data.text, data.description
+	
+	
+	
+	
+	
+	---right side
+	local tracked_achievements = managers.achievment:get_tracked_fill()
+	if #tracked > 0 then 
+		
+	end
+	
+	
 	
 	
 	--buffs/debuffs?	
