@@ -150,7 +150,14 @@
 			- Target Designator
 			- Fuel Rod Cannon
 			- Plasma Cannon (Mounted)
-
+			- Other vehicles?
+				* Scorpion
+				* Gauss hog gunner?
+				* Falcon?
+				* Banshee?
+				* Ghost?
+				* Revenant?
+				* Wraith?
 		-- Ammo type tick variant textures
 			- Weapon Overheat meter? (Reach)
 			- DMR
@@ -236,7 +243,26 @@ NobleHUD.settings = {
 	shield_low_sound_enabled = true,
 	shield_empty_sound_enabled = true,
 	--callsign_string = "S117", --automatically randomly generated
-	unusual = 1
+	unusual = 1,
+	crosshair_type_assaultrifle_single = 1,
+	crosshair_type_assaultrifle_auto = 1,
+	crosshair_type_pistol_single = 1,
+	crosshair_type_pistol_auto = 1,
+	crosshair_type_revolver = 1,
+	crosshair_type_smg_single = 1,
+	crosshair_type_smg_auto = 1,
+	crosshair_type_shotgun_single = 1,
+	crosshair_type_shotgun_auto = 1,
+	crosshair_type_lmg_single = 1,
+	crosshair_type_lmg_auto = 1,
+	crosshair_type_snp = 1,
+	crosshair_type_rocket = 1,
+	crosshair_type_minigun = 1,
+	crosshair_type_flamethrower = 1,
+	crosshair_type_saw = 1,
+	crosshair_type_grenade_launcher = 1,
+	crosshair_type_bow = 1,
+	crosshair_type_crossbow = 1
 }
 
 
@@ -437,6 +463,34 @@ NobleHUD._cache = { --buffer type deal, holds IMPORTANT THINGS tm
 	kills = table.deep_map_copy(kills_cache_empty)
 }
 
+NobleHUD._reticle_types_by_index = {
+	[1] = false, --default
+	[2] = "assault_rifle",
+	[3] = "dmr",
+	[4] = "pistol",
+	[5] = "smg",
+	[6] = "shotgun",
+	[7] = "sniper",
+	[8] = "grenade_launcher",
+	[9] = "rocket",
+	[10] = "minigun",
+	[11] = "flamethrower",
+	[12] = "target_laser", --todo
+	[13] = "car", --todo
+	[14] = "plasma_pistol",
+	[15] = "plasma_rifle",
+	[16] = "plasma_repeater",
+	[17] = "needler", --todo
+	[18] = "needle_rifle",
+	[19] = "concussion_rifle", --todo
+	[20] = "sword",
+	[21] = "gravity_hammer", --todo
+	[22] = "plasma_launcher", --todo (complex)
+	[23] = "beam_rifle", --todo
+	[24] = "spiker", --todo
+	[25] = "fuel_rod", --todo
+	[26] = "plasma_cannon" --todo
+}
 
 NobleHUD._delayed_callbacks = {}
 
@@ -513,7 +567,7 @@ NobleHUD._bullet_textures = {
 		icon_w = 100,
 		icon_h = 8
 	},
-	xbow = {
+	crossbow = {
 		texture = "guis/textures/bullet_tick" or "guis/textures/ammo_xbow",
 		texture_rect_DISABLED = {
 			1,2,3,4
@@ -1202,54 +1256,6 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 			}
 		}
 	},
-	smg = {
-		bloom_func = function(index,bitmap,data) 
-		--not sure what to do for the bloom, since the SMG was not in reach, 
-		--and other games do not feature reticle bloom.
-		--this one's a bit of a placeholder.
-		--in fact, i don't even like it that much. it's TOO bloom-y. no bloom for you.
-
-			local bloom = data.bloom 
-			local crosshair_data = data.crosshair_data and data.crosshair_data.parts[index] or {}
-			local distance = (crosshair_data.distance or 16) * (1 + (bloom * 1.5))
-			local angle = crosshair_data.angle or crosshair_data.rotation or 60
-			local c_x = NobleHUD._crosshair_panel:w()/2
-			local c_y = NobleHUD._crosshair_panel:h()/2
-			bitmap:set_size((crosshair_data.w or 1) * (1 + bloom),(crosshair_data.h or 1) * (1 + bloom))
-			bitmap:set_center(c_x + (math.sin(angle) * distance),c_y - (math.cos(angle) * distance))
-			
-		end,
-		parts = {
-			{
-				texture = "guis/textures/smg_crosshair",
-				w = 24,
-				h = 8,
-				distance = 16,
-				rotation = 0
-			},
-			{
-				texture = "guis/textures/smg_crosshair",
-				w = 24,
-				h = 8,
-				distance = 16,
-				rotation = 90
-			},
-			{
-				texture = "guis/textures/smg_crosshair",
-				w = 24,
-				h = 8,
-				distance = 16,
-				rotation = 180
-			},
-			{
-				texture = "guis/textures/smg_crosshair",
-				w = 24,
-				h = 8,
-				distance = 16,
-				rotation = 270
-			}
-		}
-	},
 	pistol = { --similar to dmr
 		bloom_func = function(index,bitmap,data)
 			local bloom = data.bloom * 2
@@ -1302,6 +1308,54 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 				distance = 8,
 				w = 2,
 				h = 6
+			}
+		}
+	},
+	smg = {
+		bloom_func = function(index,bitmap,data) 
+		--not sure what to do for the bloom, since the SMG was not in reach, 
+		--and other games do not feature reticle bloom.
+		--this one's a bit of a placeholder.
+		--in fact, i don't even like it that much. it's TOO bloom-y. no bloom for you.
+
+			local bloom = data.bloom 
+			local crosshair_data = data.crosshair_data and data.crosshair_data.parts[index] or {}
+			local distance = (crosshair_data.distance or 16) * (1 + (bloom * 1.5))
+			local angle = crosshair_data.angle or crosshair_data.rotation or 60
+			local c_x = NobleHUD._crosshair_panel:w()/2
+			local c_y = NobleHUD._crosshair_panel:h()/2
+			bitmap:set_size((crosshair_data.w or 1) * (1 + bloom),(crosshair_data.h or 1) * (1 + bloom))
+			bitmap:set_center(c_x + (math.sin(angle) * distance),c_y - (math.cos(angle) * distance))
+			
+		end,
+		parts = {
+			{
+				texture = "guis/textures/smg_crosshair",
+				w = 24,
+				h = 8,
+				distance = 16,
+				rotation = 0
+			},
+			{
+				texture = "guis/textures/smg_crosshair",
+				w = 24,
+				h = 8,
+				distance = 16,
+				rotation = 90
+			},
+			{
+				texture = "guis/textures/smg_crosshair",
+				w = 24,
+				h = 8,
+				distance = 16,
+				rotation = 180
+			},
+			{
+				texture = "guis/textures/smg_crosshair",
+				w = 24,
+				h = 8,
+				distance = 16,
+				rotation = 270
 			}
 		}
 	},
@@ -1391,6 +1445,25 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 				texture = "guis/textures/flame_crosshair",
 				w = 48,
 				h = 48
+			}
+		}
+	},
+	target_laser = { --four chevrons, offset by 45*, with pointy bit pointing outward, forming a diamond
+		parts = {
+			{
+				is_center = true,
+				texture = "guis/textures/flame_crosshair",
+				w = 48,
+				h = 48
+			}
+		}
+	},
+	car = { --chevron; will be used for pd2 vehicles
+		parts = {
+			{
+				texture = "guis/textures/sword_crosshair",
+				w = 32,
+				h = 32
 			}
 		}
 	},
@@ -1513,56 +1586,6 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 			}
 		}
 	},
-	plasma_launcher = { --four arrows
-		parts = {
-			{
-				texture = "guis/textures/plasma_crosshair_1",
-				w = 4,
-				h = 8,
-				distance = 10,
-				rotation = 180
-			},
-			{
-				texture = "guis/textures/plasma_crosshair_1",
-				w = 4,
-				h = 8,
-				distance = 10,
-				rotation = 270
-			},
-			{
-				texture = "guis/textures/plasma_crosshair_1",
-				w = 4,
-				h = 8,
-				distance = 10,
-				rotation = 0
-			},
-			{
-				texture = "guis/textures/plasma_crosshair_1",
-				w = 4,
-				h = 8,
-				distance = 10,
-				rotation = 90
-			}
-		}
-	},
-	sword = { --crescent with arrow; used for melee
-		parts = {
-			{
-				texture = "guis/textures/sword_crosshair",
-				w = 32,
-				h = 32
-			}
-		}
-	},
-	car = { --chevron; will be used for pd2 vehicles
-		parts = {
-			{
-				texture = "guis/textures/sword_crosshair",
-				w = 32,
-				h = 32
-			}
-		}
-	},
 	needle_rifle = {
 		bloom_func = function(index,bitmap,data)
 			local crosshair_data = data.crosshair_data and data.crosshair_data.parts[index] or {}
@@ -1618,7 +1641,123 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 			}
 		}
 	},
-	beam_rifle = {
+	concussion_rifle = { --todo
+		parts = {
+			{
+				texture = "guis/textures/sword_crosshair",
+				w = 32,
+				h = 32
+			}
+		}
+	},
+	sword = { --crescent with arrow; used for melee
+		parts = {
+			{
+				texture = "guis/textures/sword_crosshair",
+				w = 32,
+				h = 32
+			}
+		}
+	},
+	gravity_hammer = { --todo
+		parts = {
+			{
+				texture = "guis/textures/sword_crosshair",
+				w = 32,
+				h = 32
+			}
+		}
+	},
+	plasma_launcher = { --four arrows
+		parts = {
+			{
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 4,
+				h = 8,
+				distance = 10,
+				rotation = 180
+			},
+			{
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 4,
+				h = 8,
+				distance = 10,
+				rotation = 270
+			},
+			{
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 4,
+				h = 8,
+				distance = 10,
+				rotation = 0
+			},
+			{
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 4,
+				h = 8,
+				distance = 10,
+				rotation = 90
+			}
+		}
+	},
+	beam_rifle = { --todo
+		parts = {
+			{
+				is_center = true,
+				alpha = 0.75,
+				texture = "guis/textures/nrif_crosshair_1",
+				w = 6,
+				h = 6
+			},
+			{
+				texture = "guis/textures/nrif_crosshair_2",
+				w = 12,
+				h = 6,
+				distance = 8,
+				rotation = 0
+			},
+			{
+				texture = "guis/textures/nrif_crosshair_2",
+				w = 12,
+				h = 6,
+				distance = 8,
+				rotation = 90
+			},
+			{
+				texture = "guis/textures/nrif_crosshair_2",
+				w = 12,
+				h = 6,
+				distance = 8,
+				rotation = 180
+			},
+			{
+				texture = "guis/textures/nrif_crosshair_2",
+				w = 12,
+				h = 6,
+				distance = 8,
+				rotation = 270
+			}
+		}
+	},
+	spiker = { --todo
+		parts = {
+			{
+				texture = "guis/textures/sword_crosshair",
+				w = 32,
+				h = 32
+			}
+		}
+	},
+	fuel_rod = { --todo
+		parts = {
+			{
+				texture = "guis/textures/sword_crosshair",
+				w = 32,
+				h = 32
+			}
+		}
+	},
+	plasma_cannon = { --todo
 		parts = {
 			{
 				texture = "guis/textures/sword_crosshair",
@@ -3478,6 +3617,11 @@ function NobleHUD:SetKiller(unit,peer_id)
 	end
 end
 
+function NobleHUD:IsSkullActive(id)
+	if id == "birthday" then 
+		return true
+	end
+end
 
 --		HUD UPDATE STUFF / EVENT FUNCTIONS
 
@@ -4375,7 +4519,20 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 		self:PlayAnnouncerSound("betrayal")
 		--no +1 kills for you, you murderer >:(
 	else
-	
+		if self:IsSkullActive("birthday") and headshot and unit and alive(unit) and unit:base() then 
+--			if unit:base()._grunt_bday then
+				
+--			else
+				unit:base()._grunt_bday = XAudio.UnitSource:new(unit,XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg"))
+				--todo figure out why this doesn't update position
+				--	check mono/stereo
+				--	check if it needs an update for some reason???
+				--local s = XAudio.Source:new(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg")); Log(s:get_volume()); Log(s:get_raw_volume())
+				--local unit = Console.tagged_unit; if alive(unit) and unit:character_damage() then XAudio.UnitSource:new(unit,XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg")) end
+				--local ray = Console:GetFwdRay(); local unit = ray and ray.unit; if alive(unit) and unit:character_damage() then XAudio.UnitSource:new(unit,XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg")) end
+				--wow that's super quiet
+--			end
+		end
 		if player_weapon_id == primary_id then
 			self:_set_killcount(1,managers.statistics:session_killed_by_weapon(primary_id))
 		elseif player_weapon_id == secondary_id then 
@@ -5371,12 +5528,78 @@ function NobleHUD:_get_crosshair_data_by_type(type,use_fallback)
 	return self._crosshair_textures[type or ""] or (use_fallback and (self._crosshair_textures[tostring(use_fallback)] or self._crosshair_textures["plasma_pistol"]))
 end
 
+function NobleHUD:GetCrosshairChoiceByType(weapon_type,fire_mode,is_akimbo)
+	fire_mode = tostring(fire_mode or "single")
+	local index
+	if weapon_type == "assault_rifle" then 
+		if fire_mode == "auto" then 
+			index = self.settings.crosshair_type_assaultrifle_auto
+		else
+			index = self.settings.crosshair_type_assaultrifle_single
+		end
+	elseif weapon_type == "pistol" then
+		if fire_mode == "auto" then 
+			index = self.settings.crosshair_type_pistol_auto
+		else
+			index = self.settings.crosshair_type_pistol_single
+		end
+	elseif weapon_type == "revolver" then
+		if fire_mode == "auto" then 
+			index = self.settings.crosshair_type_pistol_auto
+		else
+			index = self.settings.crosshair_type_pistol_single
+		end
+	elseif weapon_type == "smg" then
+		if fire_mode == "auto" then 
+			index = self.settings.crosshair_type_smg_auto
+		else
+			index = self.settings.crosshair_type_smg_single
+		end
+	elseif weapon_type == "shotgun" then
+		if fire_mode == "auto" then 
+			index = self.settings.crosshair_type_shotgun_auto
+		else
+			index = self.settings.crosshair_type_shotgun_single
+		end
+	elseif weapon_type == "lmg" then
+		if fire_mode == "auto" then 
+			index = self.settings.crosshair_type_lmg_auto
+		else
+			index = self.settings.crosshair_type_lmg_single
+		end
+	elseif weapon_type == "snp" then
+		index = self.settings.crosshair_type_snp
+	elseif weapon_type == "rocket" then
+		index = self.settings.crosshair_type_rocket
+	elseif weapon_type == "minigun" then
+		index = self.settings.crosshair_type_minigun
+	elseif weapon_type == "flamethrower" then
+		index = self.settings.crosshair_type_flamethrower
+	elseif weapon_type == "saw" then
+		index = self.settings.crosshair_type_saw
+	elseif weapon_type == "grenade_launcher" then
+		index = self.settings.crosshair_type_grenade_launcher
+	elseif weapon_type == "bow" then
+		index = self.settings.crosshair_type_bow
+	elseif weapon_type == "crossbow" then
+		index = self.settings.crosshair_type_crossbow
+	else
+		if self.settings["crosshair_type_" .. weapon_type] then
+			index = self.settings["crosshair_type_" .. weapon_type]
+		elseif self.settings["crosshair_type_" .. weapon_type .. "_" .. fire_mode] then
+			index = self.settings["crosshair_type_" .. weapon_type .. "_" .. fire_mode]
+		end
+	end
+	
+	return self._reticle_types_by_index[index or 1]
+end
+
 --todo user prefs
 function NobleHUD:_get_crosshair_type_from_weapon_base(base,fire_mode)
 	if not base then 
 		self:log("ERROR: _get_crosshair_type_from_weapon_base(" .. concat({base,slot},",") .. "): bad base/slot")
 		return
-	end
+	end	
 	local function crosshair_from_category(cat,mode)
 		if cat == "assault_rifle" then 
 			if mode == "single" then
@@ -5410,8 +5633,8 @@ function NobleHUD:_get_crosshair_type_from_weapon_base(base,fire_mode)
 			return "pistol"
 		elseif cat == "bow" then 
 			return "plasma_pistol"
-		elseif cat == "xbow" then 
-			return "plasma_rifle"
+		elseif cat == "crossbow" then 
+			return "pistol"
 		end		
 	end	
 	local tweakdata = base:weapon_tweak_data()
@@ -5422,23 +5645,32 @@ function NobleHUD:_get_crosshair_type_from_weapon_base(base,fire_mode)
 			return self._crosshair_override_data[weapon_id][fire_mode]
 		end
 	end
+	local gadget_weapon_override = base:gadget_overrides_weapon_functions()
+	
+	base = gadget_weapon_override or base
 	
 	local categories = base:categories()
 
-	if base:gadget_overrides_weapon_functions() then 
+	local weapon_category,is_revolver,is_akimbo
 		
+		--category = base:get_override_gadget_base()
 		--get weapon type from gadget
-	else
 		--todo get user settings for weapon categories to crosshair types
 		
-		for _,category in pairs(categories) do 
-			local crosshair_result = crosshair_from_category(category,fire_mode)
-			if crosshair_result then 
-				return crosshair_result
-			end
+	for _,category in pairs(categories) do 
+		if category == "revolver" then 
+			is_revolver = true
+		elseif category == "akimbo" then 
+			is_akimbo = true
+		else
+			weapon_category = category
 		end
-	end
-	return "plasma_rifle"
+--			local crosshair_result = crosshair_from_category(category,fire_mode)
+--			if crosshair_result then 
+--				return crosshair_result
+--			end
+	end	
+	return self:GetCrosshairChoiceByType(weapon_category,fire_mode) or crosshair_from_category(weapon_category,fire_mode) or "plasma_rifle"
 end
 
 function NobleHUD:create_modepanel(slot,slotpanel,mode) --not actually used
@@ -10305,7 +10537,102 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		NobleHUD.settings.crosshair_stability = tonumber(item:value())
 		NobleHUD:SaveSettings()
 	end
+--CROSSHAIR CHOICE BY WEAPON CATEGORY
+	MenuCallbackHandler.callback_noblehud_crosshair_type_assaultrifle_single = function(self,item)
+		NobleHUD.settings.crosshair_type_assaultrifle_single = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+	MenuCallbackHandler.callback_noblehud_crosshair_type_assaultrifle_auto = function(self,item)
+		NobleHUD.settings.crosshair_type_assaultrifle_auto = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
 	
+	MenuCallbackHandler.callback_noblehud_crosshair_type_pistol_single = function(self,item)
+		NobleHUD.settings.crosshair_type_pistol_single = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+
+	MenuCallbackHandler.callback_noblehud_crosshair_type_pistol_auto = function(self,item)
+		NobleHUD.settings.crosshair_type_pistol_auto = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+
+	MenuCallbackHandler.callback_noblehud_crosshair_type_revolver = function(self,item)
+		NobleHUD.settings.crosshair_type_revolver = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+
+	MenuCallbackHandler.callback_noblehud_crosshair_type_smg_single = function(self,item)
+		NobleHUD.settings.crosshair_type_smg_single = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+
+	MenuCallbackHandler.callback_noblehud_crosshair_type_smg_auto = function(self,item)
+		NobleHUD.settings.crosshair_type_smg_auto = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+
+	MenuCallbackHandler.callback_noblehud_crosshair_type_shotgun_single = function(self,item)
+		NobleHUD.settings.crosshair_type_shotgun_single = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+
+	MenuCallbackHandler.callback_noblehud_crosshair_type_shotgun_auto = function(self,item)
+		NobleHUD.settings.crosshair_type_shotgun_auto = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_noblehud_crosshair_type_lmg_single = function(self,item)
+		NobleHUD.settings.crosshair_type_lmg_single = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_noblehud_crosshair_type_lmg_auto = function(self,item)
+		NobleHUD.settings.crosshair_type_lmg_auto = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+
+	MenuCallbackHandler.callback_noblehud_crosshair_type_snp = function(self,item)
+		NobleHUD.settings.crosshair_type_snp = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_noblehud_crosshair_type_rocket = function(self,item)
+		NobleHUD.settings.crosshair_type_rocket = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_noblehud_crosshair_type_minigun = function(self,item)
+		NobleHUD.settings.crosshair_type_minigun = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_noblehud_crosshair_type_flamethrower = function(self,item)
+		NobleHUD.settings.crosshair_type_flamethrower = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+
+	MenuCallbackHandler.callback_noblehud_crosshair_type_saw = function(self,item)
+		NobleHUD.settings.crosshair_type_saw = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+
+	MenuCallbackHandler.callback_noblehud_crosshair_type_grenade_launcher = function(self,item)
+		NobleHUD.settings.crosshair_type_grenade_launcher = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+
+	MenuCallbackHandler.callback_noblehud_crosshair_type_bow = function(self,item)
+		NobleHUD.settings.crosshair_type_bow = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+
+	MenuCallbackHandler.callback_noblehud_crosshair_type_crossbow = function(self,item)
+		NobleHUD.settings.crosshair_type_crossbow = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+
+
 	MenuCallbackHandler.callback_noblehud_set_crosshair_alpha = function(self,item)
 		NobleHUD.settings.crosshair_alpha = tonumber(item:value())
 		NobleHUD:SaveSettings()
