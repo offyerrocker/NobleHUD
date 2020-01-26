@@ -99,6 +99,8 @@
 
 		&& DECISIONS &&
 			* Should graze kills give sniper medals? currently, they don't
+			* Should ECM Jammers only show their radar decoys when a player is within range of the ECM jammer? This would match Halo 3's Radar Jammer behaviour,
+				where decoys would appear in the radius 
 			
 	&& BEAUTIFY EXISTING: &&
 		* Standardize HUD style data for any given panel eg. ponr font size; this will facilitate adding scaling and movement later on
@@ -141,22 +143,22 @@
 
 		-- Firemode indicator
 		-- Crosshair textures
-			- Chevron
-			- Needler
-			- Spiker
-			- Plasma Launcher
-			- Beam Rifle
-			- Target Designator
-			- Fuel Rod Cannon
-			- Plasma Cannon (Mounted)
+			- Chevron [ref]
+			- Needler  [ref]
+			- Spiker [ref]
+			- Plasma Launcher [ref]
+			- Beam Rifle [ref]
+			- Target Designator [ref] 
+			- Fuel Rod Cannon [ref]
+			- Plasma Cannon (Mounted) [ref]
 			- Other vehicles?
 				* Scorpion
 				* Gauss hog gunner?
 				* Falcon?
 				* Banshee?
-				* Ghost?
-				* Revenant?
-				* Wraith?
+				* Ghost? [ref]
+				* Revenant? 
+				* Wraith? [ref]
 		-- Ammo type tick variant textures
 			- Weapon Overheat meter? (Reach)
 			- DMR
@@ -3622,6 +3624,33 @@ function NobleHUD:IsSkullActive(id)
 	end
 end
 
+function NobleHUD:GetMaxRadarDecoyRange()
+	local m = self:GetRadarDistance() * 100
+	--values are [0-1] as a percentage of radar range
+	local x = 1
+	local y = 1
+	local z = 1
+	return m * x,m * y,m * z
+end
+
+function NobleHUD:GetRadarDecoyIntervalMin() 
+	return 0.15
+end
+
+function NobleHUD:GetRadarDecoyIntervalMax() 
+	return 1
+end
+
+function NobleHUD:GetRadarDecoyLifetimeMin() 
+	return 3
+end
+
+function NobleHUD:GetRadarDecoyLifetimeMax() 
+	return 10
+end
+
+
+
 --		HUD UPDATE STUFF / EVENT FUNCTIONS
 
 Hooks:Add("BeardLibSetupInitFinalize","NobleHUD_AddUpdator",function()
@@ -3839,7 +3868,7 @@ function NobleHUD:UpdateHUD(t,dt)
 			end
 		end		
 		
-		--ping update
+		--ping (latency) update
 		for _,data in pairs(managers.criminals._characters) do 
 			if data.peer_id and managers.network:session() and managers.network:session():peer(data.peer_id) then
 				self:SetTeammatePing(data.data and data.data.panel_id,managers.network:session():peer(data.peer_id):qos().ping)
@@ -4084,14 +4113,43 @@ function NobleHUD:UpdateHUD(t,dt)
 				local blip_h = RADAR_SIZE / 20
 				local is_vehicle
 				if data.variant == "ecm_decoy" then 
-					self:log("radar: found ecm decoy. this shouldn't be happening yet")
-					blip_pos = data.position or (blip_unit and alive(blip_unit) and blip_unit:position())
-					if data.expire_t and data.expire_t <= t then 
-						blip_dead = true
-					elseif blip_pos then 
-						data.position = data.position + (data.velocity or Vector3(math.random(),math.random(),math.random()))
-						--still kickin'!
-					--Vector3(math.random(RADAR_DISTANCE_MAX / 2),math.random(RADAR_DISTANCE_MAX / 2),math.random(RADAR_DISTANCE_MAX / 2))
+					
+					if alive(blip_unit) and blip_unit:base() and blip_unit:base():battery_life() > 0 and (blip_unit:base():active() or blip_unit:base():feedback_active()) then 
+--						blip_pos = data.position or (blip_unit and alive(blip_unit) and blip_unit:position())
+					
+						if (not data.expire_t) or data.expire_t <= t then 
+							blip_dead = true
+						elseif data.position and data.velocity then 
+							local random_team = math.sin(t + (data.expire_t * 1000))
+							if random_team > 0.8 then 
+								blip_team = "neutral1" --20% chance
+							elseif random_team > 0.75 then 
+								blip_team = "mobster1" --5% chance
+							elseif random_team > 0.6 then
+								blip_team = "criminal1" --15% chance
+							else 
+								blip_team = "law1" --60% chance
+							end
+
+							local vel_x = data.velocity.x * dt
+							local vel_y = data.velocity.y * dt
+							local vel_z = data.velocity.z * dt
+							is_vehicle = math.sin((t + data.expire_t) * 0.001) > 0
+							if data.arc then 
+								local arc = data.arc --math.rad(data.arc)
+								local curvature = math.round(data.expire_t) % 50
+								if NobleHUD.even(math.round(data.expire_t)) then 
+									data.position = data.position + Vector3((math.cos((arc + t) * curvature)) * vel_x,(math.sin((arc + t) * curvature)) * vel_y,vel_z)
+								else
+									data.position = data.position + Vector3((math.sin((arc + t) * curvature)) * vel_x,(math.cos((arc + t) * curvature)) * vel_y,vel_z)
+								end
+							else
+								data.position = data.position + Vector3(vel_x,vel_y,vel_z)
+							end
+							blip_pos = blip_unit:position() + data.position
+						else
+							blip_dead = true
+						end
 					else
 						blip_dead = true
 					end
@@ -8879,21 +8937,26 @@ function NobleHUD:create_radar_blip(u,variant)
 		
 	if ((variant == "person") or (variant == "sentry")) then
 		if (not (alive(u) and u:movement() and u:movement():team())) or ((not u:character_damage()) or u:character_damage():dead()) then 
-			self:log("Error: No " .. tostring(variant) .. " unit for create_radar_blip()!",{color = Color.red})
+			self:log("Error: No unit for create_radar_blip(" .. tostring(u) .. "," .. tostring(variant) .. ")!",{color = Color.red})
 			return
 		end
 	elseif variant == "vehicle" then 
 		if not (alive(u) and u:vehicle_driving()) then 
-			self:log("Error: No vehicle unit for create_radar_blip()!",{color = Color.red})
+			self:log("Error: No vehicle unit for create_radar_blip(" .. tostring(u) .. "," .. tostring(variant) .. ")!",{color = Color.red})
 			return
 		end
 	end
-	
-	if self._radar_blips[u:key()] then --blip data already exists, so return it
+	if variant == "ecm_decoy" then 
+		if not (alive(u) and u:base() and u:base():get_name_id() == "ecm_jammer" and u:base():battery_life() > 0) then 
+			self:log("Error: No ECM unit for create_radar_blip(" .. tostring(u) .. "," .. tostring(variant) .. ")!",{color = Color.red})
+			return
+		end
+	elseif self._radar_blips[u:key()] then --blip data already exists, so return it
 		return self._radar_blips[u:key()]
 	end
-		
-	local team
+	local u_key = u:key()
+	local team,position
+	local expire_t,arc,velocity --ecm_decoy only
 	if variant == "vehicle" then 
 		local driving_state = u:vehicle_driving()
 		if driving_state then 
@@ -8925,6 +8988,21 @@ function NobleHUD:create_radar_blip(u,variant)
 		team = u:movement():team().id
 		if team == "criminal1" then 
 		end
+	elseif variant == "ecm_decoy" then 
+		local decoy_max_x,decoy_max_y,decoy_max_z = self:GetMaxRadarDecoyRange()
+		
+		local lifetime_min = self:GetRadarDecoyLifetimeMin()
+		local lifetime_max = self:GetRadarDecoyLifetimeMax()
+		expire_t = Application:time() + (math.random() * (lifetime_max - lifetime_min)) + lifetime_min
+		u_key = variant .. "_" .. tostring(Application:time())
+		if math.random() > 0.5 then 
+			arc = math.random(0,359)
+		else
+			
+		end
+		position = Vector3(math.random(decoy_max_x * 2) - decoy_max_x,math.random(decoy_max_y * 2) - decoy_max_y,math.random(2 * decoy_max_z) - decoy_max_z)
+		velocity = Vector3(math.random(50,500),math.random(50,500),math.random(0,500))
+		team = "law1"
 	else
 --		blip_texture = "guis/textures/radar_blip"
 		team = u:movement():team().id
@@ -8943,12 +9021,16 @@ function NobleHUD:create_radar_blip(u,variant)
 	
 	
 	local blip_data = {
+		variant = variant,
 		bitmap = blip_bitmap,
 		unit = u,
-		variant = variant
+		arc = arc,
+		velocity = velocity,
+		expire_t = expire_t, --for ecm_decoy only
+		position = position --for ecm_decoy only; todo fake_vehicle should use this
 	}
 	
-	self._radar_blips[u:key()] = blip_data
+	self._radar_blips[u_key] = blip_data
 	return blip_data
 end
 
