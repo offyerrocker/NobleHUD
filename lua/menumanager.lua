@@ -7,7 +7,7 @@
 
 	&&& HIGH PRIORITY: &&&
 		* DROP IN MENU
-		
+		* Teammate equipment
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER 
 		* Layout HUD on disabling radar
 				* if radar disabled, hide radar and realign panels: ability panel down, cartographer text indicator left align
@@ -2771,10 +2771,6 @@ NobleHUD._animate_targets = {
 --]]
 }
 
-function NobleHUD:IsSafeMode()
-	return self.settings.safe_mode
-end
-
 --    UTILS
 local also_blt_log = false
 function NobleHUD:log(...)
@@ -3551,6 +3547,10 @@ function NobleHUD:GetCallsign(peer_id) --synced/saved, manually selected callsig
 		end
 	end
 	return self.settings.callsign_string
+end
+
+function NobleHUD:IsSafeMode()
+	return self.settings.safe_mode
 end
 
 		--SET SETTINGS
@@ -6573,13 +6573,73 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 		font_size = tweak_data.hud_players.name_size,
 		font = ammo_font
 	})
+
+	local vitals_icon_size = 32
+	local vitals_subpanel = panel:panel({
+		name = "vitals_subpanel",
+		x = callsign_box:right(),
+		w = subpanel_w,
+		h = 48,
+		visible = true --false
+	})
+	
+	local vitals_armor_label = vitals_subpanel:text({
+		name = "vitals_armor_label",
+		layer = 1,
+		text = "100",
+		vertical = "top",
+		align = "center",
+		color = Color.white,
+		font_size = tweak_data.hud_players.name_size,
+		font = ammo_font
+	})
+	
+	local vitals_icon_x = (vitals_subpanel:w() - vitals_icon_size) / 2
+	local vitals_icon_y = (vitals_subpanel:h() - vitals_icon_size) / 2
+	local vitals_icon = vitals_subpanel:bitmap({
+		name = "vitals_icon",
+		layer = 0,
+		rotation = 360,
+		texture = "guis/textures/lives_icon",
+		color = self.color_data.hud_blueoutline,
+		x = vitals_icon_x,
+		y = vitals_icon_y,
+		w = vitals_icon_size,
+		h = vitals_icon_size,
+		alpha = 1
+	})
+	
+	local vitals_icon_bg = vitals_subpanel:bitmap({
+		name = "vitals_icon_bg",
+		layer = -1,
+		rotation = 360,
+		texture = "guis/textures/lives_icon",
+		color = self.color_data.hud_bluefill,
+		x = vitals_icon_x,
+		y = vitals_icon_y,
+		w = vitals_icon_size,
+		h = vitals_icon_size,
+		alpha = 0.25
+	})
+	
+	
+	local vitals_health_label = vitals_subpanel:text({
+		name = "vitals_health_label",
+		layer = 1,
+		text = "100",
+		vertical = "bottom",
+		align = "center",
+		color = Color.white,
+		font_size = tweak_data.hud_players.name_size,
+		font = ammo_font
+	})
 	
 	local deployable_subpanel = panel:panel({
 		name = "deployable_subpanel",
-		x = callsign_box:right(),
+		x = vitals_subpanel:right(),
 		w = subpanel_w, --*2	
 		h = subpanel_h,
-		visible = false
+		visible = true
 	})
 	local debug_subpanel1 = deployable_subpanel:rect({
 		name = "debug_subpanel1",
@@ -6611,7 +6671,6 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 		font = ammo_font
 	})
 	
-	
 	local deployable_divider = deployable_subpanel:rect({
 		name = "deployable_divider",
 		color = self.color_data.hud_blueoutline,
@@ -6626,7 +6685,7 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 		x = deployable_subpanel:right(),
 		w = subpanel_w,
 		h = subpanel_h,
-		visible = false
+		visible = true
 	})
 	local debug_subpanel2 = ties_subpanel:rect({
 		name = "debug_subpanel2",
@@ -6673,7 +6732,7 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 		x = ties_subpanel:right(),
 		w = subpanel_w,
 		h = subpanel_h,
-		visible = false
+		visible = true
 	})
 	local debug_subpanel3 = grenade_subpanel:rect({
 		name = "debug_subpanel3",
@@ -6705,6 +6764,8 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 		font_size = tweak_data.hud_players.name_size,
 		font = ammo_font
 	})
+	
+	
 	
 	local teammate_panel_debug = panel:rect({
 		visible = false,
@@ -9999,7 +10060,7 @@ function NobleHUD:_create_waiting(hud)
 		w = 200,
 		h = 48,
 		layer = 10,
-		visible = true -- false 
+		visible = false
 	})
 	
 	local waiting_icon = waiting_panel:bitmap({
@@ -10010,7 +10071,6 @@ function NobleHUD:_create_waiting(hud)
 		w = 24,
 		h = 24,
 		layer = 0,
-		visible = true,
 		blend_mode = "normal",
 		halign = "left",
 		valign = "top"
@@ -10018,6 +10078,7 @@ function NobleHUD:_create_waiting(hud)
 	local waiting_text = waiting_panel:text({
 		name = "waiting_text",
 		text = "butt butt butt butt butt",
+		x = 24 + 4,
 		font_size = tweak_data.hud_players.name_size,
 		font = tweak_data.hud_players.name_font
 	})

@@ -93,13 +93,13 @@ Hooks:PostHook(HUDStatsScreen,"recreate_left","noblehud_hudstats_recreateleft",f
 	
 	
 	
-	
-	---right side
+	--[[
+	--right side
 	local tracked_achievements = managers.achievment:get_tracked_fill()
-	if #tracked > 0 then 
+	if #tracked_achievements > 0 then 
 		
 	end
-	
+	--]]
 	
 	
 	
