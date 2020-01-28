@@ -70,100 +70,116 @@ Hooks:PostHook(HUDTeammate,"set_cable_ties_amount","noblehud_setcabletiesamount"
 end)
 
 Hooks:PostHook(HUDTeammate,"set_health","noblehud_set_health",function(self,data)
-	if not self._main_player then 
-		return
-	end
 	local hp_r = tonumber(tostring(data.current / data.total))
-	NobleHUD:SetRevives(data.revives)
-	
-	local num_ticks = NobleHUD._HUD_HEALTH_TICKS
-	local YELLOW_THRESHOLD = 0.75
-	local RED_THRESHOLD = 0.25
-	
-	local vitals_panel = NobleHUD._vitals_panel
+	if self._main_player then 
+		NobleHUD:SetRevives(data.revives)
 		
-	for i = num_ticks,1,-1 do 
-		local outline_left = vitals_panel:child("health_tick_left_outline_" .. i)
-		local outline_right = vitals_panel:child("health_tick_right_outline_" .. i)
-		local tick_left = vitals_panel:child("health_tick_left_fill_" .. i) 
-		local tick_right = vitals_panel:child("health_tick_right_fill_" .. i) 
-		if outline_left and outline_right and tick_left and tick_right then 
-			if hp_r < RED_THRESHOLD then 
-				tick_left:set_color(NobleHUD.color_data.hud_vitalsfill_red)
-				tick_right:set_color(NobleHUD.color_data.hud_vitalsfill_red)
-				outline_left:set_color(NobleHUD.color_data.hud_vitalsoutline_red)
-				outline_right:set_color(NobleHUD.color_data.hud_vitalsoutline_red)
-			elseif hp_r < YELLOW_THRESHOLD then
-				tick_left:set_color(NobleHUD.color_data.hud_vitalsfill_yellow)
-				tick_right:set_color(NobleHUD.color_data.hud_vitalsfill_yellow)
-				outline_left:set_color(NobleHUD.color_data.hud_vitalsoutline_yellow)
-				outline_right:set_color(NobleHUD.color_data.hud_vitalsoutline_yellow)
-			else
-				tick_left:set_color(NobleHUD.color_data.hud_vitalsfill_blue)
-				tick_right:set_color(NobleHUD.color_data.hud_vitalsfill_blue)
-				outline_left:set_color(NobleHUD.color_data.hud_vitalsoutline_blue)
-				outline_right:set_color(NobleHUD.color_data.hud_vitalsoutline_blue)
+		local num_ticks = NobleHUD._HUD_HEALTH_TICKS
+		local YELLOW_THRESHOLD = 0.75
+		local RED_THRESHOLD = 0.25
+		
+		local vitals_panel = NobleHUD._vitals_panel
+			
+		for i = num_ticks,1,-1 do 
+			local outline_left = vitals_panel:child("health_tick_left_outline_" .. i)
+			local outline_right = vitals_panel:child("health_tick_right_outline_" .. i)
+			local tick_left = vitals_panel:child("health_tick_left_fill_" .. i) 
+			local tick_right = vitals_panel:child("health_tick_right_fill_" .. i) 
+			if outline_left and outline_right and tick_left and tick_right then 
+				if hp_r < RED_THRESHOLD then 
+					tick_left:set_color(NobleHUD.color_data.hud_vitalsfill_red)
+					tick_right:set_color(NobleHUD.color_data.hud_vitalsfill_red)
+					outline_left:set_color(NobleHUD.color_data.hud_vitalsoutline_red)
+					outline_right:set_color(NobleHUD.color_data.hud_vitalsoutline_red)
+				elseif hp_r < YELLOW_THRESHOLD then
+					tick_left:set_color(NobleHUD.color_data.hud_vitalsfill_yellow)
+					tick_right:set_color(NobleHUD.color_data.hud_vitalsfill_yellow)
+					outline_left:set_color(NobleHUD.color_data.hud_vitalsoutline_yellow)
+					outline_right:set_color(NobleHUD.color_data.hud_vitalsoutline_yellow)
+				else
+					tick_left:set_color(NobleHUD.color_data.hud_vitalsfill_blue)
+					tick_right:set_color(NobleHUD.color_data.hud_vitalsfill_blue)
+					outline_left:set_color(NobleHUD.color_data.hud_vitalsoutline_blue)
+					outline_right:set_color(NobleHUD.color_data.hud_vitalsoutline_blue)
+				end
+				local shown = hp_r >= (i/num_ticks)
+				tick_left:set_visible(shown)
+				tick_right:set_visible(shown)
 			end
-			local shown = hp_r >= (i/num_ticks)
-			tick_left:set_visible(shown)
-			tick_right:set_visible(shown)
+		end
+		local outline_center = vitals_panel:child("health_tick_center_outline")
+		local tick_center = vitals_panel:child("health_tick_center_fill")
+		tick_center:set_visible(hp_r > 0)
+		if hp_r < RED_THRESHOLD then
+			tick_center:set_color(NobleHUD.color_data.hud_vitalsfill_red)
+			outline_center:set_color(NobleHUD.color_data.hud_vitalsoutline_red)
+		elseif hp_r < YELLOW_THRESHOLD then
+			tick_center:set_color(NobleHUD.color_data.hud_vitalsfill_yellow)
+			outline_center:set_color(NobleHUD.color_data.hud_vitalsoutline_yellow)
+		else
+			tick_center:set_color(NobleHUD.color_data.hud_vitalsfill_blue)
+			outline_center:set_color(NobleHUD.color_data.hud_vitalsoutline_blue)
+		end
+	--todo set hp/shield numbers
+	else
+	NobleHUD:GetTeammatePanel(1)
+		local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
+		local label = teammate_panel:child("vitals_subpanel"):child("vitals_health_label")
+		label:set_text(math.round(data.current)) --or data.current/data.total?
+		if string.len(label:text()) > 3 then 
+			label:set_font_size(12)
+		else
+			label:set_font_size(19)
 		end
 	end
-	local outline_center = vitals_panel:child("health_tick_center_outline")
-	local tick_center = vitals_panel:child("health_tick_center_fill")
-	tick_center:set_visible(hp_r > 0)
-	if hp_r < RED_THRESHOLD then
-		tick_center:set_color(NobleHUD.color_data.hud_vitalsfill_red)
-		outline_center:set_color(NobleHUD.color_data.hud_vitalsoutline_red)
-	elseif hp_r < YELLOW_THRESHOLD then
-		tick_center:set_color(NobleHUD.color_data.hud_vitalsfill_yellow)
-		outline_center:set_color(NobleHUD.color_data.hud_vitalsoutline_yellow)
-	else
-		tick_center:set_color(NobleHUD.color_data.hud_vitalsfill_blue)
-		outline_center:set_color(NobleHUD.color_data.hud_vitalsoutline_blue)
-	end
-	--todo set hp/shield numbers
 end)
 
 Hooks:PostHook(HUDTeammate,"set_armor","noblehud_set_armor",function(self,data)
-	if not self._main_player then 
-		return
-	end
 	local current = data.current
 	local total = data.total
-	local ratio = current / total
-	
-	local vitals_panel = NobleHUD._vitals_panel
-	if vitals_panel then 
-		if (total == 0) then
-			vitals_panel:child("shield_fill"):set_w(0)
-		else
-			
---			vitals_panel:child("shield_fill"):set_texture_rect(0,0,512 * ratio,64) --classic, one-way depletion
-
-
-			vitals_panel:child("shield_fill"):set_texture_rect((1 - ratio) * 256,0,(ratio * 512),64)
-			vitals_panel:child("shield_fill"):set_w(512 * ratio)
-			vitals_panel:child("shield_fill"):set_x((1 - ratio) * 256)
-			
-			if current == 0 then 
-				local freq = math.sin(300 * Application:time() * math.pi)
-				local glow_a = 0.65 + (freq / 4) --alpha range 0.3 to 0.8
-				local text_a = 0.8 + (freq / 5) --alpha range 0.6 to 1
-				vitals_panel:child("shield_glow"):set_alpha(glow_a)
-				vitals_panel:child("shield_warning"):set_alpha(text_a)
-				vitals_panel:child("shield_outline"):set_alpha(0.2)
+	local ratio = total ~= 0 and (current / total) or 0
+	if self._main_player then 
+		local vitals_panel = NobleHUD._vitals_panel
+		if vitals_panel then 
+			if (total == 0) then
+				vitals_panel:child("shield_fill"):set_w(0)
 			else
-				vitals_panel:child("shield_glow"):set_alpha(0)
-				vitals_panel:child("shield_outline"):set_alpha(0.7)
-				vitals_panel:child("shield_warning"):set_alpha(0)
+				
+	--			vitals_panel:child("shield_fill"):set_texture_rect(0,0,512 * ratio,64) --classic, one-way depletion
+
+
+				vitals_panel:child("shield_fill"):set_texture_rect((1 - ratio) * 256,0,(ratio * 512),64)
+				vitals_panel:child("shield_fill"):set_w(512 * ratio)
+				vitals_panel:child("shield_fill"):set_x((1 - ratio) * 256)
+				
+				if current == 0 then 
+					local freq = math.sin(300 * Application:time() * math.pi)
+					local glow_a = 0.65 + (freq / 4) --alpha range 0.3 to 0.8
+					local text_a = 0.8 + (freq / 5) --alpha range 0.6 to 1
+					vitals_panel:child("shield_glow"):set_alpha(glow_a)
+					vitals_panel:child("shield_warning"):set_alpha(text_a)
+					vitals_panel:child("shield_outline"):set_alpha(0.2)
+				else
+					vitals_panel:child("shield_glow"):set_alpha(0)
+					vitals_panel:child("shield_outline"):set_alpha(0.7)
+					vitals_panel:child("shield_warning"):set_alpha(0)
+				end
+				--todo get image size, multiply by scale;
+				
 			end
-			--todo get image size, multiply by scale;
 			
 		end
-		
+	else
+		local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
+		local label = teammate_panel:child("vitals_subpanel"):child("vitals_armor_label")
+		label:set_text(math.round(current)) --or data.current/data.total?
+		if string.len(label:text()) > 3 then 
+			label:set_font_size(12)
+		else
+			label:set_font_size(19)
+		end
+		--todo set arm/hp numbers
 	end
-	--todo set arm/hp numbers numbers
 end)
 
 Hooks:PostHook(HUDTeammate,"update_delayed_damage","noblehud_update_stoic_bar",function(self)
@@ -466,9 +482,6 @@ Hooks:PostHook(HUDTeammate,"set_weapon_selected","noblehud_set_weapon_selected",
 	NobleHUD:_switch_weapons(id)
 end)
 
-Hooks:PostHook(HUDTeammate,"set_teammate_weapon_firemode","noblehud_set_teammate_firemode",function(self,slot,firemode)
---
-end)
 
 
 
@@ -750,6 +763,10 @@ end)
 --caution! under construction! 
 if true then return end 
 
+
+Hooks:PostHook(HUDTeammate,"set_teammate_weapon_firemode","noblehud_set_teammate_firemode",function(self,slot,firemode)
+--
+end)
 
 Hooks:PostHook(HUDTeammate,"set_ability_radial","khud_set_ability_radial",function(self,data)
 --used for abilities' cooldowns (kingpin, stoic, tag team, hacker)

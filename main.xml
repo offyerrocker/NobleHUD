@@ -57,6 +57,8 @@
 		<texture path="guis/textures/teammate_nameplate"/>
 		<texture path="guis/textures/score_banner_large"/>
 		<texture path="guis/textures/lives_icon"/>
-		<texture path="guis/textures/damage_overlay_1"/>
+<!--		<texture path="guis/textures/damage_overlay_1"/>
+		<texture path="guis/textures/damage_overlay_2"/>
+-->
 	</AddFiles>
 </mod>

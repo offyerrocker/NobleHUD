@@ -42,6 +42,10 @@
 			"script_path" : "lua/hudobjectives.lua"
 		},
 		{
+			"DISABLED_hook_id" : "lib/managers/hud/hudhitdirection",
+			"script_path" : "lua/hudhitdirection.lua"
+		},
+		{
 			"hook_id" : "lib/managers/hud/hudtemp",
 			"script_path" : "lua/hudtemp.lua"
 		},
@@ -66,7 +70,7 @@
 			"script_path" : "lua/hudinteraction.lua"
 		},
 		{
-			"DISABLED_hook_id" : "lib/managers/hud/newhudstatsscreen",
+			"hook_id" : "lib/managers/hud/newhudstatsscreen",
 			"script_path" : "lua/newhudstatsscreen.lua"
 		},
 		{

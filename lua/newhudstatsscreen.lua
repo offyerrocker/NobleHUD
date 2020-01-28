@@ -1,7 +1,12 @@
-Hooks:PostHook(HUDStatsScreen,"init","noblehud_hudstats_init",function(self)
-	--todo Lobby Player Info support
+
+Hooks:PostHook(HUDStatsScreen,"show","noblehud_hudstats_show",function(self)
+	NobleHUD:animate(NobleHUD._tabscreen,"animate_fadein",nil,0.25,NobleHUD:GetHUDAlpha())
 end)
 
+Hooks:PostHook(HUDStatsScreen,"hide","noblehud_hudstats_hide",function(self)
+	NobleHUD:animate(NobleHUD._tabscreen,"animate_fadeout",nil,0.25,NobleHUD._tabscreen:alpha())
+end)
+--[[
 Hooks:PostHook(HUDStatsScreen,"recreate_left","noblehud_hudstats_recreateleft",function(self)
 	local mission_box = NobleHUD._tabscreen:child("mission_box")
 	
@@ -93,17 +98,17 @@ Hooks:PostHook(HUDStatsScreen,"recreate_left","noblehud_hudstats_recreateleft",f
 	
 	
 	
-	--[[
 	--right side
-	local tracked_achievements = managers.achievment:get_tracked_fill()
-	if #tracked_achievements > 0 then 
-		
-	end
-	--]]
+	--local tracked_achievements = managers.achievment:get_tracked_fill()
 	
 	
 	
 	--buffs/debuffs?	
+end)
+--]]
+--[[
+Hooks:PostHook(HUDStatsScreen,"init","noblehud_hudstats_init",function(self)
+	--todo Lobby Player Info support
 end)
 
 Hooks:PostHook(HUDStatsScreen,"recreate_right","noblehud_hudstats_recreateright",function(self)
@@ -112,44 +117,9 @@ end)
 
 function HUDStatsScreen:show()
 	NobleHUD:AnimateShowTabscreen()
---	NobleHUD:ShowTabscreen()
---[[
-	self:recreate_left()
-	self:recreate_right()
-
-	local safe = managers.hud.STATS_SCREEN_SAFERECT
-	local full = managers.hud.STATS_SCREEN_FULLSCREEN
-
-	managers.hud:show(full)
-
-	local left_panel = self._left
-	local right_panel = self._right
-	local bottom_panel = self._bottom
-
-	left_panel:stop()
-
-	local teammates_panel = managers.hud:script(PlayerBase.PLAYER_INFO_HUD_PD2).panel:child("teammates_panel")
-	local objectives_panel = managers.hud:script(PlayerBase.PLAYER_INFO_HUD_PD2).panel:child("objectives_panel")
-	local chat_panel = managers.hud:script(PlayerBase.PLAYER_INFO_HUD_PD2).panel:child("chat_panel")
-
-	left_panel:animate(callback(self, self, "_animate_show_stats_left_panel"), right_panel, bottom_panel, teammates_panel, objectives_panel, chat_panel)
-	--]]
 end
 
 function HUDStatsScreen:hide()
 	NobleHUD:AnimateHideTabscreen()
---	NobleHUD:HideTabscreen()
-	--[[
-	local left_panel = self._left
-	local right_panel = self._right
-	local bottom_panel = self._bottom
-
-	left_panel:stop()
-
-	local teammates_panel = managers.hud:script(PlayerBase.PLAYER_INFO_HUD_PD2).panel:child("teammates_panel")
-	local objectives_panel = managers.hud:script(PlayerBase.PLAYER_INFO_HUD_PD2).panel:child("objectives_panel")
-	local chat_panel = managers.hud:script(PlayerBase.PLAYER_INFO_HUD_PD2).panel:child("chat_panel")
-
-	left_panel:animate(callback(self, self, "_animate_hide_stats_left_panel"), right_panel, bottom_panel, teammates_panel, objectives_panel, chat_panel)
---]]
 end
+--]]

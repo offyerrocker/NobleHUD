@@ -5,20 +5,29 @@
 	Notes:
 -test has font with managers.dyn_resource:has_resource(Idstring("scene"), Idstring("core/environments/skies/" .. sky .. "/" .. sky), managers.dyn_resource.DYN_RESOURCES_PACKAGE)
 
+		* Sync data:
+			send team name + color
+			send assault phase
+			send downs
+			
 	&&& HIGH PRIORITY: &&&
-		* DROP IN MENU
+		* Verify DROP IN MENU
 		* Teammate equipment
+		* popup is still showing popup from behind for athena and bluespider
+			* use to_polar_with_reference, figure out how that works
+		
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER 
 		* Layout HUD on disabling radar
 				* if radar disabled, hide radar and realign panels: ability panel down, cartographer text indicator left align
 		* underbarrel base does not trigger HUD change (ammo tick, crosshair)
 
 		%% BUGS:
-			- hide score popup if outside viewing angle (place outside hud)
+			- hide score popup if outside viewing angle (place outside hud) (test)
 			- callsign is not being used when not host?
 			- Teammate panel does not reset after teammate leaves
 			- Teammate grenade count does not sync beyond initial count
 			- hide HUD when in camera
+			- Floating ammo panel is visible in casing/civilian mode
 			- ADS should maintain mostly still reticle, unusable otherwise
 
 		%% FEATURES: %%
@@ -44,10 +53,6 @@
 				* Add shield sounds slider
 			
 	&& LOW PRIORITY FEATURES: &&
-		* Sync data:
-			send team name + color
-			send assault phase
-			send downs
 		* Show other things, such as equipment, on radar? check slotmask 
 		* Adjust overshield color to be more green (check MCC screenshots)
 		* Flash mission name at mission start? (See mission/submission name in MCC screenshots)
@@ -283,6 +288,9 @@ NobleHUD.color_data = {
 	hud_vitalsfill_yellow = Color(255/255,195/255,74/255),
 	hud_vitalsfill_red = Color(212/255,0/255,0/255),
 	hud_vitalsglow_red = Color(255/255,115/255,115/255), --empty pink flash
+	hud_hit_health = Color("ff3d10"), --orange
+	hud_hit_armor = Color("32a0ff"), --blue
+	hud_hit_vehicle = Color("2141ff"), --blue-purple
 	hud_weapon_color = Color(113/255,202/255,239/255), --"official" blue hud color
 	hud_text_blue = Color(100/255,178/255,255/255),
 	hud_text_flash = Color(254/255,239/255,239/255),
@@ -3855,7 +3863,7 @@ function NobleHUD:GetRadarScale()
 end
 
 function NobleHUD:IsFloatingAmmoPanelEnabled()
-	return false
+	return self.settings.floating_ammo_enabled
 end
 
 function NobleHUD:get_blip_color_by_team(team_name)
@@ -4092,7 +4100,8 @@ end
 
 function NobleHUD:IsSkullActive(id)
 	if id == "birthday" then 
-		return true
+		--yaaaaaay
+		return (tonumber(os.date("%d")) == 1) and (tonumber(os.date("%m")) == 4)
 	end
 end
 
@@ -4212,7 +4221,7 @@ function NobleHUD:OnLoaded()
 --	self._score_panel:child("score_banner_small"):set_color(tweak_data.chat_colors[peer_id])
 	
 	self:SetRadarDistance(self:GetRadarDistance())
-	
+	self._floating_ammo_panel:set_visible(self:IsFloatingAmmoPanelEnabled())
 	--[[
 	for id,data in pairs(managers.criminals._characters) do 
 		if data.taken then 
@@ -5050,18 +5059,9 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 		--no +1 kills for you, you murderer >:(
 	else
 		if self:IsSkullActive("birthday") and headshot and unit and alive(unit) and unit:base() then 
---			if unit:base()._grunt_bday then
-				
---			else
-				unit:base()._grunt_bday = XAudio.UnitSource:new(unit,XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg"))
-				--todo figure out why this doesn't update position
-				--	check mono/stereo
-				--	check if it needs an update for some reason???
-				--local s = XAudio.Source:new(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg")); Log(s:get_volume()); Log(s:get_raw_volume())
-				--local unit = Console.tagged_unit; if alive(unit) and unit:character_damage() then XAudio.UnitSource:new(unit,XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg")) end
-				--local ray = Console:GetFwdRay(); local unit = ray and ray.unit; if alive(unit) and unit:character_damage() then XAudio.UnitSource:new(unit,XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg")) end
-				--wow that's super quiet
---			end
+--				unit:base()._grunt_bday = XAudio.UnitSource:new(unit,XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg"))
+				unit:base()._grunt_bday = XAudio.UnitSource:new(player,XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg"))
+--			XAudio.Source:new(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg")):set_position(managers.player:local_player():position())
 		end
 		if player_weapon_id == primary_id then
 			self:_set_killcount(1,managers.statistics:session_killed_by_weapon(primary_id))
@@ -5086,7 +5086,6 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 		end
 		
 		local action = movement and movement._active_actions[1]
---		NobleHUD.buttass = movement and movement._active_actions --!
 		
 		local action_type = action and action:type()
 		if unit_type == "spooc" then
@@ -5321,6 +5320,101 @@ function NobleHUD:PlayAnnouncerSound(name)
 	end
 end
 
+
+--HIT INDICATOR
+function NobleHUD:AddHitIndicator(damage_origin, damage_type, fixed_angle)
+	damage_type = damage_type or HUDHitDirection.DAMAGE_TYPES.HEALTH
+	
+	local color = Color(1,1,1)
+	
+	if damage_type == HUDHitDirection.DAMAGE_TYPES.HEALTH then
+		color = self.color_data.hud_hit_health
+	elseif damage_type == HUDHitDirection.DAMAGE_TYPES.ARMOUR then
+		color = self.color_data.hud_hit_armor
+	elseif damage_type == HUDHitDirection.DAMAGE_TYPES.VEHICLE then
+		color = self.color_data.hud_hit_vehicle
+	end
+	
+	local name = "hit_" .. tostring(damage_origin) .. "_" .. tostring(damage_type) .. "_" .. tostring(fixed_angle)
+	local hit = self._ws:panel():bitmap({
+		name = name,
+		texture = "guis/textures/damage_overlay_2",
+		blend_mode = "add",
+		alpha = 0,
+		layer = -1000,
+		rotation = 0,
+		color = color
+	})
+	local hit_mirror = self._ws:panel():bitmap({
+		name = name .. "_mirror",
+		texture = "guis/textures/damage_overlay_2",
+		blend_mode = "add",
+		alpha = 0,
+		layer = -1000,
+		rotation = 0,
+		color = color
+	})
+
+	local function remove_hit(o)
+		o:parent():remove(o)
+	end
+--[[		
+	
+	local function fadeout(o)
+		NobleHUD:animate(o,"animate_hit_out",remove_hit,0.3)
+	end
+--]]	
+	
+	local duration = 0.5
+	self:animate(hit,"animate_hit_in",remove_hit,duration,damage_origin,fixed_angle)
+	self:animate(hit_mirror,"animate_hit_in",remove_hit,duration,damage_origin,fixed_angle,true)
+end
+
+function NobleHUD:animate_hit_in(o,t,dt,start_t,duration,damage_origin,fixed_angle,mirrored)
+	local ratio = (t - start_t) / duration
+	local angle = 0
+	local angle_alpha = 0
+	local on_left_side
+	if fixed_angle then 
+		angle = fixed_angle
+	else
+		if alive(managers.player:local_player()) then 
+			local ply_camera = managers.player:local_player():camera()
+			if ply_camera then 
+				local target_vec = ply_camera:position() - damage_origin
+				angle = target_vec:to_polar_with_reference(ply_camera:forward(), math.UP).spin
+				on_left_side = angle <= 0 
+			end
+		end
+	end
+	
+	if angle == 0 then 
+		angle_alpha = 1
+	else
+		angle_alpha = 22.5 / (math.abs(angle) - (180 - 45))
+	end
+	if mirrored then 
+		on_left_side = not on_left_side
+		angle_alpha = angle_alpha * 0.5
+	end
+	if on_left_side then 
+		o:set_rotation(0)
+		o:set_x(0)
+	else 
+		o:set_rotation(180)
+		o:set_x(o:parent():w() - o:w())					
+	end
+	
+	o:set_alpha(math.min(angle_alpha,0.33))
+	
+	if ratio >= 1 then 
+		return true
+	end
+end
+
+function NobleHUD:animate_hit_out(o,t,dt,start_t,duration,damage_origin,fixed_angle)
+	
+end
 
 --		WEAPONS
 
@@ -5652,7 +5746,7 @@ function NobleHUD:_set_weapon_reserve(slot,amount)
 end
 
 function NobleHUD:_set_weapon_mag(slot,amount,max_amount)
-	self:SetFloatingAmmo(amount,max_amount)
+	self:SetFloatingAmmo(slot,amount,max_amount)
 	amount = amount or 0
 	max_amount = max_amount or 1
 	local weapon_panel
@@ -5756,7 +5850,7 @@ function NobleHUD:_switch_weapons(id)
 		if id == i then 		
 			self:_set_weapon_label(id,base:get_name_id()) --only one shared weapon label, used by master weapon panel
 		else
-			self:SetFloatingAmmo(base:get_ammo_remaining_in_clip(),base:get_ammo_max_per_clip())
+			self:SetFloatingAmmo(i,base:get_ammo_remaining_in_clip(),base:get_ammo_max_per_clip())
 		end
 		self:_set_weapon_icon(i,base:get_name_id())
 		self:_set_weapon_mag(i,base:get_ammo_remaining_in_clip())
@@ -5767,6 +5861,10 @@ function NobleHUD:_switch_weapons(id)
 	self._master_weapon_panel:animate(callback(self,self,"animate_flash_weapon_name"))
 	if not self:UseCrosshairDynamicColor() then 
 		self:_set_crosshair_color(self:GetCrosshairStaticColor())
+	end
+	if self:IsFloatingAmmoPanelEnabled() then 
+		self._floating_ammo_panel:child("primary"):set_visible(id == 1)
+		self._floating_ammo_panel:child("secondary"):set_visible(id == 2)
 	end
 end
 
@@ -5845,7 +5943,7 @@ function NobleHUD:_create_floating_ammo(hud)
 		h = 50,
 		w = 100,
 		alpha = self:GetHUDAlpha(),
-		visible = false --disabled for now
+		visible = false --set enabled on load
 	})
 	local margin = 4
 	local bg = floating_ammo_panel:rect({
@@ -5854,8 +5952,8 @@ function NobleHUD:_create_floating_ammo(hud)
 		alpha = 0.3,
 		layer = 1
 	})
-	local label = floating_ammo_panel:text({
-		name = "magazine",
+	local primary = floating_ammo_panel:text({
+		name = "primary",
 		text = "69/420",
 --		vertical = "center",
 --		align = "center",
@@ -5863,14 +5961,28 @@ function NobleHUD:_create_floating_ammo(hud)
 		y = margin/2,
 		font = tweak_data.hud_players.ammo_font,
 		font_size = 16,
-		layer = 3
+		layer = 3,
+		visible = true
+	})
+	local secondary = floating_ammo_panel:text({
+		name = "secondary",
+		text = "420/69",
+		x = margin/2,
+		y = margin/2,
+		font = tweak_data.hud_players.ammo_font,
+		font_size = 16,
+		layer = 3,
+		visible = false
 	})
 	self._floating_ammo_panel = floating_ammo_panel
 end
 
-function NobleHUD:SetFloatingAmmo(current,total)
+function NobleHUD:SetFloatingAmmo(slot,current,total)
 	local margin = 4
-	local magazine = self._floating_ammo_panel:child("magazine")
+	local magazine = self._floating_ammo_panel:child("primary")
+	if slot == 2 then 
+		magazine = self._floating_ammo_panel:child("secondary")
+	end
 	if not (current and total and self:IsFloatingAmmoPanelEnabled()) then 
 		return
 	end
@@ -7463,7 +7575,7 @@ function NobleHUD:_create_score(hud)
 	local score_label = score_panel:text({
 		name = "score_label",
 		text = "0",
-		align = "left", --!
+		align = "left",
 		color = Color.white,
 		x = score_banner_large:x() + margin_s,
 		y = score_banner_large:y() + margin_s,
@@ -7990,19 +8102,20 @@ function NobleHUD:animate_popup_bluespider(o,t,dt,start_t,cb,duration,unit,fadeo
 			o:set_alpha(o:alpha() + (dt * duration * 2))
 		end
 		local viewport_cam = managers.viewport:get_current_camera()
---		if viewport_cam:position() - unit_pos
 		local head_pos = unit:movement() and unit:movement():m_head_pos()
-		local unit_pos = head_pos and NobleHUD._ws:world_to_screen(viewport_cam,head_pos)
-		if unit_pos then 
-			local a = viewport_cam:position()
-			if viewport_cam:rotation():yaw() - NobleHUD.to_angle(a.x,a.y) > 180 then 
+		local unit_screen_pos = head_pos and NobleHUD._ws:world_to_screen(viewport_cam,head_pos)
+		if unit_screen_pos then 
+			local my_pos = viewport_cam:position()
+			local aim = viewport_cam:rotation():yaw()
+			local angle_from = NobleHUD.angle_from(head_pos.x,head_pos.y,my_pos.x,my_pos.y)
+			
+			if aim and my_pos and (math.abs(180 - (90 + (angle_from - aim))) <= 90) then 
+				o:set_x(unit_screen_pos.x)
+				o:set_y(unit_screen_pos.y)
+			else
 				o:set_x(-1000)
 				o:set_y(-1000)
-			else
-				o:set_x(unit_pos.x)
-				o:set_y(unit_pos.y)
 			end
---			o:set_center(unit_pos.x,unit_pos.y)
 		end
 	else
 		return true
@@ -8021,10 +8134,19 @@ function NobleHUD:animate_popup_athena(o,t,dt,start_t,cb,duration,unit,distance,
 		end
 		local viewport_cam = managers.viewport:get_current_camera()
 		local head_pos = unit:movement() and unit:movement():m_head_pos()
-		local unit_pos = head_pos and NobleHUD._ws:world_to_screen(viewport_cam,head_pos)
-		if unit_pos then
-			o:set_x(unit_pos.x)
-			o:set_y(unit_pos.y + (distance * (t - start_t)))
+		local unit_screen_pos = head_pos and NobleHUD._ws:world_to_screen(viewport_cam,head_pos)
+		if unit_screen_pos then
+			local my_pos = viewport_cam:position()
+			local aim = viewport_cam:rotation():yaw()
+			local angle_from = NobleHUD.angle_from(head_pos.x,head_pos.y,my_pos.x,my_pos.y)
+			if aim and my_pos and (math.abs(180 - (90 + (angle_from - aim))) <= 90) then 
+				o:set_x(unit_screen_pos.x)
+				o:set_y(unit_screen_pos.y + (distance * (t - start_t)))
+			else
+				o:set_x(-1000)
+				o:set_y(-1000)
+			end
+			
 		end
 	else
 		return true
@@ -8552,8 +8674,8 @@ end
 function NobleHUD:_create_tabscreen(hud)
 	local tabscreen = hud:panel({
 		name = "tabscreen",
-		visible = false,
-		alpha = 1
+		visible = true,
+		alpha = 0
 	})
 	self._tabscreen = tabscreen
 	local h_margin = 8
@@ -8594,7 +8716,7 @@ function NobleHUD:_create_tabscreen(hud)
 		visible = false,
 		alpha = 0.2
 	})
-	scoreboard:set_x((hud:w() - scoreboard:w()) / 2)
+	scoreboard:set_x(100 + ((hud:w() - scoreboard_w) / 2))
 	scoreboard:set_y(all_box_h * 1.5) --margin from top of screen
 --	scoreboard:set_center(hud:w()/2,hud:h()/2)
 	
@@ -8920,7 +9042,8 @@ function NobleHUD:_create_tabscreen(hud)
 		name = "music_box",
 		y = 0,
 		w = tabscreen:w(),
-		h = 30
+		h = 30,
+		visible = false
 	})
 	local music_bg = music_box:gradient({
 		name = "music_bg",
@@ -8982,7 +9105,8 @@ function NobleHUD:_create_tabscreen(hud)
 		x = 16,
 		y = 16,
 		w = 256,
-		h = tabscreen:h()
+		h = tabscreen:h(),
+		visible = false
 	})
 	mission_box:set_h(tabscreen:h() - (mission_box:y() + 16))
 	
@@ -9078,7 +9202,8 @@ function NobleHUD:_create_tabscreen(hud)
 		w = right_box_w,
 		h = tabscreen:h(),
 		x = tabscreen:w() - right_box_w,
-		y = 0
+		y = 0,
+		visible = false
 	})
 	local right_label = right_box:text({
 		name = "right_label",
@@ -9094,65 +9219,6 @@ function NobleHUD:_create_tabscreen(hud)
 		color = Color(0.4,0.4,0.4),
 		alpha = 1
 	})
-	
-
---[[
-	local blur_box = tabscreen:bitmap({
-	
-	})
-	
-	
-	
-	local bodybags_text
-	
-	local cs_level_label = managers.localization:text("menu_cs_level", {level = managers.experience:cash_string(managers.crime_spree:server_spree_level(), "")})
-
-	local job_chain = managers.job:current_job_chain_data()
-	local day = managers.job:current_stage()
-	local days = job_chain and #job_chain or 0
-	local day_title =managers.localization:to_upper_text("hud_days_title", {
-		DAY = day,
-		DAYS = days
-	})
-	
-	local ghostable_icon = managers.job:is_level_ghostable(managers.job:current_level_id())
-	local is_whisper_mode = managers.groupai and managers.groupai:state():whisper_mode()
-	local ghost_color = is_whisper_mode and Color.white or tweak_data.screen_colors.important_1
-	local ghost = placer:add_right(self._left:bitmap({
-		texture = "guis/textures/pd2/cn_minighost",
-		name = "ghost_icon",
-		h = 16,
-		blend_mode = "add",
-		w = 16,
-		color = ghost_color
-	}))
-	
-	
-	
-	local job_stars = managers.job:current_job_stars()
-	local difficulty_stars = managers.job:current_difficulty_stars()
-	local payout = managers.localization:text("hud_day_payout", {MONEY = managers.experience:cash_string(managers.money:get_potential_payout_from_current_stage())})
-	local active_objectives = managers.objectives:get_active_objectives() --data.text, data.description
-	--buffs/debuffs?
-
-	local mandatory_bags_data = managers.loot:get_mandatory_bags_data()
-	local mandatory_amount = mandatory_bags_data and mandatory_bags_data.amount
-	local secured_amount = managers.loot:get_secured_mandatory_bags_amount()
-	local bonus_amount = managers.loot:get_secured_bonus_bags_amount()
-	
-	local secured_bags_money = managers.experience:cash_string(managers.money:get_secured_mandatory_bags_money() + managers.money:get_secured_bonus_bags_money())
-
-	local instant_cash = managers.experience:cash_string(managers.loot:get_real_total_small_loot_value())
-	
-	
-	
-	local track_now_playing
-	local achievement_list --or mutators list
-	
---]]	
-	
-	
-	
 end
 
 function NobleHUD:_set_tabscreen_teammate_callsign(id,callsign)
@@ -9292,7 +9358,7 @@ function NobleHUD:SetTeammatePing(id,ping)
 	local player_box = id and self._tabscreen:child("scoreboard"):child("player_box_" .. id)
 	if alive(player_box) then
 		local ping_box = player_box:child("ping_box")
-		ping_box:child("ping_label"):set_text(((ping and tostring(ping) .. " ms")) or "-")
+		ping_box:child("ping_label"):set_text((ping and string.format("%d ms",ping)) or "-")
 		local ping_h_max = player_box:h()
 		if ping then 
 			local ping_h = ping_h_max
@@ -9317,6 +9383,7 @@ function NobleHUD:SetTeammatePing(id,ping)
 			local ping_bitmap = ping_box:child("ping_bitmap")
 			ping_bitmap:set_color(color)
 			ping_bitmap:set_h(ping_h)
+			ping_bitmap:set_y(ping_box:h() - ping_h)
 		end
 	end
 end
@@ -11109,7 +11176,11 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 
 --WEAPONS
 	MenuCallbackHandler.callback_noblehud_set_floating_ammo_enabled = function(self,item)
-		NobleHUD.settings.floating_ammo_enabled = item:value() == "on"
+		local value = item:value() == "on"
+		NobleHUD.settings.floating_ammo_enabled = value
+		if managers.hud and alive(NobleHUD._floating_ammo_panel) then 
+			NobleHUD._floating_ammo_panel:set_visible(item:value() == "on")
+		end
 		NobleHUD:SaveSettings()
 	end
 	MenuCallbackHandler.callback_noblehud_set_weapon_ammo_real_counter_enabled = function(self,item)
