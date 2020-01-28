@@ -54,7 +54,7 @@
 				"noblehud_crosshair_choice_sword",
 				"noblehud_crosshair_choice_gravity_hammer",
 				"noblehud_crosshair_choice_plasma_launcher",
-				"noblehud_crosshair_choice_beam_rifle",
+				"noblehud_crosshair_choice_focus_rifle",
 				"noblehud_crosshair_choice_spiker",
 				"noblehud_crosshair_choice_fuel_rod",
 				"noblehud_crosshair_choice_plasma_cannon"
@@ -90,7 +90,7 @@
 				"noblehud_crosshair_choice_sword",
 				"noblehud_crosshair_choice_gravity_hammer",
 				"noblehud_crosshair_choice_plasma_launcher",
-				"noblehud_crosshair_choice_beam_rifle",
+				"noblehud_crosshair_choice_focus_rifle",
 				"noblehud_crosshair_choice_spiker",
 				"noblehud_crosshair_choice_fuel_rod",
 				"noblehud_crosshair_choice_plasma_cannon"
@@ -126,7 +126,7 @@
 				"noblehud_crosshair_choice_sword",
 				"noblehud_crosshair_choice_gravity_hammer",
 				"noblehud_crosshair_choice_plasma_launcher",
-				"noblehud_crosshair_choice_beam_rifle",
+				"noblehud_crosshair_choice_focus_rifle",
 				"noblehud_crosshair_choice_spiker",
 				"noblehud_crosshair_choice_fuel_rod",
 				"noblehud_crosshair_choice_plasma_cannon"
@@ -162,7 +162,7 @@
 				"noblehud_crosshair_choice_sword",
 				"noblehud_crosshair_choice_gravity_hammer",
 				"noblehud_crosshair_choice_plasma_launcher",
-				"noblehud_crosshair_choice_beam_rifle",
+				"noblehud_crosshair_choice_focus_rifle",
 				"noblehud_crosshair_choice_spiker",
 				"noblehud_crosshair_choice_fuel_rod",
 				"noblehud_crosshair_choice_plasma_cannon"
@@ -198,7 +198,7 @@
 				"noblehud_crosshair_choice_sword",
 				"noblehud_crosshair_choice_gravity_hammer",
 				"noblehud_crosshair_choice_plasma_launcher",
-				"noblehud_crosshair_choice_beam_rifle",
+				"noblehud_crosshair_choice_focus_rifle",
 				"noblehud_crosshair_choice_spiker",
 				"noblehud_crosshair_choice_fuel_rod",
 				"noblehud_crosshair_choice_plasma_cannon"
@@ -234,7 +234,7 @@
 				"noblehud_crosshair_choice_sword",
 				"noblehud_crosshair_choice_gravity_hammer",
 				"noblehud_crosshair_choice_plasma_launcher",
-				"noblehud_crosshair_choice_beam_rifle",
+				"noblehud_crosshair_choice_focus_rifle",
 				"noblehud_crosshair_choice_spiker",
 				"noblehud_crosshair_choice_fuel_rod",
 				"noblehud_crosshair_choice_plasma_cannon"
@@ -270,7 +270,7 @@
 				"noblehud_crosshair_choice_sword",
 				"noblehud_crosshair_choice_gravity_hammer",
 				"noblehud_crosshair_choice_plasma_launcher",
-				"noblehud_crosshair_choice_beam_rifle",
+				"noblehud_crosshair_choice_focus_rifle",
 				"noblehud_crosshair_choice_spiker",
 				"noblehud_crosshair_choice_fuel_rod",
 				"noblehud_crosshair_choice_plasma_cannon"
@@ -306,7 +306,7 @@
 				"noblehud_crosshair_choice_sword",
 				"noblehud_crosshair_choice_gravity_hammer",
 				"noblehud_crosshair_choice_plasma_launcher",
-				"noblehud_crosshair_choice_beam_rifle",
+				"noblehud_crosshair_choice_focus_rifle",
 				"noblehud_crosshair_choice_spiker",
 				"noblehud_crosshair_choice_fuel_rod",
 				"noblehud_crosshair_choice_plasma_cannon"
@@ -342,7 +342,7 @@
 				"noblehud_crosshair_choice_sword",
 				"noblehud_crosshair_choice_gravity_hammer",
 				"noblehud_crosshair_choice_plasma_launcher",
-				"noblehud_crosshair_choice_beam_rifle",
+				"noblehud_crosshair_choice_focus_rifle",
 				"noblehud_crosshair_choice_spiker",
 				"noblehud_crosshair_choice_fuel_rod",
 				"noblehud_crosshair_choice_plasma_cannon"
@@ -378,7 +378,7 @@
 				"noblehud_crosshair_choice_sword",
 				"noblehud_crosshair_choice_gravity_hammer",
 				"noblehud_crosshair_choice_plasma_launcher",
-				"noblehud_crosshair_choice_beam_rifle",
+				"noblehud_crosshair_choice_focus_rifle",
 				"noblehud_crosshair_choice_spiker",
 				"noblehud_crosshair_choice_fuel_rod",
 				"noblehud_crosshair_choice_plasma_cannon"
@@ -414,7 +414,7 @@
 				"noblehud_crosshair_choice_sword",
 				"noblehud_crosshair_choice_gravity_hammer",
 				"noblehud_crosshair_choice_plasma_launcher",
-				"noblehud_crosshair_choice_beam_rifle",
+				"noblehud_crosshair_choice_focus_rifle",
 				"noblehud_crosshair_choice_spiker",
 				"noblehud_crosshair_choice_fuel_rod",
 				"noblehud_crosshair_choice_plasma_cannon"
@@ -450,7 +450,7 @@
 				"noblehud_crosshair_choice_sword",
 				"noblehud_crosshair_choice_gravity_hammer",
 				"noblehud_crosshair_choice_plasma_launcher",
-				"noblehud_crosshair_choice_beam_rifle",
+				"noblehud_crosshair_choice_focus_rifle",
 				"noblehud_crosshair_choice_spiker",
 				"noblehud_crosshair_choice_fuel_rod",
 				"noblehud_crosshair_choice_plasma_cannon"
@@ -486,7 +486,7 @@
 				"noblehud_crosshair_choice_sword",
 				"noblehud_crosshair_choice_gravity_hammer",
 				"noblehud_crosshair_choice_plasma_launcher",
-				"noblehud_crosshair_choice_beam_rifle",
+				"noblehud_crosshair_choice_focus_rifle",
 				"noblehud_crosshair_choice_spiker",
 				"noblehud_crosshair_choice_fuel_rod",
 				"noblehud_crosshair_choice_plasma_cannon"
@@ -522,7 +522,7 @@
 				"noblehud_crosshair_choice_sword",
 				"noblehud_crosshair_choice_gravity_hammer",
 				"noblehud_crosshair_choice_plasma_launcher",
-				"noblehud_crosshair_choice_beam_rifle",
+				"noblehud_crosshair_choice_focus_rifle",
 				"noblehud_crosshair_choice_spiker",
 				"noblehud_crosshair_choice_fuel_rod",
 				"noblehud_crosshair_choice_plasma_cannon"
@@ -558,7 +558,7 @@
 				"noblehud_crosshair_choice_sword",
 				"noblehud_crosshair_choice_gravity_hammer",
 				"noblehud_crosshair_choice_plasma_launcher",
-				"noblehud_crosshair_choice_beam_rifle",
+				"noblehud_crosshair_choice_focus_rifle",
 				"noblehud_crosshair_choice_spiker",
 				"noblehud_crosshair_choice_fuel_rod",
 				"noblehud_crosshair_choice_plasma_cannon"
@@ -594,7 +594,7 @@
 				"noblehud_crosshair_choice_sword",
 				"noblehud_crosshair_choice_gravity_hammer",
 				"noblehud_crosshair_choice_plasma_launcher",
-				"noblehud_crosshair_choice_beam_rifle",
+				"noblehud_crosshair_choice_focus_rifle",
 				"noblehud_crosshair_choice_spiker",
 				"noblehud_crosshair_choice_fuel_rod",
 				"noblehud_crosshair_choice_plasma_cannon"
@@ -630,7 +630,7 @@
 				"noblehud_crosshair_choice_sword",
 				"noblehud_crosshair_choice_gravity_hammer",
 				"noblehud_crosshair_choice_plasma_launcher",
-				"noblehud_crosshair_choice_beam_rifle",
+				"noblehud_crosshair_choice_focus_rifle",
 				"noblehud_crosshair_choice_spiker",
 				"noblehud_crosshair_choice_fuel_rod",
 				"noblehud_crosshair_choice_plasma_cannon"
@@ -666,7 +666,7 @@
 				"noblehud_crosshair_choice_sword",
 				"noblehud_crosshair_choice_gravity_hammer",
 				"noblehud_crosshair_choice_plasma_launcher",
-				"noblehud_crosshair_choice_beam_rifle",
+				"noblehud_crosshair_choice_focus_rifle",
 				"noblehud_crosshair_choice_spiker",
 				"noblehud_crosshair_choice_fuel_rod",
 				"noblehud_crosshair_choice_plasma_cannon"
@@ -702,7 +702,7 @@
 				"noblehud_crosshair_choice_sword",
 				"noblehud_crosshair_choice_gravity_hammer",
 				"noblehud_crosshair_choice_plasma_launcher",
-				"noblehud_crosshair_choice_beam_rifle",
+				"noblehud_crosshair_choice_focus_rifle",
 				"noblehud_crosshair_choice_spiker",
 				"noblehud_crosshair_choice_fuel_rod",
 				"noblehud_crosshair_choice_plasma_cannon"

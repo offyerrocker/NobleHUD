@@ -66,7 +66,7 @@
 			"script_path" : "lua/hudinteraction.lua"
 		},
 		{
-			"hook_id" : "lib/managers/hud/newhudstatsscreen",
+			"DISABLED_hook_id" : "lib/managers/hud/newhudstatsscreen",
 			"script_path" : "lua/newhudstatsscreen.lua"
 		},
 		{

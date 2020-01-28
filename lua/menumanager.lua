@@ -11,7 +11,7 @@
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER 
 		* Layout HUD on disabling radar
 				* if radar disabled, hide radar and realign panels: ability panel down, cartographer text indicator left align
-
+		* underbarrel base does not trigger HUD change (ammo tick, crosshair)
 
 		%% BUGS:
 			- hide score popup if outside viewing angle (place outside hud)
@@ -143,14 +143,6 @@
 
 		-- Firemode indicator
 		-- Crosshair textures
-			- Chevron [ref]
-			- Needler  [ref]
-			- Spiker [ref]
-			- Plasma Launcher [ref]
-			- Beam Rifle [ref]
-			- Target Designator [ref] 
-			- Fuel Rod Cannon [ref]
-			- Plasma Cannon (Mounted) [ref]
 			- Other vehicles?
 				* Scorpion
 				* Gauss hog gunner?
@@ -476,21 +468,21 @@ NobleHUD._reticle_types_by_index = {
 	[9] = "rocket",
 	[10] = "minigun",
 	[11] = "flamethrower",
-	[12] = "target_laser", --todo
-	[13] = "car", --todo
+	[12] = "target_laser",
+	[13] = "car",
 	[14] = "plasma_pistol",
 	[15] = "plasma_rifle",
 	[16] = "plasma_repeater",
-	[17] = "needler", --todo
+	[17] = "needler",
 	[18] = "needle_rifle",
-	[19] = "concussion_rifle", --todo
+	[19] = "concussion_rifle",
 	[20] = "sword",
-	[21] = "gravity_hammer", --todo
-	[22] = "plasma_launcher", --todo (complex)
-	[23] = "beam_rifle", --todo
-	[24] = "spiker", --todo
-	[25] = "fuel_rod", --todo
-	[26] = "plasma_cannon" --todo
+	[21] = "gravity_hammer",
+	[22] = "plasma_launcher",
+	[23] = "focus_rifle",
+	[24] = "spiker",
+	[25] = "fuel_rod",
+	[26] = "plasma_cannon"
 }
 
 NobleHUD._delayed_callbacks = {}
@@ -1279,7 +1271,6 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 				h = 28
 			},
 			{
-				is_center = true,
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 0,
 				distance = 8,
@@ -1287,7 +1278,6 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 				h = 6
 			},
 			{
-				is_center = true,
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 90,
 				distance = 8,
@@ -1295,7 +1285,6 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 				h = 6
 			},
 			{
-				is_center = true,
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 180,
 				distance = 8,
@@ -1303,7 +1292,6 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 				h = 6
 			},
 			{
-				is_center = true,
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 270,
 				distance = 8,
@@ -1450,21 +1438,52 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 		}
 	},
 	target_laser = { --four chevrons, offset by 45*, with pointy bit pointing outward, forming a diamond
+		bloom_func = function(index,bitmap,data)
+			local bloom = data.bloom
+			local crosshair_data = data.crosshair_data and data.crosshair_data.parts[index] or {}
+			local distance = (crosshair_data.distance or 10) * (1 + bloom)
+			local angle = crosshair_data.angle or crosshair_data.rotation or 60
+			local c_x = NobleHUD._crosshair_panel:w()/2
+			local c_y = NobleHUD._crosshair_panel:h()/2
+			bitmap:set_center(c_x + (math.sin(angle) * distance),c_y - (math.cos(angle) * distance))
+		end,
 		parts = {
 			{
-				is_center = true,
-				texture = "guis/textures/flame_crosshair",
-				w = 48,
-				h = 48
+				texture = "guis/textures/targeting_crosshair",
+				w = 16,
+				h = 12,
+				distance = 12,
+				rotation = 0
+			},
+			{
+				texture = "guis/textures/targeting_crosshair",
+				w = 16,
+				h = 12,
+				distance = 12,
+				rotation = 90
+			},
+			{
+				texture = "guis/textures/targeting_crosshair",
+				w = 16,
+				h = 12,
+				distance = 12,
+				rotation = 180
+			},
+			{
+				texture = "guis/textures/targeting_crosshair",
+				w = 16,
+				h = 12,
+				distance = 12,
+				rotation = 270
 			}
 		}
 	},
-	car = { --chevron; will be used for pd2 vehicles
+	car = { --chevron
 		parts = {
 			{
-				texture = "guis/textures/sword_crosshair",
-				w = 32,
-				h = 32
+				texture = "guis/textures/car_crosshair",
+				w = 24,
+				h = 8
 			}
 		}
 	},
@@ -1577,12 +1596,34 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 			}
 		}
 	},
-	needler = { --tri chevron
+	needler = {
 		parts = {
 			{
-				texture = "guis/textures/bullet_tick",
-				texture_rect = {0,0,4,8},
-				w = 4,
+				texture = "guis/textures/needler_crosshair_1",
+				x = -12,
+				rotation = 0,
+				w = 8,
+				h = 16
+			},
+			{
+				texture = "guis/textures/needler_crosshair_2",
+				distance = 8,
+				rotation = 90,
+				w = 8,
+				h = 4
+			},
+			{
+				texture = "guis/textures/needler_crosshair_1",
+				x = 12,
+				rotation = 180,
+				w = 8,
+				h = 16
+			},
+			{
+				texture = "guis/textures/needler_crosshair_2",
+				distance = 8,
+				rotation = 270,
+				w = 8,
 				h = 4
 			}
 		}
@@ -1590,27 +1631,46 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 	needle_rifle = {
 		bloom_func = function(index,bitmap,data)
 			local crosshair_data = data.crosshair_data and data.crosshair_data.parts[index] or {}
-			local angle = crosshair_data.angle or crosshair_data.rotation or 60
+			local angle = crosshair_data.angle or crosshair_data.rotation or 45
 			local c_x = NobleHUD._crosshair_panel:w()/2
 			local c_y = NobleHUD._crosshair_panel:h()/2
-			local bloom = data.bloom
-			if index == 1 then 
-				--main
-				bitmap:set_size((crosshair_data.w or 1) * (1 + bloom),(crosshair_data.h or 1) * (1 + bloom))
-				bitmap:set_center(NobleHUD._crosshair_panel:w()/2,NobleHUD._crosshair_panel:h()/2)
-			else
-				bloom = data.bloom * 1.5
+			if index <= 4 then 
+				local bloom = data.bloom * 2
+				--bitmap:set_center(NobleHUD._crosshair_panel:w()/2,NobleHUD._crosshair_panel:h()/2)
 				local distance = (crosshair_data.distance or 10) * (1 + bloom)
+				bitmap:set_size((crosshair_data.w or 6) * (1 + bloom),(crosshair_data.h or 3) * (1 + bloom))
 				bitmap:set_center(c_x + (math.sin(angle) * distance),c_y - (math.cos(angle) * distance))
+			else
 			end
 		end,
 		parts = {
-			{
-				is_center = true,
-				alpha = 0.75,
-				texture = "guis/textures/nrif_crosshair_1",
-				w = 6,
-				h = 6
+			{ --center
+				texture = "guis/textures/nrif_crosshair_2",
+				w = 2,
+				h = 1,
+				distance = 4,
+				rotation = 45
+			},
+			{ --center
+				texture = "guis/textures/nrif_crosshair_2",
+				w = 2,
+				h = 1,
+				distance = 4,
+				rotation = 135
+			},
+			{ --center
+				texture = "guis/textures/nrif_crosshair_2",
+				w = 2,
+				h = 1,
+				distance = 4,
+				rotation = 225
+			},
+			{ --center
+				texture = "guis/textures/nrif_crosshair_2",
+				w = 2,
+				h = 1,
+				distance = 4,
+				rotation = 315
 			},
 			{
 				texture = "guis/textures/nrif_crosshair_2",
@@ -1645,9 +1705,56 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 	concussion_rifle = { --todo
 		parts = {
 			{
-				texture = "guis/textures/sword_crosshair",
+				texture = "guis/textures/concussion_crosshair",
 				w = 32,
-				h = 32
+				h = 16,
+				x = -18,
+				y = -8
+			},
+			{
+				texture = "guis/textures/concussion_crosshair",
+				w = -32,
+				h = 16,
+				x = 18,
+				y = -8
+			},
+			{
+				texture = "guis/textures/concussion_crosshair",
+				w = -32,
+				h = -16,
+				x = 18,
+				y = 8
+			},
+			{
+				texture = "guis/textures/concussion_crosshair",
+				w = 32,
+				h = -16,
+				x = -18,
+				y = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				y = 24,
+				w = 4,
+				h = 16,
+				rotation = 90,
+				alpha = 0.6
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				y = 32,
+				w = 4,
+				h = 12,
+				rotation = 90,
+				alpha = 0.4
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				y = 40,
+				w = 4,
+				h = 8,
+				rotation = 90,
+				alpha = 0.2
 			}
 		}
 	},
@@ -1660,110 +1767,468 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 			}
 		}
 	},
-	gravity_hammer = { --todo
+	gravity_hammer = {
 		parts = {
 			{
-				texture = "guis/textures/sword_crosshair",
-				w = 32,
-				h = 32
+				texture = "guis/textures/hammer_crosshair",
+				w = 64,
+				h = 64
 			}
 		}
 	},
 	plasma_launcher = { --four arrows
+		bloom_func = function(index,bitmap,data)
+			local bloom = data.bloom
+			local crosshair_data = data.crosshair_data and data.crosshair_data.parts[index] or {}
+			local distance = (crosshair_data.distance or 12) * (1 + bloom)
+			local angle = crosshair_data.angle or crosshair_data.rotation or 0
+			local c_x = NobleHUD._crosshair_panel:w()/2
+			local c_y = NobleHUD._crosshair_panel:h()/2
+			if index >= 5 then 
+				bitmap:set_center(c_x + (math.sin(angle) * distance),c_y - (math.cos(angle) * distance))
+			end
+		end,
 		parts = {
 			{
 				texture = "guis/textures/plasma_crosshair_1",
 				w = 4,
 				h = 8,
-				distance = 10,
-				rotation = 180
-			},
-			{
-				texture = "guis/textures/plasma_crosshair_1",
-				w = 4,
-				h = 8,
-				distance = 10,
-				rotation = 270
-			},
-			{
-				texture = "guis/textures/plasma_crosshair_1",
-				w = 4,
-				h = 8,
-				distance = 10,
+				distance = 16,
 				rotation = 0
 			},
 			{
 				texture = "guis/textures/plasma_crosshair_1",
 				w = 4,
 				h = 8,
-				distance = 10,
+				distance = 16,
+				rotation = 180
+			},
+			{
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 4,
+				h = 8,
+				distance = 16,
+				rotation = 270
+			},
+			{
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 4,
+				h = 8,
+				distance = 16,
 				rotation = 90
+			},
+			{
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 2,
+				h = 4,
+				alpha = 0.33,
+				distance = 12,
+				rotation = 45
+			},
+			{
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 2,
+				h = 4,
+				alpha = 0.33,
+				distance = 12,
+				rotation = 135
+			},
+			{
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 2,
+				h = 4,
+				alpha = 0.33,
+				distance = 12,
+				rotation = 225
+			},
+			{
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 2,
+				h = 4,
+				alpha = 0.33,
+				distance = 12,
+				rotation = 315
 			}
 		}
 	},
-	beam_rifle = { --todo
+	focus_rifle = { --todo
+		bloom_func = function(index,bitmap,data)
+			local bloom = data.bloom * 2
+			local crosshair_data = data.crosshair_data and data.crosshair_data.parts[index] or {}
+			local distance = (crosshair_data.distance or 8) * (1 + bloom)
+			local angle = crosshair_data.angle or crosshair_data.rotation or 0
+			local c_x = NobleHUD._crosshair_panel:w()/2
+			local c_y = NobleHUD._crosshair_panel:h()/2
+			bitmap:set_center(c_x + (math.sin(angle) * distance),c_y - (math.cos(angle) * distance))
+		end,
 		parts = {
 			{
-				is_center = true,
-				alpha = 0.75,
-				texture = "guis/textures/nrif_crosshair_1",
-				w = 6,
-				h = 6
-			},
-			{
 				texture = "guis/textures/nrif_crosshair_2",
 				w = 12,
 				h = 6,
-				distance = 8,
-				rotation = 0
-			},
-			{
-				texture = "guis/textures/nrif_crosshair_2",
-				w = 12,
-				h = 6,
-				distance = 8,
-				rotation = 90
-			},
-			{
-				texture = "guis/textures/nrif_crosshair_2",
-				w = 12,
-				h = 6,
-				distance = 8,
+				distance = 6,
 				rotation = 180
 			},
 			{
 				texture = "guis/textures/nrif_crosshair_2",
 				w = 12,
 				h = 6,
-				distance = 8,
-				rotation = 270
+				distance = 6,
+				rotation = 60
+			},
+			{
+				texture = "guis/textures/nrif_crosshair_2",
+				w = 12,
+				h = 6,
+				distance = 6,
+				rotation = 300
 			}
 		}
 	},
 	spiker = { --todo
+		bloom_func = function(index,bitmap,data)
+			local bloom = data.bloom
+			local crosshair_data = data.crosshair_data and data.crosshair_data.parts[index] or {}
+			local distance = (crosshair_data.distance or 12) * (1 + bloom)
+			local angle = crosshair_data.angle or crosshair_data.rotation or 0
+			local c_x = NobleHUD._crosshair_panel:w()/2
+			local c_y = NobleHUD._crosshair_panel:h()/2
+			if index >= 5 then 
+				bitmap:set_center(c_x + (math.sin(angle) * distance),c_y - (math.cos(angle) * distance))
+			end
+		end,
 		parts = {
 			{
-				texture = "guis/textures/sword_crosshair",
-				w = 32,
-				h = 32
+				texture = "guis/textures/spiker_crosshair_1",
+				x = -14,
+				y = -14,
+				rotation = 0,
+				w = 16,
+				h = 16
+			},
+			{
+				texture = "guis/textures/spiker_crosshair_2",
+				x = 14,
+				y = -14,
+				rotation = 0,
+				w = 16,
+				h = 16
+			},
+			{
+				texture = "guis/textures/spiker_crosshair_1",
+				x = 14,
+				y = 14,
+				rotation = 180,
+				w = 16,
+				h = 16
+			},
+			{
+				texture = "guis/textures/spiker_crosshair_2",
+				x = -14,
+				y = 14,
+				rotation = 180,
+				w = 16,
+				h = 16
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2", --top 
+				distance = 20,
+				rotation = 0,
+				h = 10,
+				w = 2
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2", --right
+				distance = 22,
+				rotation = 90,
+				h = 14,
+				w = 2
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2", --bottom
+				distance = 20,
+				rotation = 180,
+				h = 10,
+				w = 2
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2", --left
+				distance = 22,
+				rotation = 270,
+				h = 14,
+				w = 2
 			}
 		}
 	},
 	fuel_rod = { --todo
 		parts = {
-			{
-				texture = "guis/textures/sword_crosshair",
-				w = 32,
-				h = 32
+			{ -- 1 big, bottom
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 6,
+				h = 16,
+				distance = 20,
+				rotation = 180
+			},
+			{ -- 2
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 24,
+				rotation = 170
+			},
+			{ -- 3
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 24,
+				rotation = 160
+			},
+			{ -- 4
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 24,
+				rotation = 150
+			},
+			{ -- 5
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 24,
+				rotation = 140
+			},
+			{ -- 6
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 24,
+				rotation = 130
+			},
+			{ -- 7
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 24,
+				rotation = 120
+			},
+			{ -- 8
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 24,
+				rotation = 110
+			},
+			{ -- 9
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 24,
+				rotation = 100
+			},
+			{ -- 10 big
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 6,
+				h = 16,
+				distance = 20,
+				rotation = 90
+			},
+			{ -- 11 big; left
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 6,
+				h = 16,
+				distance = 20,
+				rotation = 270
+			},
+			{ -- 12
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 24,
+				rotation = 280
+			},
+			{ -- 13
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 24,
+				rotation = 290
+			},
+			{ -- 14
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 24,
+				rotation = 300
+			},
+			{ -- 15
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 24,
+				rotation = 310
+			},
+			{ -- 16
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 24,
+				rotation = 320
+			},
+			{ -- 17
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 24,
+				rotation = 330
+			},
+			{ -- 18
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 24,
+				rotation = 340
+			},
+			{ -- 19
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 24,
+				rotation = 350
+			},
+			{ -- 20 big
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 6,
+				h = 16,
+				distance = 20,
+				rotation = 0
 			}
 		}
 	},
 	plasma_cannon = { --todo
 		parts = {
-			{
-				texture = "guis/textures/sword_crosshair",
-				w = 32,
-				h = 32
+			{ -- 1 top
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 16,
+				rotation = 0,
+				alpha = 0.5
+			},
+			{ -- 2
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 16,
+				rotation = 22.5,
+				alpha = 0.5
+			},
+			{ -- 3 big
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 6,
+				h = 12,
+				distance = 20,
+				rotation = 45
+			},
+			{ -- 4
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 16,
+				rotation = 67.5,
+				alpha = 0.5
+			},
+			{ -- 5 right
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 16,
+				rotation = 90,
+				alpha = 0.5
+			},
+			{ -- 6
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 16,
+				rotation = 112.5,
+				alpha = 0.5
+			},
+			{ -- 7 big
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 6,
+				h = 12,
+				distance = 20,
+				rotation = 135
+			},
+			{ -- 8
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 16,
+				rotation = 157.5,
+				alpha = 0.5
+			},
+			{ -- 9 bottom
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 16,
+				rotation = 180,
+				alpha = 0.5
+			},
+			{ -- 10
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 16,
+				rotation = 202.5,
+				alpha = 0.5
+			},
+			{ -- 11 big
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 6,
+				h = 12,
+				distance = 20,
+				rotation = 225
+			},
+			{ -- 12
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 16,
+				rotation = 247.5,
+				alpha = 0.5
+			},
+			{ -- 13 left
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 16,
+				rotation = 270,
+				alpha = 0.5
+			},
+			{ -- 14
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 16,
+				rotation = 292.5,
+				alpha = 0.5
+			},
+			{ -- 15 big
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 6,
+				h = 12,
+				distance = 20,
+				rotation = 315
+			},
+			{ -- 16
+				texture = "guis/textures/plasma_crosshair_1",
+				w = 3,
+				h = 6,
+				distance = 16,
+				rotation = 337.5,
+				alpha = 0.5
 			}
 		}
 	}
@@ -3183,6 +3648,13 @@ function NobleHUD.interp_colors(one,two,percent) --interpolates colors based on 
 	local b3 = b2 - b1
 	
 	return Color(r1 + (r3 * percent),g1 + (g3 * percent), b1 + (b3 * percent))	
+end
+
+function NobleHUD.to_angle(x,y) --converts x-y to slope to angle
+	if x < 0 and y < 0 then 
+		return (math.atan(y/x) + 90)
+	end
+	return (math.atan(y/x) + 90)
 end
 
 function NobleHUD:GetMedalIcon(x,y)
@@ -6939,7 +7411,7 @@ function NobleHUD:_create_score(hud)
 	local banner_l_x = panel_w - banner_l_w
 	local score_banner_large = score_panel:bitmap({
 		name = "score_banner_large",
-		texture = "guis/textures/test_blur_df",
+		texture = "guis/textures/score_banner_large",
 		layer = 1,
 		color = self.color_data.hud_vitalsfill_blue,--tweak_data.chat_colors[2], --managers.network:session():local_peer():id()], --should be refreshed on load for accuracy
 		x = banner_l_x, --right
@@ -7518,13 +7990,18 @@ function NobleHUD:animate_popup_bluespider(o,t,dt,start_t,cb,duration,unit,fadeo
 			o:set_alpha(o:alpha() + (dt * duration * 2))
 		end
 		local viewport_cam = managers.viewport:get_current_camera()
---		local camera_angle = viewport_cam:rotation():yaw()
 --		if viewport_cam:position() - unit_pos
 		local head_pos = unit:movement() and unit:movement():m_head_pos()
 		local unit_pos = head_pos and NobleHUD._ws:world_to_screen(viewport_cam,head_pos)
 		if unit_pos then 
-			o:set_x(unit_pos.x)
-			o:set_y(unit_pos.y)
+			local a = viewport_cam:position()
+			if viewport_cam:rotation():yaw() - NobleHUD.to_angle(a.x,a.y) > 180 then 
+				o:set_x(-1000)
+				o:set_y(-1000)
+			else
+				o:set_x(unit_pos.x)
+				o:set_y(unit_pos.y)
+			end
 --			o:set_center(unit_pos.x,unit_pos.y)
 		end
 	else

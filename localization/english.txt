@@ -59,7 +59,7 @@
 	"noblehud_crosshair_choice_sword" : "Energy Sword",
 	"noblehud_crosshair_choice_gravity_hammer" : "Gravity Hammer",
 	"noblehud_crosshair_choice_plasma_launcher" : "Plasma Launcher",
-	"noblehud_crosshair_choice_beam_rifle" : "Beam Rifle",
+	"noblehud_crosshair_choice_focus_rifle" : "Focus Rifle",
 	"noblehud_crosshair_choice_spiker" : "Spiker",
 	"noblehud_crosshair_choice_fuel_rod" : "Fuel Rod",
 	"noblehud_crosshair_choice_plasma_cannon" : "Plasma Cannon",
