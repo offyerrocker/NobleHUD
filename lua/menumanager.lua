@@ -8,55 +8,53 @@
 		* Sync data:
 			send team name + color
 			send assault phase
-			send downs
+			
+		* Teammate divider for vitals;
+		* Teammate vitals icon fill/blink effect (for non-conditional) - use vitals_icon_bg?
+		* Test sync data success
+			* assault
+			* team_name
 			
 	&&& HIGH PRIORITY: &&&
-		* Verify DROP IN MENU
 		* Teammate equipment
-		* popup is still showing popup from behind for athena and bluespider
-			* use to_polar_with_reference, figure out how that works
 		
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER 
 		* Layout HUD on disabling radar
 				* if radar disabled, hide radar and realign panels: ability panel down, cartographer text indicator left align
+				* do part of this from _sort_teammates()
 		* underbarrel base does not trigger HUD change (ammo tick, crosshair)
 
 		%% BUGS:
-			- hide score popup if outside viewing angle (place outside hud) (test)
 			- callsign is not being used when not host?
-			- Teammate panel does not reset after teammate leaves
-			- Teammate grenade count does not sync beyond initial count
 			- hide HUD when in camera
+			- Vanilla HUD is visible in drop-in spectate mode
 			- Floating ammo panel is visible in casing/civilian mode
 			- ADS should maintain mostly still reticle, unusable otherwise
+			- Down Counter Standalone will fight NobleHUD for dominance when it comes to setting downs in the tabscreen
+				* This is because I tried to add compatibility between the two via network syncing, but didn't save whether or not peers had DCS in NobleHUD
 
 		%% FEATURES: %%
 			* Tab screen
-				--tabscreen should be created (and referenced) by teammate panel id, not peer_id
-					* function to get panel id from peerid and vice versa
-				--move scoreboard based on score, not peerid?
+				--move scoreboard based on score, not peerid? or basically anything
 			* Teammates panel
 					- center vertically to subpanel
 				-player name
 					* player names are often too long. :(
 				- equipment
-				- health/shields?
-					- Halo 1 passenger/gunner ui?
-					- PDTH style outline/fill system?
-					- Blink on shields depleted?
 				- ammo?
-				- downs?
 			* Mod options
-				* Slider setting for popup_fadeout_time
 				* Placement and Scaling
-				* Keybinds for Safety etc
-				* Add shield sounds slider
+		
 			
 	&& LOW PRIORITY FEATURES: &&
 		* Show other things, such as equipment, on radar? check slotmask 
 		* Adjust overshield color to be more green (check MCC screenshots)
 		* Flash mission name at mission start? (See mission/submission name in MCC screenshots)
 				
+		* Mod options
+			* Slider setting for popup_fadeout_time
+			* Keybinds for Safety etc
+			* Add shield sounds slider
 		* HIGH SCORES
 			- Convert scores to credits after each run; add "purchaseable" items for credits
 			- Unusual effects? On-death SFX (grunt birthday party?)
@@ -108,6 +106,7 @@
 				where decoys would appear in the radius 
 			
 	&& BEAUTIFY EXISTING: &&
+		* Increase height of teammate panels + vitals panel, so that the text doesn't get in the way of the blinky icon 
 		* Standardize HUD style data for any given panel eg. ponr font size; this will facilitate adding scaling and movement later on
 		* Shield damage chunking
 		* PONR label goes where "BONUS ROUND" was in reach
@@ -135,12 +134,11 @@
 				* Left arrow is not colored (frame, circle, and altimeter are already colored)
 		* Radar	
 			* radar_far blips should not clip outside the radar panel
-			* Unique vehicle blip asset texture so that they're not blurry?
 			* Motion-based tracking
 			* Radar pulse when update?
 			* Different motion tracker icon or color for Team AI versus players
 			* Lower blip should be darker/lower opacity, instead of halo 3 style
-				* higher/lower radar blips should use darker colors (eg color * 0.5) rather than reducing alpha
+			* Unique vehicle blip asset texture so that they're not blurry?
 
 
 		
@@ -168,8 +166,6 @@
 			- Shotgun (rename)
 
 --grenade/ability outline (baked blue color for vertex radial render template)
-		-- Replacement tube for auntie dot
---score banner (tiny beveled corner)
 --score banner small
 - bloom funcs should all have a reference to their own crosshair tweakdata
 - bloom funcs should also have reference to their own weapon tweakdata
@@ -226,6 +222,7 @@ NobleHUD.settings = {
 	weapon_ammo_tick_full_alpha = 0.8,
 	weapon_ammo_tick_empty_alpha = 0.15,
 	weapon_ammo_real_counter = false,
+	steelsight_hides_reticle_enabled = true,
 	master_hud_alpha = 0.9,
 	chat_autohide_timer = 3,
 	chat_autohide_mode = 1,
@@ -241,6 +238,8 @@ NobleHUD.settings = {
 	shield_low_sound_enabled = true,
 	shield_empty_sound_enabled = true,
 	--callsign_string = "S117", --automatically randomly generated
+	team_name = "Red Team",
+--	team_color = Color(0.5,0.2,0.2),
 	unusual = 1,
 	crosshair_type_assaultrifle_single = 1,
 	crosshair_type_assaultrifle_auto = 1,
@@ -445,8 +444,15 @@ local kills_cache_empty = {
 
 NobleHUD._cache = { --buffer type deal, holds IMPORTANT THINGS tm
 	t = 0,
+	birthday = nil, --overrideable by user input, so set to nil
 	callsigns = {
 		--76561198025511599 = "B025" --example callsign storage
+	},
+	downs = {
+		[1] = 0,
+		[2] = 0,
+		[3] = 0,
+		[4] = 0
 	},
 	killer = {},
 	score_timer_mult = 1,
@@ -3306,7 +3312,8 @@ local function concat(...) --2lazy 2type
 	return NobleHUD.table_concat(...)
 end
 
-function NobleHUD.angle_from(a,b,c,d) --mvector3.angle() is a big fat meanie zucchini
+function NobleHUD.angle_from(a,b,c,d) -- converts to angle with ranges (-180 , 180); for result range 0-360, do +180 to result
+--mvector3.angle() is a big fat meanie zucchini;
 	a = a or "nil"
 	b = b or "nil"
 	c = c or "nil"
@@ -3656,13 +3663,6 @@ function NobleHUD.interp_colors(one,two,percent) --interpolates colors based on 
 	local b3 = b2 - b1
 	
 	return Color(r1 + (r3 * percent),g1 + (g3 * percent), b1 + (b3 * percent))	
-end
-
-function NobleHUD.to_angle(x,y) --converts x-y to slope to angle
-	if x < 0 and y < 0 then 
-		return (math.atan(y/x) + 90)
-	end
-	return (math.atan(y/x) + 90)
 end
 
 function NobleHUD:GetMedalIcon(x,y)
@@ -4035,6 +4035,18 @@ function NobleHUD:IsSafeMode()
 	return self.settings.safe_mode
 end
 
+function NobleHUD:GetSteelsightHidesReticle()
+	return self.settings.steelsight_hides_reticle_enabled
+end
+
+function NobleHUD:GetTeamName()
+	return self.settings.team_name
+end
+
+function NobleHUD:GetTeamColor()
+	return Color(0.5,0.2,0.2)
+end
+
 		--SET SETTINGS
 function NobleHUD:SetCrosshairEnabled(enabled)
 	self.crosshair_enabled = enabled
@@ -4101,7 +4113,11 @@ end
 function NobleHUD:IsSkullActive(id)
 	if id == "birthday" then 
 		--yaaaaaay
-		return (tonumber(os.date("%d")) == 1) and (tonumber(os.date("%m")) == 4)
+		if self._cache.birthday ~= nil then 
+			return self._cache.birthday --overrideable by user input ("birthday stop" in chat)
+		else
+			return ((tonumber(os.date("%d")) == 1) and (tonumber(os.date("%m")) == 4))
+		end
 	end
 end
 
@@ -4129,7 +4145,6 @@ end
 function NobleHUD:GetRadarDecoyLifetimeMax() 
 	return 10
 end
-
 
 
 --		HUD UPDATE STUFF / EVENT FUNCTIONS
@@ -4179,6 +4194,35 @@ function NobleHUD:CreateHUD(orig)
 --	managers.hud:script("guis/mask_off_hud"):hide()
 end
 		
+function NobleHUD:SetTeammateDowns(id,downs,panel_id,increment)
+	if not id then
+		self:log("ERROR: No id to SetTeammateDowns()",{color=Color.red})
+		return
+	end
+	if downs then 
+		if increment and self._cache.downs[id] then 
+			self._cache.downs[id] = self._cache.downs[id] + downs
+		else
+			self._cache.downs[id] = downs
+		end
+	end
+	downs = self._cache.downs[id]
+	if panel_id == true then 
+		panel_id = self:GetPanelIdFromPeerId(id)
+	end
+	self:log(panel_id)
+	if panel_id then 
+		local player_box = self._tabscreen:child("scoreboard"):child("player_box_" .. tostring(panel_id))
+		if alive(player_box) then 
+			player_box:child("downs_box"):child("downs_label"):set_text(downs)
+		end
+	end
+end
+
+function NobleHUD:GetTeammateDowns(id)
+	return self._cache.downs[id or ""]
+end
+
 function NobleHUD:OnLoaded()
 	self._cache.loaded = true
 	self:LoadXAudioSounds()
@@ -4981,6 +5025,9 @@ end
 
 function NobleHUD:OnPlayerStateChanged(state)
 	self:log("Changed player state to " .. tostring(state),{color = Color(0,1,1)})
+	if state == "bleed_out" then 
+		self:SetTeammateDowns(1,1,true,true)
+	end
 	if state == "fatal" or state == "bleed_out" or state == "arrested" or state == "incapacitated" then 
 		self:ClearKillsCache()
 	end
@@ -5015,6 +5062,22 @@ function NobleHUD:OnGameStateChanged(before_state,state)
 	elseif GameStateFilters.any_ingame[state] then 
 		hud:show()
 	end
+end
+
+function NobleHUD:OnPeerSynced(peer,peer_id)
+	if managers.hud then 
+--		self:_set_teammate_callsign
+	end
+	if Network:is_server() then 
+		LuaNetworking:SendToPeer(peer_id,self.network_messages.sync_callsign,self:GetCallsign())
+		LuaNetworking:SendToPeer(peer_id,self.network_messages.sync_teamname,self:GetTeamName()) -- .. ":" .. LuaNetworking:ColorToString(self:GetTeamColor()))		
+	end
+	
+--[[
+			send team name + color
+			send assault phase
+			send downs
+	--]]
 end
 
 function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
@@ -5059,10 +5122,17 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 		--no +1 kills for you, you murderer >:(
 	else
 		if self:IsSkullActive("birthday") and headshot and unit and alive(unit) and unit:base() then 
---				unit:base()._grunt_bday = XAudio.UnitSource:new(unit,XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg"))
-				unit:base()._grunt_bday = XAudio.UnitSource:new(player,XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg"))
+				
+				unit:base()._grunt_bday = XAudio.UnitSource:new(unit,XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg"))
+				
+--				unit:base()._grunt_bday = XAudio.UnitSource:new(player,XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg"))
+--			XAudio.Source:new(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/birthday_loud_2.ogg")):set_position(managers.viewport:get_current_camera():position())
+--			XAudio.Source:new(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday_2.ogg"))
+--			XAudio.Source:new(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg")):set_position(managers.viewport:get_current_camera():position())
+--XAudio.Source:new(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg")):set_position(managers.viewport:get_current_camera():position() + (managers.player:local_player():camera():forward() * 100))
 --			XAudio.Source:new(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg")):set_position(managers.player:local_player():position())
 		end
+--		NobleHUD._announcer_sound_source:set_buffer(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg")); NobleHUD._announcer_sound_source:play()
 		if player_weapon_id == primary_id then
 			self:_set_killcount(1,managers.statistics:session_killed_by_weapon(primary_id))
 		elseif player_weapon_id == secondary_id then 
@@ -7176,7 +7246,7 @@ end
 function NobleHUD:_create_teammate_panel(teammates_panel,i)
 	local ammo_font = tweak_data.hud_players.ammo_font
 --	local name_font = tweak_data.hud_players.name_font
-	local teammate_w = 200
+	local teammate_w = 256
 	local teammate_h = 48
 	local subpanel_w = 24
 	local subpanel_h = 36
@@ -7222,7 +7292,7 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 		x = callsign_box:right(),
 		w = subpanel_w,
 		h = 48,
-		visible = true --false
+		visible = false
 	})
 	
 	local vitals_armor_label = vitals_subpanel:text({
@@ -7254,6 +7324,7 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 	local vitals_icon_bg = vitals_subpanel:bitmap({
 		name = "vitals_icon_bg",
 		layer = -1,
+		visible = false, --unused
 		rotation = 360,
 		texture = "guis/textures/lives_icon",
 		color = self.color_data.hud_bluefill,
@@ -7281,7 +7352,7 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 		x = vitals_subpanel:right(),
 		w = subpanel_w, --*2	
 		h = subpanel_h,
-		visible = true
+		visible = false
 	})
 	local debug_subpanel1 = deployable_subpanel:rect({
 		name = "debug_subpanel1",
@@ -7305,7 +7376,7 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 	local deployable_label = deployable_subpanel:text({
 		name = "deployable_label",
 		layer = 1,
-		text = "14 | 6",
+		text = "14|6",
 		align = "center",
 		vertical = "bottom",
 		color = Color.white,
@@ -7327,7 +7398,7 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 		x = deployable_subpanel:right(),
 		w = subpanel_w,
 		h = subpanel_h,
-		visible = true
+		visible = false
 	})
 	local debug_subpanel2 = ties_subpanel:rect({
 		name = "debug_subpanel2",
@@ -7374,7 +7445,7 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 		x = ties_subpanel:right(),
 		w = subpanel_w,
 		h = subpanel_h,
-		visible = true
+		visible = false
 	})
 	local debug_subpanel3 = grenade_subpanel:rect({
 		name = "debug_subpanel3",
@@ -7410,6 +7481,7 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 	
 	
 	local teammate_panel_debug = panel:rect({
+		name = "teammate_panel_debug",
 		visible = false,
 		color = tweak_data.chat_colors[i],
 		alpha = 0.2
@@ -7417,8 +7489,7 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 	return panel
 end
 
-function NobleHUD:_add_teammate()
-
+function NobleHUD:_add_teammate() --i don't think this is even called...???
 end
 
 
@@ -7446,13 +7517,15 @@ end
 function NobleHUD:_set_teammate_callsign(i,id)	
 	local panel = self._teammates_panel:child("teammate_" .. tostring(i))
 	if (panel and alive(panel)) then
-		local color = tweak_data.chat_colors[id or 5] or Color.red
-		panel:child("callsign_box"):child("player_name"):set_color(color)
+		local color = tweak_data.chat_colors[id or 5]
 		local bitmap = panel:child("callsign_box"):child("character_bitmap")
 		bitmap:set_image("guis/textures/teammate_nameplate")
 		bitmap:set_size(100 * 0.75,32 * 0.75)
 		bitmap:set_y((panel:h() - bitmap:h()) * 0.5)
-		bitmap:set_color(color) --optional
+		if color then 
+			panel:child("callsign_box"):child("player_name"):set_color(color)
+			bitmap:set_color(color) --optional
+		end
 	else
 		self:log("ERROR: _add_teammate panel(" .. tostring(i) .. "): Panel does not exist")
 		return
@@ -7467,10 +7540,10 @@ function NobleHUD:_set_teammate_name(i,player_name)
 		self:log("ERROR: _add_teammate panel(" .. tostring(i) .. "): Panel does not exist")
 		return
 	end
-	self:_set_tabscreen_teammate_callsign(i,player_name)
+	if not self._cache.callsigns[i] then  --todo get by steamid64
+		self:_set_tabscreen_teammate_callsign(i,player_name)
+	end
 end
-
-
 
 
 function NobleHUD:_init_teammate(i,panel,is_player,width)
@@ -7485,7 +7558,7 @@ function NobleHUD:_init_teammate(i,panel,is_player,width)
 end
 
 function NobleHUD:_add_convert(params)
-
+--todo
 end
 
 
@@ -8101,20 +8174,23 @@ function NobleHUD:animate_popup_bluespider(o,t,dt,start_t,cb,duration,unit,fadeo
 		else
 			o:set_alpha(o:alpha() + (dt * duration * 2))
 		end
+		
 		local viewport_cam = managers.viewport:get_current_camera()
 		local head_pos = unit:movement() and unit:movement():m_head_pos()
+		
 		local unit_screen_pos = head_pos and NobleHUD._ws:world_to_screen(viewport_cam,head_pos)
 		if unit_screen_pos then 
-			local my_pos = viewport_cam:position()
+		
 			local aim = viewport_cam:rotation():yaw()
-			local angle_from = NobleHUD.angle_from(head_pos.x,head_pos.y,my_pos.x,my_pos.y)
+			local my_pos = viewport_cam:position()	
+			local angle_from = (180 + aim - NobleHUD.angle_from(head_pos.x,head_pos.y,my_pos.x,my_pos.y)) % 360
 			
-			if aim and my_pos and (math.abs(180 - (90 + (angle_from - aim))) <= 90) then 
+			if (math.abs(90 - angle_from) > 90) or o:parent():outside(unit_screen_pos.x,unit_screen_pos.y) then 
+				o:set_x(-1000)
+				o:set_y(-1000)			
+			else
 				o:set_x(unit_screen_pos.x)
 				o:set_y(unit_screen_pos.y)
-			else
-				o:set_x(-1000)
-				o:set_y(-1000)
 			end
 		end
 	else
@@ -8136,15 +8212,17 @@ function NobleHUD:animate_popup_athena(o,t,dt,start_t,cb,duration,unit,distance,
 		local head_pos = unit:movement() and unit:movement():m_head_pos()
 		local unit_screen_pos = head_pos and NobleHUD._ws:world_to_screen(viewport_cam,head_pos)
 		if unit_screen_pos then
-			local my_pos = viewport_cam:position()
+	
 			local aim = viewport_cam:rotation():yaw()
-			local angle_from = NobleHUD.angle_from(head_pos.x,head_pos.y,my_pos.x,my_pos.y)
-			if aim and my_pos and (math.abs(180 - (90 + (angle_from - aim))) <= 90) then 
-				o:set_x(unit_screen_pos.x)
-				o:set_y(unit_screen_pos.y + (distance * (t - start_t)))
-			else
+			local my_pos = viewport_cam:position()	
+			local angle_from = (180 + aim - NobleHUD.angle_from(head_pos.x,head_pos.y,my_pos.x,my_pos.y)) % 360
+			
+			if (math.abs(90 - angle_from) > 90) or o:parent():outside(unit_screen_pos.x,unit_screen_pos.y) then 
 				o:set_x(-1000)
 				o:set_y(-1000)
+			else
+				o:set_x(unit_screen_pos.x)
+				o:set_y(unit_screen_pos.y + (distance * (t - start_t)))
 			end
 			
 		end
@@ -8803,12 +8881,12 @@ function NobleHUD:_create_tabscreen(hud)
 	})
 	local teamname_bg = teamname_box:rect({
 		name = "teamname_bg",
-		color = Color(0.5,0.2,0.2),
+		color = self:GetTeamColor(),
 		layer = 1
 	})
 	local teamname_label = teamname_box:text({
 		name = "teamname_label",
-		text = "RED TEAM",
+		text = self:GetTeamName(),
 		align = "left",
 		x = teamname_box:w() / 20,
 		vertical = "center",
@@ -9248,18 +9326,15 @@ function NobleHUD:_clear_tabscreen_teammate_info()
 end
 
 function NobleHUD:SetTeamName(name,color)
-	if name then 
-		name = tostring(name)
-	else
-		self:log("NobleHUD:SetTeamName(" .. tostring(name) .. "," .. tostring(color) .. ": invalid name")
-		return
-	end
 	local scoreboard = self._tabscreen:child("scoreboard")
 	local header_box = scoreboard:child("header_box")
 	local teamname_box = header_box:child("teamname_box")
 	local teamname_label = teamname_box:child("teamname_label")
 	if name then 
-		teamname_label:set_text(name)
+		teamname_label:set_text(tostring(name))
+	else
+--		self:log("NobleHUD:SetTeamName(" .. tostring(name) .. "," .. tostring(color) .. ": invalid name")
+		return
 	end
 	if color then 
 		teamname_box:child("teamname_bg"):set_color(color)
@@ -10683,7 +10758,7 @@ end
 function NobleHUD:_create_waiting(hud)
 	local waiting_panel = hud:panel({
 		name = "waiting_panel",
-		w = 200,
+		w = 256,
 		h = 48,
 		layer = 10,
 		visible = false
@@ -10924,19 +10999,51 @@ function NobleHUD:helper_is_typing()
 	--return not self._helper_current_event
 end
 
+function NobleHUD:GetPeerIdFromPanelId(panel_id)
+	if managers.criminals then
+		for id, data in pairs(managers.criminals._characters or {}) do 
+--			self:log("GetPeerIdFromPanelId() " .. tostring(data.taken) .. " " .. tostring(panel_id) .. " " .. tostring(data.data.panel_id))
+			if data.taken and panel_id and data.data and (data.data.panel_id == panel_id) then 
+				return data.peer_id
+			end
+		end
+	end
+end
+
+--for id, data in pairs(managers.criminals._characters or {}) do if data.taken and data.peer_id then logall(data) Log("-") logall(data.data) Log("---") end end
+
+function NobleHUD:GetPanelIdFromPeerId(peer_id)
+	if not peer_id or peer_id == managers.network:session():local_peer():id() then
+		return HUDManager.PLAYER_PANEL
+	end
+	if managers.criminals then
+		for id, data in pairs(managers.criminals._characters or {}) do 
+			if data.taken and (data.peer_id == peer_id) then 
+			--todo if ai get panel anyway somehow
+				return data.data and data.data.panel_id
+			end
+		end
+	end
+end
+
 Hooks:Add("NetworkReceivedData", "noblehud_onreceiveluanetworkingmessage", function(sender, message, data)
+	local panel_id = NobleHUD:GetPanelIdFromPeerId(sender)
 	if (message == NobleHUD.network_messages.sync_assault) then
 		if (sender == 1) and NobleHUD._assault_phases[data] then 
 			NobleHUD:SetAssaultPhase(managers.localization:text(NobleHUD._assault_phases[data]),false)
 		end
 	elseif (message == NobleHUD.network_messages.down_counter) then
-		--stuff
+		--set downs here
+		NobleHUD:SetTeammateDowns(sender,tonumber(data),panel_id,false)
 	elseif (message == NobleHUD.network_messages.sync_callsign) then
-		
+		if panel_id then 
+			NobleHUD:_set_teammate_name(panel_id,data)
+		end
 		--stuff
 	elseif (message == NobleHUD.network_messages.sync_teamname) then
 		if sender == 1 then
 			--parse color and data from this mess
+			--[[
 			local teamdata = string.split(data,":")
 			local team_name,team_color
 			if teamdata and #teamdata >= 1 then 
@@ -10947,8 +11054,9 @@ Hooks:Add("NetworkReceivedData", "noblehud_onreceiveluanetworkingmessage", funct
 				if r and g and b then 
 					team_color = Color(r,g,b):with_alpha(1)
 				end
-				NobleHUD:SetTeamName(team_name,team_color)
 			end
+			--]]
+			NobleHUD:SetTeamName(data)
 		end
 	end
 end)
@@ -11274,6 +11382,10 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 
 	MenuCallbackHandler.callback_noblehud_set_crosshair_bloom_enabled = function(self,item)
 		NobleHUD.settings.crosshair_bloom = item:value() == "on"
+		NobleHUD:SaveSettings()
+	end
+	MenuCallbackHandler.callback_noblehud_set_steelsight_hides_reticle_enabled = function(self,item)
+		NobleHUD.settings.steelsight_hides_reticle_enabled = item:value() == "on"
 		NobleHUD:SaveSettings()
 	end
 	

@@ -15,7 +15,8 @@
 	"noblehud_set_crosshair_stability_desc" : "The extent to which Reticle Shake affects the Reticle. A lower number means greater effect.",
 	"noblehud_set_crosshair_alpha_title" : "Reticle Alpha",
 	"noblehud_set_crosshair_alpha_desc" : "Transparency of the Reticle.",
-	
+	"noblehud_set_steelsight_hides_reticle_enabled_title" : "Hide Reticle in ADS",
+	"noblehud_set_steelsight_hides_reticle_enabled_desc" : "If true, hides the Reticle while aiming down sights.",
 	"noblehud_crosshair_type_desc" : "Choose the reticle for this weapon type",
 	"noblehud_crosshair_type_assaultrifle_single_title" : "Assault Rifle (Single)",
 	"noblehud_crosshair_type_assaultrifle_auto_title" : "Assault Rifle (Auto)",

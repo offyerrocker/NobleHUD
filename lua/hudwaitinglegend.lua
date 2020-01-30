@@ -14,26 +14,15 @@ end)
 
 
 Hooks:PostHook(HUDWaitingLegend,"show_on","noblehud_playerwaiting_showlegend",function(self,teammate_hud,peer)
---	local id = teammate_hud._id
-	
-	local panel_id
-	if self._current_peer then
-		local peer_id = self._current_peer:id()
-		for _,c in pairs(managers.criminals._characters) do 
-			if c.data.panel_id and c.peer_id == peer_id then
-				panel_id = c.data.panel_id
-				break
-			end
-		--managers.hud:get_waiting_index(self._current_peer)
-		end
-	end
-	
+
+	local panel_id = managers.hud:get_waiting_index(self._current_peer:id()) or NobleHUD:GetPanelIdFromPeerId(self._current_peer:id())
+
 	local teammate_panel = NobleHUD:GetTeammatePanel(panel_id)
 	local panel = NobleHUD._waiting_panel
 	panel:show()
 	if teammate_panel then 
-		panel:set_x(teammate_panel:x())
-		panel:set_y(teammate_panel:y())
+		panel:set_x(NobleHUD._teammates_panel:x() + teammate_panel:x())
+		panel:set_y(NobleHUD._teammates_panel:y())
 	end
 end)
 

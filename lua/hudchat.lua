@@ -46,6 +46,17 @@ function HUDChat:receive_message(name,message,color,icon,...)
 	if NobleHUD:IsSafeMode() then 
 		return orig_receive_message(self,name,message,color,icon,...)
 	end
+	local check_secret = utf8.to_lower(string.gsub(message,"%W",""))
+	if string.find(check_secret,"birthday") or string.find(check_secret,"bday") then 
+		if string.find(check_secret,"off") or string.find(check_secret,"stop") then 
+			if managers.network:session():local_peer():name() == name then
+				NobleHUD._cache.birthday = false
+			--show hint
+			end
+		else
+			NobleHUD._cache.birthday = true
+		end
+	end
 	if NobleHUD:IsChatNotificationSoundEnabled() then
 		local notif_sfx = NobleHUD.chat_notification_sounds[NobleHUD:GetChatNotificationSound()]
 		if managers.player:local_player() then

@@ -37,10 +37,63 @@ Hooks:PostHook(HUDTeammate,"set_name","noblehud_setteammatename",function(self,p
 	end
 end)
 
-Hooks:PostHook(HUDTeammate,"remove_panel","noblehud_teammate_remove_panel",function(self,weapons_panel)
-	--!
+Hooks:PostHook(HUDTeammate,"add_panel","noblehud_teammate_add_panel",function(self)
+	local teammates_panel = NobleHUD._teammates_panel
+	local id = self._id
+	local player_box = NobleHUD._tabscreen:child("scoreboard"):child("player_box_" .. tostring(id))
+	if alive(player_box) then 
+--		player_box:child("downs_box"):child("downs_label"):set_text("LOAD")
+--		player_box:child("name_box"):child("name_label"):set_text("LOAD")
+--		player_box:child("callsign_box"):child("callsign_label"):set_text("LOAD")
+--		player_box:child("score_box"):child("score_label"):set_text("LOAD")
+--		player_box:child("ping_box"):child("ping_label"):set_text("LOAD")
+--		player_box:child("ping_box"):child("ping_bitmap"):set_h(0)
+	end
+	local panel = NobleHUD:GetTeammatePanel(id)
+	if alive(panel) then 
+		panel:show()
+	end
+	NobleHUD:_sort_teammates()
 end)
 
+Hooks:PostHook(HUDTeammate,"remove_panel","noblehud_teammate_remove_panel",function(self,weapons_panel)
+	local teammates_panel = NobleHUD._teammates_panel
+	local id = self._id
+	local player_box = NobleHUD._tabscreen:child("scoreboard"):child("player_box_" .. tostring(id))
+	if alive(player_box) then 
+		player_box:child("downs_box"):child("downs_label"):set_text("")
+		player_box:child("name_box"):child("name_label"):set_text("")
+		player_box:child("callsign_box"):child("callsign_label"):set_text("")
+		player_box:child("score_box"):child("score_label"):set_text("")
+		player_box:child("ping_box"):child("ping_label"):set_text("")
+		player_box:child("ping_box"):child("ping_bitmap"):set_h(0)
+	end
+	local panel = NobleHUD:GetTeammatePanel(id)
+	if alive(panel) then
+		teammates_panel:remove(panel)
+	end
+	panel = NobleHUD:_create_teammate_panel(teammates_panel,id)
+	panel:child("ties_subpanel"):hide()
+	panel:child("vitals_subpanel"):hide()
+	panel:child("grenade_subpanel"):hide()
+	local callsign_box = panel:child("callsign_box")
+	callsign_box:child("character_bitmap"):set_image("guis/textures/teammate_nameplate_vacant")
+	callsign_box:child("player_name"):set_text("")
+	NobleHUD:_sort_teammates()
+--	panel:hide()
+end)
+
+Hooks:PostHook(HUDTeammate,"set_condition","noblehud_teammate_setcondition",function(self,icon_data, text)
+	local panel = NobleHUD:GetTeammatePanel(self._id)
+	local vitals_icon = panel:child("vitals_subpanel"):child("vitals_icon")
+	if icon_data == "mugshot_normal" then
+		vitals_icon:set_image("guis/textures/lives_icon")
+	else
+		local icon, texture_rect = tweak_data.hud_icons:get_icon_data(icon_data)
+
+		vitals_icon:set_image(icon, texture_rect[1], texture_rect[2], texture_rect[3], texture_rect[4])
+	end
+end)
 
 Hooks:PostHook(HUDTeammate,"set_cable_ties_amount","noblehud_setcabletiesamount",function(self,amount)
 	if self._main_player then 
@@ -60,7 +113,7 @@ Hooks:PostHook(HUDTeammate,"set_cable_ties_amount","noblehud_setcabletiesamount"
 			else
 				label:set_text(amount)
 				if amount == 0 then
-					color = NobleHUD.color_data.hud_vitalsfill_blue
+					color = NobleHUD.color_data.hud_blueoutline
 				end
 			end
 			label:set_color(color)
@@ -124,8 +177,11 @@ Hooks:PostHook(HUDTeammate,"set_health","noblehud_set_health",function(self,data
 	else
 	NobleHUD:GetTeammatePanel(1)
 		local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
-		local label = teammate_panel:child("vitals_subpanel"):child("vitals_health_label")
-		label:set_text(math.round(data.current)) --or data.current/data.total?
+		local vitals_panel = teammate_panel:child("vitals_subpanel")
+		vitals_panel:show()
+		local label = vitals_panel:child("vitals_health_label")
+		label:set_text(math.round(data.current * 10)) --or data.current/data.total?
+		label:set_color(Color(hp_r,0.7,1-hp_r))
 		if string.len(label:text()) > 3 then 
 			label:set_font_size(12)
 		else
@@ -171,8 +227,11 @@ Hooks:PostHook(HUDTeammate,"set_armor","noblehud_set_armor",function(self,data)
 		end
 	else
 		local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
-		local label = teammate_panel:child("vitals_subpanel"):child("vitals_armor_label")
-		label:set_text(math.round(current)) --or data.current/data.total?
+		local vitals_panel = teammate_panel:child("vitals_subpanel")
+		vitals_panel:show()
+		local label = vitals_panel:child("vitals_armor_label")
+		label:set_text(math.round(current * 10)) --or data.current/data.total?
+		label:set_color(Color(ratio,0.7,1-ratio))
 		if string.len(label:text()) > 3 then 
 			label:set_font_size(12)
 		else
@@ -289,7 +348,6 @@ Hooks:PostHook(HUDTeammate,"set_grenades","noblehud_set_grenades",function(self,
 		if self._main_player then
 			NobleHUD:_set_grenades(data)
 		else
-			NobleHUD:log("set_grenades(" .. NobleHUD.table_concat(data,"|","=") .. ")")
 			local icon, texture_rect = tweak_data.hud_icons:get_icon_data(data.icon, {
 				0,
 				0,
@@ -329,27 +387,21 @@ Hooks:PostHook(HUDTeammate,"set_grenades_amount","noblehud_set_grenades_amount",
 		local grenade_label = subpanel and subpanel:child("grenade_label")
 		if data.amount and alive(grenade_label) then 
 			if data.amount <= 0 then 
-				grenade_label:set_color(Color(0.5,0.5,0.5))
+				subpanel:child("grenade_icon"):set_color(NobleHUD.color_data.hud_vitalsfill_blue)
+				grenade_label:set_color(NobleHUD.color_data.hud_vitalsfill_blue)
 			else
-				grenade_label:set_color(Color.white)
+				subpanel:child("grenade_icon"):set_color(NobleHUD.color_data.hud_vitalsoutline_blue)
+				grenade_label:set_color(NobleHUD.color_data.hud_vitalsoutline_blue)
 			end
 			grenade_label:set_text(data.amount)
 		end
 	end
 end)
 
-		--[[
-managers.hud:set_teammate_grenades(2,{icon = "frag_grenade",amount = 9})
-managers.hud:set_deployable_equipment(2,{icon = "frag_grenade",amount = 9})
-managers.hud:set_cable_ties_amount(2,9)
-managers.hud:set_teammate_deployable_equipment_amount_from_string(2,1,{icon = "equipment_soda",amount = {1,9}})
-
-			--]]
 Hooks:PostHook(HUDTeammate,"set_deployable_equipment","noblehud_set_deployable_equipment",function(self,data)
 	if not self._main_player then 
 		local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
 		if teammate_panel then 
-			NobleHUD:log("set_deployable_equipment(" .. NobleHUD.table_concat(data,"|","=") .. ")")
 			local subpanel = teammate_panel:child("deployable_subpanel")
 			subpanel:show()
 			local icon, texture_rect = tweak_data.hud_icons:get_icon_data(data.icon)
@@ -364,7 +416,6 @@ Hooks:PostHook(HUDTeammate,"set_deployable_equipment_amount","noblehud_set_deplo
 	if not self._main_player then 
 		local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
 		if teammate_panel then 
-			NobleHUD:log("set_deployable_equipment_amount(" .. tostring(index) .. "," .. NobleHUD.table_concat(data,"|","=") .. ")")
 			local subpanel = teammate_panel:child("deployable_subpanel")
 			local label = subpanel:child("deployable_label")
 			local amount = data.amount
@@ -389,7 +440,6 @@ Hooks:PostHook(HUDTeammate,"set_deployable_equipment_from_string","noblehud_set_
 	if not self._main_player then 
 		local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
 		if teammate_panel then 
-			NobleHUD:log("set_deployable_equipment_from_string(" .. NobleHUD.table_concat(data,"|","=") .. ")")
 			local subpanel = teammate_panel:child("deployable_subpanel")
 			subpanel:show()
 			local icon, texture_rect = tweak_data.hud_icons:get_icon_data(data.icon)
@@ -404,8 +454,7 @@ Hooks:PostHook(HUDTeammate,"set_deployable_equipment_amount_from_string","nobleh
 	if not self._main_player then 
 		local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
 		if teammate_panel then 
-			NobleHUD:log("set_deployable_equipment_amount_from_string(" .. tostring(index) .. "," .. NobleHUD.table_concat(data,"|","=") .. ")")
-			
+
 			local subpanel = teammate_panel:child("deployable_subpanel")
 			subpanel:show()
 			local amounts = ""
@@ -413,7 +462,6 @@ Hooks:PostHook(HUDTeammate,"set_deployable_equipment_amount_from_string","nobleh
 			local color = NobleHUD.color_data.hud_vitalsfill_blue
 			
 			for i, amount in ipairs(data.amount) do 
-				NobleHUD:log("amount: " .. amount)
 				local amount_str = string.format("%01d",amount)
 				local divider = "|"
 				
@@ -439,7 +487,6 @@ Hooks:PostHook(HUDTeammate,"set_deployable_equipment_amount_from_string","nobleh
 			local label = subpanel:child("deployable_label")
 			
 			label:set_text(amounts)
-			NobleHUD:log(amounts)
 			label:set_color(color)
 					
 			for _, range in ipairs(zero_ranges) do
@@ -451,19 +498,6 @@ Hooks:PostHook(HUDTeammate,"set_deployable_equipment_amount_from_string","nobleh
 		NobleHUD:_set_deployable_amount(index)
 	end
 end)
-
---[[
-Hooks:PostHook(HUDTeammate,"set_grenades","noblehud_set_grenades",function(self,data)
-	if not self._main_player then 
-		local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
-		if teammate_panel then 
-			NobleHUD:log("set_grenades(" .. NobleHUD.table_concat(data,"|","=") .. ")")
-		end
-	else
-		NobleHUD:_set_grenades(data)
-	end	
-end)
---]]
 
 
 Hooks:PostHook(HUDTeammate,"set_weapon_selected","noblehud_set_weapon_selected",function(self,id)
