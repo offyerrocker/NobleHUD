@@ -1,3 +1,4 @@
+--nothing wrong with this, it's just disabled because it's redundant
 Hooks:PostHook(ClientNetworkSession,"on_peer_sync_complete","noblehudon_peer_synced_client",function(self,peer,peer_id)
 	if not self._local_peer then
 		return

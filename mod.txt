@@ -58,7 +58,7 @@
 			"script_path" : "lua/basenetworksession.lua"
 		},
 		{
-			"hook_id" : "lib/network/base/clientnetworksession",
+			"DISABLED_hook_id" : "lib/network/base/clientnetworksession",
 			"script_path" : "lua/clientnetworksession.lua"
 		},
 		{

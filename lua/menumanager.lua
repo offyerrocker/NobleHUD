@@ -7,7 +7,6 @@
 
 
 		* Sync data:
-			send team name + color
 			send assault phase
 		
 		* Teammate Vitals
@@ -26,8 +25,6 @@
 	&&& HIGH PRIORITY: &&&
 		* Teammate equipment
 		* [ASSET] Flamethrower reticle looks like shit
-		* Downs counter starts at "" (test fix)
-		* Custom callsign is not currently used for teammates
 		
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER 
 		* Layout HUD on disabling radar
@@ -41,8 +38,7 @@
 			- Own equipment seems buggered as client (not removing properly?) or else maybe clipping with teammates'?
 			- Downs are not reset after using a docbag (test fix)
 		
-			- Assault phase localization when not host]
-			- callsign is not being used when not host?
+			- Assault phase localization when not host
 			- hide HUD when in camera
 			- Vanilla HUD is visible in drop-in spectate mode
 			- Floating ammo panel is visible in casing/civilian mode
@@ -54,10 +50,7 @@
 			* Tab screen
 				--move scoreboard based on score, not peerid? or basically anything
 			* Teammates panel
-					- center vertically to subpanel
-				-player name
-					* player names are often too long. :(
-				- equipment
+				- center vertically to subpanel
 				- ammo?
 			* Mod options
 				* Placement and Scaling
@@ -3484,6 +3477,7 @@ function NobleHUD.make_compact_number(num,scale,places)
 end
 
 function NobleHUD:make_callsign_name(raw_name,min_len,max_len,fallback_character_name)
+	fallback_character_name = fallback_character_name and tostring(fallback_character_name) or ""
 	local blacklisted_prefixes = {
 		["the"] = true,
 		["a"] = true,
@@ -3492,6 +3486,10 @@ function NobleHUD:make_callsign_name(raw_name,min_len,max_len,fallback_character
 	local function validity_check(s,skip_length_check) 
 		return s and ((string.len(tostring(s)) >= min_len) or skip_length_check)
 	end
+	local function without_vowels(s)
+		return string.gsub(s,"[AEIOUaeiou]","")
+	end
+
 
 	local best_word = ""
 	local condensed = ""
@@ -3585,19 +3583,50 @@ function NobleHUD:make_callsign_name(raw_name,min_len,max_len,fallback_character
 	else
 		result = condensed
 	end
-	
-	result = string.sub(result,1,max_len)
-	
-
-	if string.len(result) < min_len then 
-		result = string.sub(raw_name,1,max_len)
-	end
-	if validity_check(anid) then 
+		
+	if validity_check(anid) and string.len(anid) <= max_len then 
 		result = anid
-	elseif validity_check(result) then
+		--anid always takes priority
 	else
-		result = string.sub(fallback_character_name,1,max_len)
+		--if no anid, then check current result
+		local result_len = string.len(result)
+		if result_len <= max_len and result_len > min_len then 
+			--current result is usable
+		else
+			--result isn't currently usable, see if it can be modified to usability
+			--check vowel-less first
+			local result_vowelless = without_vowels(result)
+			local result_vowelless_len = string.len(result_vowelless)
+			if result_vowelless_len <= max_len and result_vowelless_len > min_len then
+				result = result_vowelless --use vowel-less as callsign
+			else --vowel-less does not work, so take first four letters
+				
+				result = string.sub(result,1,max_len)
+				result_len = string.len(result)
+				if result_len <= max_len and result_len > min_len then 
+					--use this result
+				else --result is unsuitable, try fallback
+					local fallback_len = string.len(fallback_character_name)
+					if fallback_len <= max_len and fallback_len > min_len then 
+						--fallback_character_name is the right size
+						result = fallback_character_name
+					else--fallback_character_name is not the right size
+						--attempt removing vowels
+						result_vowelless = without_vowels(fallback_character_name)
+						result_vowelless_len = string.len(result_vowelless)
+						if result_vowelless_len <= max_len and result_vowelless_len > min_len then 
+							--without vowels, fallback_character_name is usable
+							result = result_vowelless
+						else
+							--last resort is simply cropping the raw name to max_len
+							result = string.sub(raw_name,1,max_len)
+						end
+					end
+				end
+			end
+		end
 	end
+	
 	result = string.upper(result)
 	return result
 end
@@ -5072,10 +5101,9 @@ end
 
 function NobleHUD:OnPeerSynced(peer,peer_id)
 	if managers.hud then 
---		self:_set_teammate_name()
+		LuaNetworking:SendToPeer(peer_id,self.network_messages.sync_callsign,self:GetCallsign())
 	end
 	if Network:is_server() then 
-		LuaNetworking:SendToPeer(peer_id,self.network_messages.sync_callsign,self:GetCallsign())
 		LuaNetworking:SendToPeer(peer_id,self.network_messages.sync_teamname,self:GetTeamName()) -- .. ":" .. LuaNetworking:ColorToString(self:GetTeamColor()))		
 --		LuaNetworking:SendToPeer(peer_id,self.network_messages.sync_teamcolor,self:GetTeamColor())
 --todo sync downs
