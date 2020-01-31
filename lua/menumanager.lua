@@ -11,9 +11,8 @@
 		
 		* Teammate Vitals
 			* Teammate divider for vitals;
-			* change vitals color
+			* change vitals text color
 			* Teammate vitals icon fill/blink effect (for non-conditional) - use vitals_icon_bg?
-			* Flash on empty 
 			
 		* Test sync data success
 			* assault
@@ -23,7 +22,6 @@
 		
 			
 	&&& HIGH PRIORITY: &&&
-		* Teammate equipment
 		* [ASSET] Flamethrower reticle looks like shit
 		
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER 
@@ -35,8 +33,6 @@
 		* BAI sync data compatibility?
 
 		%% BUGS:
-			- Own equipment seems buggered as client (not removing properly?) or else maybe clipping with teammates'?
-			- Downs are not reset after using a docbag (test fix)
 		
 			- Assault phase localization when not host
 			- hide HUD when in camera

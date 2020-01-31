@@ -3,7 +3,7 @@ Hooks:PreHook(UnitNetworkHandler, "sync_doctor_bag_taken", "noblehud_unitnetwork
 	if not alive(unit) or not self._verify_gamestate(self._gamestate_filter.any_ingame) or not peer then
 		return
 	end
-	NobleHUD:SetTeammateDowns(managers.criminals:character_peer_id_by_unit(unit),0)
+	NobleHUD:SetTeammateDowns(sender,0)
 end)
 
 Hooks:PreHook(UnitNetworkHandler, "sync_player_movement_state", "noblehud_unitnetworkhandler_syncplayermovementstate", function(self, unit, state, ...)
