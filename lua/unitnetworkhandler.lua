@@ -11,7 +11,7 @@ Hooks:PreHook(UnitNetworkHandler, "sync_player_movement_state", "noblehud_unitne
 		return
 	end
 	local peer_id = managers.criminals:character_peer_id_by_unit(unit)
-	NobleHUD:log("Player " .. tostring(peer_id) .. " changed to state " .. tostring(state))
+--	NobleHUD:log("Teammate  " .. tostring(peer_id) .. " changed to state " .. tostring(state))
 	if peer_id and state == "bleed_out" then 
 		NobleHUD:SetTeammateDowns(peer_id,1,true,true)
 	end

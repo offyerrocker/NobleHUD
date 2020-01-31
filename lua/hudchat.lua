@@ -18,6 +18,7 @@ Hooks:PostHook(HUDChat,"init","noblehud_init_hudchat",function(self,ws, hud)
 		w = self._panel:w(),
 		h = self._panel:h(),
 		alpha = 0,
+		visible = false, --frankly, that shit's obnoxious. not sure why i made the damned thing
 		layer = -1 --below everything else
 	})
 	
@@ -54,12 +55,14 @@ function HUDChat:receive_message(name,message,color,icon,...)
 			--show hint
 			end
 		else
-			NobleHUD._cache.birthday = true
+			if (NobleHUD._cache.birthday == nil) or (managers.network:session():local_peer():name() == name) then 
+				NobleHUD._cache.birthday = true
+			end
 		end
 	end
 	if NobleHUD:IsChatNotificationSoundEnabled() then
 		local notif_sfx = NobleHUD.chat_notification_sounds[NobleHUD:GetChatNotificationSound()]
-		if managers.player:local_player() then
+		if NobleHUD._cache.loaded then
 			XAudio.Source:new(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/ui/" .. notif_sfx))
 		end
 	end	
