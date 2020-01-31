@@ -179,6 +179,8 @@
 	"noblehud_hud_shield_empty" : "WARNING",
 	"noblehud_hud_radar_distance_label" : "$DISTANCEm",
 	"noblehud_hud_safety_check" : "Your safety is on!",
+	"noblehud_hud_civilian_mode" : "Civilian",
+	"noblehud_hud_casing_mode" : "Casing",
 	"noblehud_hud_assault_phase_phalanx" : "WINTERS",
 	"noblehud_hud_assault_phase_anticipation" : "Anticipation",
 	"noblehud_hud_assault_phase_build" : "Build",

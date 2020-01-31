@@ -26,7 +26,7 @@
 	&&& HIGH PRIORITY: &&&
 		* Teammate equipment
 		* [ASSET] Flamethrower reticle looks like shit
-		* Downs counter starts at ""
+		* Downs counter starts at "" (test fix)
 		* Custom callsign is not currently used for teammates
 		
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER 
@@ -289,8 +289,9 @@ NobleHUD.chat_notification_sounds = {
 NobleHUD.network_messages = {
 	down_counter = "DownCounterStandalone",
 	sync_assault = "SyncAssaultPhase",
-	sync_teamname = "SyncNobleHUDTeam",
-	sync_callsign = "SyncNobleHUDCallsign"
+	sync_teamname = "SyncNobleHUDTeamName",
+	sync_callsign = "SyncNobleHUDCallsign",
+	sync_teamcolor = "SyncNobleHUDTeamColor"
 }
 
 NobleHUD.color_data = {
@@ -4377,7 +4378,7 @@ function NobleHUD:UpdateHUD(t,dt)
 			if phase and not (phasename or assaultstate:whisper_mode()) then 
 				self:log("Did not find phasename for " .. tostring(phase),{color = Color.red})
 			elseif phasename then
-				self:SetAssaultPhase(phasename,true)
+				self:SetAssaultPhase(managers.localization:text(phasename),true)
 			end
 		end
 		
@@ -5071,18 +5072,14 @@ end
 
 function NobleHUD:OnPeerSynced(peer,peer_id)
 	if managers.hud then 
---		self:_set_teammate_callsign
+--		self:_set_teammate_name()
 	end
 	if Network:is_server() then 
 		LuaNetworking:SendToPeer(peer_id,self.network_messages.sync_callsign,self:GetCallsign())
 		LuaNetworking:SendToPeer(peer_id,self.network_messages.sync_teamname,self:GetTeamName()) -- .. ":" .. LuaNetworking:ColorToString(self:GetTeamColor()))		
+--		LuaNetworking:SendToPeer(peer_id,self.network_messages.sync_teamcolor,self:GetTeamColor())
+--todo sync downs
 	end
-	
---[[
-			send team name + color
-			send assault phase
-			send downs
-	--]]
 end
 
 function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
@@ -5332,8 +5329,8 @@ function NobleHUD:OnTeammateKill(player_unit)
 	local peer_id = alive(player_unit) and managers.criminals:character_peer_id_by_unit(player_unit)
 	local vehicle = peer_id and managers.player:get_vehicle_for_peer(peer_id) or {}
 	local my_vehicle = managers.player:get_vehicle()
-	if alive(vehicle.vehicle_unit) and vehicle.vehicle_unit == my_vehicle.vehicle_unit then
-		if my_vehicle and my_vehicle.seat == "driver" then 
+	if alive(my_vehicle) and alive(vehicle.vehicle_unit) and vehicle.vehicle_unit == my_vehicle.vehicle_unit then
+		if my_vehicle.seat == "driver" then 
 			NobleHUD:AddMedal("wheelman")
 			NobleHUD:AddMedal("spree_wheelman",NobleHUD:KillsCache("vehicle_assist",1))
 		end
@@ -7215,7 +7212,7 @@ function NobleHUD:_create_teammates(hud)
 
 	local teammates_panel = hud:panel({
 		name = "teammates_panel",
-		w = 256,
+		w = 512,
 		h = 256, -- num_teammates * teammate_h,
 		x = 100,
 		y = 0,
@@ -7247,7 +7244,7 @@ end
 function NobleHUD:_create_teammate_panel(teammates_panel,i)
 	local ammo_font = tweak_data.hud_players.ammo_font
 --	local name_font = tweak_data.hud_players.name_font
-	local teammate_w = 256
+	local teammate_w = 512
 	local teammate_h = 48
 	local subpanel_w = 24
 	local subpanel_h = 36
@@ -7478,9 +7475,23 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 		font_size = tweak_data.hud_players.name_size,
 		font = ammo_font
 	})
-	
-	
-	
+	local equipment_subpanel = panel:panel({
+		name = "equipment_subpanel",
+		x = grenade_subpanel:right(),
+		y = character_bitmap:y(),
+		w = 256,
+		layer = 1,
+		h = panel:h(),
+		visible = true
+	})
+	--[[
+	local debug_subpanel4 = equipment_subpanel:rect({
+		name = "debug_subpanel4",
+		color = Color(1,1,0),
+		visible = false,
+		alpha = 0.2
+	})
+	--]]
 	local teammate_panel_debug = panel:rect({
 		name = "teammate_panel_debug",
 		visible = false,
@@ -7492,7 +7503,6 @@ end
 
 function NobleHUD:_add_teammate() --i don't think this is even called...???
 end
-
 
 function NobleHUD:_sort_teammates(num)
 --todo get tracked max teammate count, hide inactive teammates
@@ -7516,6 +7526,10 @@ function NobleHUD:_sort_teammates(num)
 end
 
 function NobleHUD:_set_teammate_callsign(i,id)	
+	self:log("_set_teammate_callsign() is deprecated! Please use _set_teammate_color() or _set_teammate_name!",{color=Color.red})
+end
+
+function NobleHUD:_set_teammate_color(i,id)	
 	local panel = self._teammates_panel:child("teammate_" .. tostring(i))
 	if (panel and alive(panel)) then
 		local color = tweak_data.chat_colors[id or 5]
@@ -7556,17 +7570,154 @@ function NobleHUD:_set_teammate_name(i,player_name)
 	end
 end
 
-
-function NobleHUD:_init_teammate(i,panel,is_player,width)
+function NobleHUD:_init_teammate(i,original_panel,is_player,width)
 	if not self._teammates_panel then return end
 	local panel = self._teammates_panel:child("teammate_" .. tostring(i))
 	if (panel and alive(panel)) then 
-		self:log("Tried to _init_teammate")
+		--self:log("Tried to _init_teammate")
 	else
-		self:log("ERROR: _init_teammate panel(" .. tostring(i) .. "): Panel does not exist")
+		self:log("ERROR: _init_teammate panel( " .. self.table_concat({i,panel,is_player,width},",") .. " ): Panel does not exist")
 		return
 	end
 end
+
+function NobleHUD:_remove_teammate_equipment(i,equipment_name)
+	local player_panel = self:GetTeammatePanel(i)
+	if alive(player_panel) then 
+		local equipment_subpanel = player_panel:child("equipment_subpanel")
+		for _,equipment_box in pairs(equipment_subpanel:children()) do 
+			if equipment_box:name() == equipment_name then 
+				local function remove_box(o)
+					o:parent():remove(o)
+				end
+				self:animate(equipment_box,"animate_fadeout",remove_box,0.25,equipment_box:alpha(),nil,-equipment_box:h())
+				break
+			end
+		end
+	end	
+	
+end
+
+function NobleHUD:_clear_teammate_equipments(i)
+	local player_panel = self:GetTeammatePanel(i)
+	if alive(player_panel) then 
+		local equipment_subpanel = player_panel:child("equipment_subpanel")
+		for _,equipment_box in pairs(equipment_subpanel:children()) do 
+			if alive(equipment_box) then 
+				equipment_subpanel:remove(equipment_box)
+			end
+		end
+	end
+end
+
+function NobleHUD:_set_teammate_equipment_amount(i,equipment_name,amount)
+	local player_panel = self:GetTeammatePanel(i)
+	if equipment_name and alive(player_panel) then 
+		local equipment_subpanel = player_panel:child("equipment_subpanel")
+		local equipment_box = equipment_subpanel:child(tostring(equipment_name))
+		if alive(equipment_box) then 
+			if amount == 1 then 
+				amount = ""
+			end
+			equipment_box:child("amount"):set_text(amount)
+		else
+			self:log("ERROR: _set_teammate_equipment_amount(" .. self.table_concat({i,equipment_name,amount},",") .. ")",{color=Color.red})
+		end
+	end
+end
+
+--[[
+
+local i = 1; local data = {id = "sanks", icon = "equipment_planks",amount = 1}; NobleHUD:_add_teammate_equipment(i,data)
+local i = 1; local data = {id = "soda", icon = "equipment_soda",amount = 4}; NobleHUD:_add_teammate_equipment(i,data)
+local i = 1; local data = {id = "drill", icon = "equipment_drill",amount = math.huge}; NobleHUD:_add_teammate_equipment(i,data)
+local i = 1; local data = {id = "saw", icon = "equipment_saw",amount = math.huge}; NobleHUD:_add_teammate_equipment(i,data)
+local i = 1; local data = {id = "buhrbur", icon = "equipment_soda",amount = math.huge}; NobleHUD:_add_teammate_equipment(i,data)
+local i = 1; NobleHUD:_remove_teammate_equipment(1,"buhrbur")
+local i = 1; local data = {id = "president_key", icon = "equipment_president_key",amount = 1}; NobleHUD:_add_teammate_equipment(i,data)
+NobleHUD:_layout_teammate_equipments(1)
+
+--]]
+function NobleHUD:_add_teammate_equipment(i,data)
+	local equipment_name = data.id and tostring(data.id)
+	local equipment_icon,equipment_rect = tweak_data.hud_icons:get_icon_data(data.icon)
+	local amount = data.amount
+	local player_panel = self:GetTeammatePanel(i)
+	if equipment_name and alive(player_panel) then 
+		local equipment_subpanel = player_panel:child("equipment_subpanel")
+		if alive(equipment_subpanel:child(equipment_name)) then 
+			self:_set_teammate_equipment_amount(i,equipment_name,amount)
+		else
+			local eq_size = 24
+			local new_equipment = equipment_subpanel:panel({
+				name = equipment_name,
+				w = eq_size * 1.5,
+				h = eq_size *  1.5,
+				alpha = 0 --due to animate
+			})
+			local icon = new_equipment:bitmap({
+				name = "icon",
+				texture = equipment_icon,
+				texture_rect = equipment_rect,
+				color = self.color_data.hud_blueoutline,
+				w = eq_size,
+				h = eq_size,
+				layer = 2
+			})
+			icon:set_center(new_equipment:center())
+		--[[
+			new_equipment:bitmap({
+				name = "amount_bg",
+				texture = "guis/textures/pd2/equip_count",
+				layer = 3,
+				color = Color.white
+			})
+		--]]
+			local rotation = 360
+			if (amount == "infinite") or (amount == math.huge) then
+				--this isn't actually a case that exists, i just wanted to try making it
+				rotation = 90
+				amount = "8" --hello yes this is the stanley parable demo
+			elseif (amount == 1) or not amount then 
+				amount = ""
+			else
+				amount = tostring(amount)
+			end
+			local label = new_equipment:text({
+				name = "amount",
+				layer = 4,
+				font = "fonts/font_small_noshadow_mf",
+				font_size = eq_size / 2,
+				text = amount,
+				x = eq_size / 4,
+				color = self.color_data.hud_bluefill,
+				rotation = rotation,
+				align = "center",
+				vertical = "bottom"
+			})
+			local function pulse(o)
+				self:animate(o:child("icon"),"animate_killfeed_icon_pulse",animate_done,0.3,eq_size,1.5)
+			end
+			self:animate(new_equipment,"animate_fadein",pulse,0.5,1)
+		end
+	end
+end
+
+function NobleHUD:_layout_teammate_equipments(i)
+	local player_panel = self:GetTeammatePanel(i)
+	if alive(player_panel) then 
+		local equipment_subpanel = player_panel:child("equipment_subpanel")
+		local next_x = 0
+		for count,equipment_box in ipairs(equipment_subpanel:children()) do
+			if equipment_box:name() ~= "debug_subpanel4" then		
+				equipment_box:set_x(next_x)
+				next_x = next_x + equipment_box:child("icon"):w()
+--				equipment_box:set_x(count * equipment_box:w())
+			end
+		end
+	end
+end
+
 
 function NobleHUD:_add_convert(params)
 --todo
@@ -7966,8 +8117,8 @@ end
 
 function NobleHUD:SetAssaultPhase(text,send_to_peers)
 	local assault_phase_label = self._score_panel:child("assault_phase_label")
-	if text and managers.localization:text(text) ~= assault_phase_label:text() then 
-		assault_phase_label:set_text(managers.localization:text(text))
+	if text ~= assault_phase_label:text() then 
+		assault_phase_label:set_text(text)
 		self:animate(assault_phase_label,"animate_killfeed_text_in",nil,0.3,20,self.color_data.hud_vitalsoutline_blue,self.color_data.hud_text_flash)
 		if send_to_peers then
 			LuaNetworking:SendToPeers(self.network_messages.sync_assault,text)
@@ -8980,7 +9131,7 @@ function NobleHUD:_create_tabscreen(hud)
 		})
 		local downs_label = downs_box:text({
 			name = "downs_label",
-			text = "",
+			text = "0",
 			align = "center",
 			vertical = "center",
 			font = tweak_data.hud_players.ammo_font,
@@ -10179,6 +10330,7 @@ end
 
 
 --		EQUIPMENT
+
 function NobleHUD:_create_equipment(hud)
 	local eq_h = 144
 	local equipment_panel = hud:panel({
@@ -11048,6 +11200,13 @@ Hooks:Add("NetworkReceivedData", "noblehud_onreceiveluanetworkingmessage", funct
 		NobleHUD:SetTeammateDowns(sender,tonumber(data),panel_id,false)
 	elseif (message == NobleHUD.network_messages.sync_callsign) then
 		if panel_id then 
+			local peer = managers.network:session():peer(sender)
+			if peer then 
+				local id64 = peer:user_id()
+				if id64 then
+					NobleHUD._cache.callsigns[id64] = tostring(data)
+				end
+			end
 			NobleHUD:_set_teammate_name(panel_id,data)
 		end
 		--stuff

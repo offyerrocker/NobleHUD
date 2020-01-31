@@ -21,9 +21,9 @@ function HUDAssaultCorner:show_casing(mode)
 
 	NobleHUD:log("Casing mode: " .. tostring(mode),{color=Color.yellow})
 	if mode == "civilian" then 
-		NobleHUD:SetAssaultPhase(managers.localization:text("civilian"),false)
+		NobleHUD:SetAssaultPhase(managers.localization:text("noblehud_hud_civilian_mode"),false)
 	else
---		NobleHUD:SetAssaultPhase("Casing")--managers.localization:text(""))	
+		NobleHUD:SetAssaultPhase(managers.localization:text("noblehud_hud_casing_mode"))
 	end
 	self:_end_assault()
 	self._casing = true
@@ -137,11 +137,11 @@ function HUDAssaultCorner:sync_set_assault_mode(mode) --from host
 	if self._assault_mode == mode then 
 		return 
 	end
-	NobleHUD:log("sync_set_assault_mode(" .. mode .. ")")
+	NobleHUD:log("HUDAssaultCorner:sync_set_assault_mode(" .. tostring(mode) .. ")",{color=Color.yellow})
 	self._assault_mode = mode
 	if mode == "phalanx" then 
 		color = self._vip_assault_color
-		NobleHUD:SetAssaultPhase(mode)
+		NobleHUD:SetAssaultPhase(managers.localization:text(NobleHUD._assault_phases.phalanx))
 	end
 	
 	self:_update_assault_hud_color(color)
