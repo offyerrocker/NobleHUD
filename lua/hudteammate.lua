@@ -16,8 +16,8 @@ Hooks:PostHook(HUDTeammate,"set_name","noblehud_setteammatename",function(self,p
 	NobleHUD:_set_tabscreen_teammate_name(self._id or 5,player_name)
 	if HUDManager.PLAYER_PANEL == self._id then 
 		NobleHUD:_set_main_player_indicator(self._id)
-		NobleHUD:_set_scoreboard_character(self._id,managers.network:session():local_peer():id())
---		NobleHUD:_set_teammate_name(self._id,NobleHUD:GetCallsign())
+		NobleHUD:_set_scoreboard_character(self._id,self._peer_id or managers.network:session():local_peer():id())
+--		NobleHUD:log("(set_name 1) NobleHUD:_set_scoreboard_character(" .. NobleHUD.table_concat({id=self._id,peer_id=managers.network:session():local_peer():id(),character_id="[nil]",player_name=player_name},"|","=",true) ..")")
 		NobleHUD:_set_tabscreen_teammate_callsign(self._id,NobleHUD:GetCallsign())
 	else
 		local character_name  --managers.criminals:character_name_by_panel_id(self._id)
@@ -26,8 +26,10 @@ Hooks:PostHook(HUDTeammate,"set_name","noblehud_setteammatename",function(self,p
 				character_name = data.name
 				if data.peer_id then 
 					NobleHUD:_set_scoreboard_character(self._id,data.peer_id,character_name)
+--					NobleHUD:log("(set_name 2) NobleHUD:_set_scoreboard_character(" .. NobleHUD.table_concat({id=panel_id or "nil",peer_id=data.peer_id or "nil",character_id=character_name or "nil",player_name = player_name},"|","=",true) ..")")
 				else
 					NobleHUD:_set_scoreboard_character(self._id,nil,character_name)
+--					NobleHUD:log("(set_name 3) NobleHUD:_set_scoreboard_character(" .. NobleHUD.table_concat({id=panel_id or "nil",peer_id="nil",character_id=character_name or "nil",player_name = player_name},"|","=",true) ..")")
 				end
 				break
 			end
@@ -180,12 +182,18 @@ Hooks:PostHook(HUDTeammate,"set_health","noblehud_set_health",function(self,data
 		local vitals_panel = teammate_panel:child("vitals_subpanel")
 		vitals_panel:show()
 		local label = vitals_panel:child("vitals_health_label")
-		label:set_text(math.round(data.current * 10)) --or data.current/data.total?
-		label:set_color(Color(hp_r,0.7,1-hp_r))
-		if string.len(label:text()) > 3 then 
-			label:set_font_size(12)
+		
+		vitals_panel:child("vitals_icon"):set_color(NobleHUD.interp_colors(NobleHUD.color_data.hud_vitalsoutline_blue,NobleHUD.color_data.hud_vitalsoutline_red,1-hp_r))
+		if true then --use ratio
+			label:set_text(string.format("%d",hp_r * 100))
 		else
-			label:set_font_size(19)
+			label:set_text(math.round(data.current * 10))
+			if string.len(label:text()) > 3 then 
+				label:set_font_size(12)
+			else
+				label:set_font_size(19)
+			end
+	--		label:set_color(NobleHUD.interp_colors(NobleHUD.color_data.hud_vitalsoutline_blue,NobleHUD.color_data.hud_vitalsoutline_red,hp_r))
 		end
 	end
 end)
@@ -230,14 +238,19 @@ Hooks:PostHook(HUDTeammate,"set_armor","noblehud_set_armor",function(self,data)
 		local vitals_panel = teammate_panel:child("vitals_subpanel")
 		vitals_panel:show()
 		local label = vitals_panel:child("vitals_armor_label")
-		label:set_text(math.round(current * 10)) --or data.current/data.total?
-		label:set_color(Color(ratio,0.7,1-ratio))
-		if string.len(label:text()) > 3 then 
-			label:set_font_size(12)
+		if true then --use ratio
+			label:set_text(string.format("%d",ratio * 100))
 		else
-			label:set_font_size(19)
+			label:set_text(math.round(current * 10))
+			if string.len(label:text()) > 3 then 
+				label:set_font_size(12)
+			else
+				label:set_font_size(19)
+			end		
 		end
-		--todo set arm/hp numbers
+		if total > 0 then
+		end
+			--todo set vitals icon or vitals icon bg color
 	end
 end)
 
@@ -809,10 +822,10 @@ Hooks:PostHook(HUDTeammate,"set_ability_radial","khud_set_ability_radial",functi
 		local total = data.total
 		local progress = current / total	
 
-	self:log("GRENADES DATA")
-	self:log("grenades current: " .. current)
-	self:log("grenades total: " .. total)
-	self:log("grenades progress: " .. progress)
+	NobleHUD:log("GRENADES DATA")
+	NobleHUD:log("grenades current: " .. current)
+	NobleHUD:log("grenades total: " .. total)
+	NobleHUD:log("grenades progress: " .. progress)
 --[[		
 		local grenades_panel = self._khud_grenades_panel
 		local grenades_recharge = grenades_panel:child("grenades_bg"):child("grenades_recharge")		

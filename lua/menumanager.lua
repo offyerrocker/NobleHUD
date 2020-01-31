@@ -5,18 +5,29 @@
 	Notes:
 -test has font with managers.dyn_resource:has_resource(Idstring("scene"), Idstring("core/environments/skies/" .. sky .. "/" .. sky), managers.dyn_resource.DYN_RESOURCES_PACKAGE)
 
+
 		* Sync data:
 			send team name + color
 			send assault phase
+		
+		* Teammate Vitals
+			* Teammate divider for vitals;
+			* change vitals color
+			* Teammate vitals icon fill/blink effect (for non-conditional) - use vitals_icon_bg?
+			* Flash on empty 
 			
-		* Teammate divider for vitals;
-		* Teammate vitals icon fill/blink effect (for non-conditional) - use vitals_icon_bg?
 		* Test sync data success
 			* assault
 			* team_name
 			
+		* Users cannot select an alternative crosshair for rocket launchers since they are technically grenade launchers
+		
+			
 	&&& HIGH PRIORITY: &&&
 		* Teammate equipment
+		* [ASSET] Flamethrower reticle looks like shit
+		* Downs counter starts at ""
+		* Custom callsign is not currently used for teammates
 		
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER 
 		* Layout HUD on disabling radar
@@ -24,7 +35,13 @@
 				* do part of this from _sort_teammates()
 		* underbarrel base does not trigger HUD change (ammo tick, crosshair)
 
+		* BAI sync data compatibility?
+
 		%% BUGS:
+			- Own equipment seems buggered as client (not removing properly?) or else maybe clipping with teammates'?
+			- Downs are not reset after using a docbag (test fix)
+		
+			- Assault phase localization when not host]
 			- callsign is not being used when not host?
 			- hide HUD when in camera
 			- Vanilla HUD is visible in drop-in spectate mode
@@ -77,9 +94,6 @@
 		* Blinky "No ammo" alert
 		* Voice command radial
 		* Mod Options:
-			* Crosshair selection
-				* By weapon type
-				* Static selection
 			* Grenade/deployable area swap
 		* Suspicion panel?
 		* Crosshair stuff
@@ -4482,15 +4496,6 @@ function NobleHUD:UpdateHUD(t,dt)
 			end
 		end
 		
-		--[[
-			for id,data in pairs(managers.criminals._characters) do 
-				if data.taken and data.peer_id then 
-					self:_set_scoreboard_character(data.peer_id,data.name)
-				end
-			end
-		end
-		--]]
-		
 		
 		local player_pos = player:position()
 		local state = player:movement():current_state()
@@ -5122,17 +5127,18 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 		--no +1 kills for you, you murderer >:(
 	else
 		if self:IsSkullActive("birthday") and headshot and unit and alive(unit) and unit:base() then 
-				
-				unit:base()._grunt_bday = XAudio.UnitSource:new(unit,XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg"))
-				
---				unit:base()._grunt_bday = XAudio.UnitSource:new(player,XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg"))
---			XAudio.Source:new(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/birthday_loud_2.ogg")):set_position(managers.viewport:get_current_camera():position())
---			XAudio.Source:new(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday_2.ogg"))
---			XAudio.Source:new(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg")):set_position(managers.viewport:get_current_camera():position())
---XAudio.Source:new(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg")):set_position(managers.viewport:get_current_camera():position() + (managers.player:local_player():camera():forward() * 100))
---			XAudio.Source:new(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg")):set_position(managers.player:local_player():position())
+			local function spawn_money_confetti()
+				World:effect_manager():spawn({
+					effect = Idstring("effects/payday2/particles/impacts/money_impact_pd2"),
+					position = movement and movement:m_head_pos() or unit:position() or Vector3()
+				})
+			end
+			--a measley 4 money particles per spawn, so 12 total here 
+			spawn_money_confetti()
+			spawn_money_confetti()
+			spawn_money_confetti()
+			XAudio.UnitSource:new(unit,XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg"))
 		end
---		NobleHUD._announcer_sound_source:set_buffer(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg")); NobleHUD._announcer_sound_source:play()
 		if player_weapon_id == primary_id then
 			self:_set_killcount(1,managers.statistics:session_killed_by_weapon(primary_id))
 		elseif player_weapon_id == secondary_id then 
@@ -6312,7 +6318,7 @@ function NobleHUD:_get_crosshair_type_from_weapon_base(base,fire_mode)
 		self:log("ERROR: _get_crosshair_type_from_weapon_base(" .. concat({base,slot},",") .. "): bad base/slot")
 		return
 	end	
-	local function crosshair_from_category(cat,mode)
+	local function crosshair_from_category(cat,mode) --default settings for "auto" setting, or for nonexistent crosshair data
 		if cat == "assault_rifle" then 
 			if mode == "single" then
 				return "dmr"
@@ -6358,7 +6364,7 @@ function NobleHUD:_get_crosshair_type_from_weapon_base(base,fire_mode)
 		end
 	end
 	local gadget_weapon_override = base:gadget_overrides_weapon_functions()
-	
+	self:log("_get_crosshair_type_from_weapon_base(): Gadget weapon override: " .. tostring(gadget_weapon_override))
 	base = gadget_weapon_override or base
 	
 	local categories = base:categories()
@@ -6367,7 +6373,6 @@ function NobleHUD:_get_crosshair_type_from_weapon_base(base,fire_mode)
 		
 		--category = base:get_override_gadget_base()
 		--get weapon type from gadget
-		--todo get user settings for weapon categories to crosshair types
 		
 	for _,category in pairs(categories) do 
 		if category == "revolver" then 
@@ -6377,10 +6382,6 @@ function NobleHUD:_get_crosshair_type_from_weapon_base(base,fire_mode)
 		else
 			weapon_category = category
 		end
---			local crosshair_result = crosshair_from_category(category,fire_mode)
---			if crosshair_result then 
---				return crosshair_result
---			end
 	end	
 	return self:GetCrosshairChoiceByType(weapon_category,fire_mode) or crosshair_from_category(weapon_category,fire_mode) or "plasma_rifle"
 end
@@ -7518,6 +7519,7 @@ function NobleHUD:_set_teammate_callsign(i,id)
 	local panel = self._teammates_panel:child("teammate_" .. tostring(i))
 	if (panel and alive(panel)) then
 		local color = tweak_data.chat_colors[id or 5]
+		local color_2 = (color * 0.8):with_alpha(1)
 		local bitmap = panel:child("callsign_box"):child("character_bitmap")
 		bitmap:set_image("guis/textures/teammate_nameplate")
 		bitmap:set_size(100 * 0.75,32 * 0.75)
@@ -7526,6 +7528,15 @@ function NobleHUD:_set_teammate_callsign(i,id)
 			panel:child("callsign_box"):child("player_name"):set_color(color)
 			bitmap:set_color(color) --optional
 		end
+		
+		local player_box = NobleHUD._tabscreen:child("scoreboard"):child("player_box_" .. tostring(i))
+		if alive(player_box) then 
+			player_box:child("icon_box"):child("icon_bg"):set_color(color)
+			player_box:child("callsign_box"):child("callsign_bg"):set_color(color)
+			player_box:child("name_box"):child("name_bg"):set_color(color_2)
+			player_box:child("ping_box"):child("ping_bg"):set_color(color_2)
+		end
+		
 	else
 		self:log("ERROR: _add_teammate panel(" .. tostring(i) .. "): Panel does not exist")
 		return
@@ -8908,7 +8919,7 @@ function NobleHUD:_create_tabscreen(hud)
 	})
 	local teamscore_label = teamscore_box:text({
 		name = "teamscore_label",
-		text = "4",
+		text = "", --tabscreen team score label
 		align = "center",
 		vertical = "center",
 		color = Color.white,
@@ -9072,7 +9083,7 @@ function NobleHUD:_create_tabscreen(hud)
 		})
 		local score_label = score_box:text({
 			name = "score_label",
-			text = "1",
+			text = "", --tabscreen scoreboard 
 			align = "center",
 			vertical = "center",
 			font = tweak_data.hud_players.ammo_font,
@@ -9352,13 +9363,13 @@ function NobleHUD:update_characters()
 			elseif v.peer_id then 
 				peer_id = v.peer_id
 			end
---			self:_set_scoreboard_character(peer_id,name)
 		end
 	end
 end
 
 function NobleHUD:_set_scoreboard_character(id,peer_id,character_id)
 	local player_box = self._tabscreen:child("scoreboard"):child("player_box_" .. tostring(id))
+--	self:log("NobleHUD:_set_scoreboard_character(" .. NobleHUD.table_concat({id=id,peer_id=peer_id,character_id=character_id},"|","=",true) ..")")
 	
 	
 	if alive(player_box) then 

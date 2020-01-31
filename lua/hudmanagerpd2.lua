@@ -17,7 +17,7 @@ function HUDManager:_add_name_label(data,...)
 	local last_id = self._hud.name_labels[#self._hud.name_labels] and self._hud.name_labels[#self._hud.name_labels].id or 0
 	local id = last_id + 1
 	local character_name = data.name
-	NobleHUD:log("Creating hud waypoint [" .. tostring(character_name) .. "] = " .. NobleHUD.table_concat(data," // "," : "))
+--	NobleHUD:log("Creating hud waypoint [" .. tostring(character_name) .. "] = " .. NobleHUD.table_concat(data," // "," : "))
 	local rank = 0
 	local peer_id = nil
 	local is_husk_player = data.unit:base().is_husk_player
@@ -262,7 +262,7 @@ Hooks:PostHook(HUDManager,"_setup_player_info_hud_pd2","noblehud_create_ws",func
 end)
 
 function HUDManager:pd_start_progress(current, total, msg, icon_id,...)
-	NobleHUD:log("HUDManager:pd_start_progress(" .. NobleHUD.table_concat({current = current, total = total, msg = msg, icon_id = icon_id},",","=") .. ")")
+--	NobleHUD:log("HUDManager:pd_start_progress(" .. NobleHUD.table_concat({current = current, total = total, msg = msg, icon_id = icon_id},",","=") .. ")")
 	--do nothing
 end
 
@@ -381,7 +381,7 @@ function HUDManager:_animate_dot_tube_interp(tube) --why doesn't this work
 		tube:set_alpha(tube_alpha + ((MIN_ALPHA - tube_alpha) * (elapsed / duration)))
 		tube:set_color(NobleHUD.interp_colors(tube_color,desired_color,elapsed/duration))
 	end
-	self:log("elapsed: " .. tostring(elapsed) .. "," .. "duration: " .. tostring(duration))
+	NobleHUD:log("elapsed: " .. tostring(elapsed) .. "," .. "duration: " .. tostring(duration))
 	tube:set_alpha(1)
 	
 end
@@ -424,7 +424,7 @@ function HUDManager:_animate_helper_tube_on_fast(tube) --reduced delay; used for
 		if delay <= 0 then 
 			tube_alpha = (tube_alpha + 0.15) * rate
 			tube:set_alpha(tube_alpha)
---			self:log(tube:name() .. "," .. dt)
+--			NobleHUD:log(tube:name() .. "," .. dt)
 			tube:set_color(NobleHUD.interp_colors(tube:color(),desired_color,0.5)) --gradually progress toward "lit" color; effectively a logarithmic function
 --			tube:set_color(interp_col(tube:color(),desired_color,dt * 1.5)) --gradually progress toward "lit" color; effectively a logarithmic function
 		else
