@@ -14,23 +14,23 @@ end)
 
 Hooks:PostHook(HUDTeammate,"set_name","noblehud_setteammatename",function(self,player_name)
 	NobleHUD:_set_tabscreen_teammate_name(self._id or 5,player_name)
+	local peer_id = self._peer_id
 	if self._main_player then --HUDManager.PLAYER_PANEL == self._id then 
 		NobleHUD:_set_main_player_indicator(self._id)
-		NobleHUD:_set_scoreboard_character(self._id,self._peer_id or managers.network:session():local_peer():id())
-		NobleHUD:log("(set_name 1) NobleHUD:_set_scoreboard_character(" .. NobleHUD.table_concat({id=self._id,peer_id=managers.network:session():local_peer():id(),character_id="[nil]",player_name=player_name},"|","=",true) ..")")
+		NobleHUD:_set_scoreboard_character(self._id,peer_id or managers.network:session():local_peer():id())
+--		NobleHUD:log("(set_name 1) NobleHUD:_set_scoreboard_character(" .. NobleHUD.table_concat({id=self._id,peer_id=managers.network:session():local_peer():id(),character_id="[nil]",player_name=player_name},"|","=",true) ..")")
 		NobleHUD:_set_tabscreen_teammate_callsign(self._id,NobleHUD:GetCallsign())
 	else
-		local character_name,peer_id  --managers.criminals:character_name_by_panel_id(self._id)
+		local character_name  --managers.criminals:character_name_by_panel_id(self._id)
 		for id, data in pairs(managers.criminals._characters or {}) do 
-			if data.taken and self._id and data.data.panel_id == self._id then 
+			if data.taken and ((self._id and data.data.panel_id == self._id) or (peer_id == data.peer_id)) then 
 				character_name = data.name
-				if data.peer_id then --is teammate player	
-					peer_id = data.peer_id
-					NobleHUD:_set_scoreboard_character(self._id,data.peer_id,character_name)
-					NobleHUD:log("(set_name 2) NobleHUD:_set_scoreboard_character(" .. NobleHUD.table_concat({id=self._id or "nil",peer_id=data.peer_id or "nil",character_id=character_name or "nil",player_name = player_name},"|","=",true) ..")")
+				if peer_id and (peer_id == data.peer_id) then --is teammate player	
+					NobleHUD:_set_scoreboard_character(self._id,peer_id,character_name)
+--					NobleHUD:log("(set_name 2) NobleHUD:_set_scoreboard_character(" .. NobleHUD.table_concat({id=self._id or "nil",peer_id=peer_id or "[nil?]",character_id=character_name or "nil",player_name = player_name},"|","=",true) ..")")
 				else
 					NobleHUD:_set_scoreboard_character(self._id,nil,character_name) --is bot, most likely
-					NobleHUD:log("(set_name 3) NobleHUD:_set_scoreboard_character(" .. NobleHUD.table_concat({id=self._id or "nil",peer_id="nil",character_id=character_name or "nil",player_name = player_name},"|","=",true) ..")")
+--					NobleHUD:log("(set_name 3) NobleHUD:_set_scoreboard_character(" .. NobleHUD.table_concat({id=self._id or "nil",peer_id="nil",character_id=character_name or "nil",player_name = player_name},"|","=",true) ..")")
 				end
 				break
 			end
@@ -40,6 +40,7 @@ Hooks:PostHook(HUDTeammate,"set_name","noblehud_setteammatename",function(self,p
 		local id64 = peer and peer:user_id()
 		local callsign = id64 and NobleHUD._cache.callsigns[id64] or NobleHUD:make_callsign_name(player_name,NobleHUD._MIN_CALLSIGN_LEN,NobleHUD._MAX_CALLSIGN_LEN,character_name)
 		NobleHUD:_set_teammate_name(self._id,callsign)
+		NobleHUD:_set_teammate_waypoint_name(peer_id,callsign)
 	end
 end)
 

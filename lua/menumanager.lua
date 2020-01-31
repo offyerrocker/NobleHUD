@@ -7570,6 +7570,38 @@ function NobleHUD:_set_teammate_name(i,player_name)
 	end
 end
 
+function NobleHUD:_set_teammate_waypoint_name(peer_id,name)
+	if managers.hud then 
+		local name_labels = managers.hud._hud.name_labels
+		for _,name_label in pairs(name_labels or {}) do 
+			if peer_id and peer_id == name_label.peer_id then 
+				local panel = name_label.panel
+				if alive(panel) then 
+					panel:child("text"):set_text(name)
+				end
+				return
+			end			
+		end
+		--[[
+		local label = peer_id and name_labels and name_labels[peer_id]
+		if label then 
+			local panel = label.panel
+			if alive(panel) then 
+				
+			end
+		end
+		--]]
+	end
+--[[
+
+	local hud = managers.hud:script(PlayerBase.PLAYER_INFO_HUD_FULLSCREEN_PD2)
+	local panel = hud and alive(hud.panel) and hud.panel:child("name_label" .. tostring(panel_id))
+	if alive(panel) then 
+		panel:child("text"):set_text(name)
+	end
+	--]]
+end
+
 function NobleHUD:_init_teammate(i,original_panel,is_player,width)
 	if not self._teammates_panel then return end
 	local panel = self._teammates_panel:child("teammate_" .. tostring(i))
@@ -11199,15 +11231,17 @@ Hooks:Add("NetworkReceivedData", "noblehud_onreceiveluanetworkingmessage", funct
 		--set downs here
 		NobleHUD:SetTeammateDowns(sender,tonumber(data),panel_id,false)
 	elseif (message == NobleHUD.network_messages.sync_callsign) then
-		if panel_id then 
-			local peer = managers.network:session():peer(sender)
-			if peer then 
-				local id64 = peer:user_id()
-				if id64 then
-					NobleHUD._cache.callsigns[id64] = tostring(data)
-				end
+		local peer = managers.network:session():peer(sender)
+		if peer then 
+			data = utf8.to_upper(data)
+			local id64 = peer:user_id()
+			if id64 then
+				NobleHUD._cache.callsigns[id64] = data
 			end
+		end
+		if managers.hud and panel_id then
 			NobleHUD:_set_teammate_name(panel_id,data)
+			NobleHUD:_set_teammate_waypoint_name(sender,data)
 		end
 		--stuff
 	elseif (message == NobleHUD.network_messages.sync_teamname) then
