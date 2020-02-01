@@ -361,61 +361,6 @@ Hooks:PostHook(HUDTeammate,"set_absorb_active","noblehud_set_absorb",function(se
 	--]]
 end)
 
-Hooks:PostHook(HUDTeammate,"set_grenades","noblehud_set_grenades",function(self,data)
-	if PlayerBase.USE_GRENADES then
-		if self._main_player then
-			NobleHUD:_set_grenades(data)
-		else
-			local icon, texture_rect = tweak_data.hud_icons:get_icon_data(data.icon, {
-				0,
-				0,
-				32,
-				32
-			})
-			
-			local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
-			if teammate_panel then 
-				local subpanel = teammate_panel:child("grenade_subpanel")
-				subpanel:show()
-					
-				local grenade_icon = subpanel:child("grenade_icon")
-				grenade_icon:set_image(icon,unpack(texture_rect))
-				local grenade_label = subpanel:child("grenade_label")
-				local color = NobleHUD.color_data.hud_vitalsoutline_blue
-				if data.amount then
-					grenade_label:set_text(data.amount)
-					if data.amount == 0 then 
-						color = NobleHUD.color_data.hud_vitalsfill_blue
-					end
-				end
-				grenade_icon:set_color(color)
-				grenade_label:set_color(color)
-			end
-		end
-	end
-end)
-
-
-Hooks:PostHook(HUDTeammate,"set_grenades_amount","noblehud_set_grenades_amount",function(self,data)
-	if self._main_player then 
-		NobleHUD:_set_grenades_amount(data.amount)		
-	else
-		local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
-		local subpanel = teammate_panel and teammate_panel:child("grenade_subpanel")
-		local grenade_label = subpanel and subpanel:child("grenade_label")
-		if data.amount and alive(grenade_label) then 
-			if data.amount <= 0 then 
-				subpanel:child("grenade_icon"):set_color(NobleHUD.color_data.hud_vitalsfill_blue)
-				grenade_label:set_color(NobleHUD.color_data.hud_vitalsfill_blue)
-			else
-				subpanel:child("grenade_icon"):set_color(NobleHUD.color_data.hud_vitalsoutline_blue)
-				grenade_label:set_color(NobleHUD.color_data.hud_vitalsoutline_blue)
-			end
-			grenade_label:set_text(data.amount)
-		end
-	end
-end)
-
 Hooks:PostHook(HUDTeammate,"set_deployable_equipment","noblehud_set_deployable_equipment",function(self,data)
 	if not self._main_player then 
 		local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
@@ -677,7 +622,99 @@ Hooks:PostHook(HUDTeammate,"clear_special_equipment","noblehud_clearequipment",f
 end)
 
 
+
 --grenades
+
+Hooks:PostHook(HUDTeammate,"set_grenades","noblehud_set_grenades",function(self,data)
+	if PlayerBase.USE_GRENADES then
+		if self._main_player then
+			NobleHUD:_set_grenades(data)
+		else
+			local icon, texture_rect = tweak_data.hud_icons:get_icon_data(data.icon, {
+				0,
+				0,
+				32,
+				32
+			})
+			
+			local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
+			if teammate_panel then 
+				local subpanel = teammate_panel:child("grenade_subpanel")
+				subpanel:show()
+					
+				local grenade_icon = subpanel:child("grenade_icon")
+				grenade_icon:set_image(icon,unpack(texture_rect))
+				local grenade_label = subpanel:child("grenade_label")
+				local color = NobleHUD.color_data.hud_vitalsoutline_blue
+				if data.amount then
+					grenade_label:set_text(data.amount)
+					if data.amount == 0 then 
+						color = NobleHUD.color_data.hud_vitalsfill_blue
+					end
+				end
+				grenade_icon:set_color(color)
+				grenade_label:set_color(color)
+			end
+		end
+	end
+end)
+
+Hooks:PostHook(HUDTeammate,"set_grenades_amount","noblehud_set_grenades_amount",function(self,data)
+	if self._main_player then 
+		NobleHUD:_set_grenades_amount(data.amount)		
+	else
+		local teammate_panel = NobleHUD:GetTeammatePanel(self._id)
+		local subpanel = teammate_panel and teammate_panel:child("grenade_subpanel")
+		local grenade_label = subpanel and subpanel:child("grenade_label")
+		if data.amount and alive(grenade_label) then 
+			if data.amount <= 0 then 
+				subpanel:child("grenade_icon"):set_color(NobleHUD.color_data.hud_vitalsfill_blue)
+				grenade_label:set_color(NobleHUD.color_data.hud_vitalsfill_blue)
+			else
+				subpanel:child("grenade_icon"):set_color(NobleHUD.color_data.hud_vitalsoutline_blue)
+				grenade_label:set_color(NobleHUD.color_data.hud_vitalsoutline_blue)
+			end
+			grenade_label:set_text(data.amount)
+		end
+	end
+end)
+
+Hooks:PostHook(HUDTeammate,"set_ability_radial","noblehud_set_ability_radial",function(self,data)
+--used for abilities' cooldowns (kingpin, tag team, and hacker. NOT Stoic)
+	if self._main_player then
+		NobleHUD:_set_ability_radial(data.current,data.total)
+--[[		
+
+		local current = data.current
+		local total = data.total
+		local progress = current / total	
+		Console:SetTrackerValue("trackera","grenades current: " .. current)
+		Console:SetTrackerValue("trackerb","grenades total: " .. total)
+		Console:SetTrackerValue("trackerc","grenades progress: " .. progress)
+		Console:SetTrackerValue("trackerd",Application:time())
+		local grenades_panel = self._khud_grenades_panel
+		local grenades_recharge = grenades_panel:child("grenades_bg"):child("grenades_recharge")		
+		
+		local here = 1 - (math.sin((60 * Application:time()) % 60) * (1 - progress))
+		grenades_recharge:set_gradient_points({
+			0,
+			Color.black,
+			here,
+			Color.red,
+			progress + 0.01,
+			Color.white,
+			progress,
+			Color.black,
+			1,
+			Color.black
+		})
+--]]
+--		grenades_recharge:set_h(grenades_panel:h() * progress)
+--		grenades_recharge:set_alpha(progress)
+	end
+	--todo
+end)
+
 Hooks:PostHook(HUDTeammate,"activate_ability_radial","noblehud_activate_ability_radial",function(self,time_left,time_total)
 	if not self._main_player then 
 		return
@@ -726,98 +763,38 @@ Hooks:PostHook(HUDTeammate,"activate_ability_radial","noblehud_activate_ability_
 	--]]
 end)
 
+
+Hooks:PostHook(HUDTeammate,"set_custom_radial","noblehud_set_custom_radial",function(self,data)
+--[[
+		NobleHUD:log("set_custom_radial() [")
+		logall(data)
+		NobleHUD:log("]")
+function HUDTeammate:set_custom_radial(data)
+	local teammate_panel = self._panel:child("player")
+	local radial_health_panel = self._radial_health_panel
+	local radial_custom = radial_health_panel:child("radial_custom")
+	local red = data.current / data.total
+
+	radial_custom:set_color(Color(1, red, 1, 1))
+	radial_custom:set_visible(red > 0)
+end
+--]]
+end)
+
+
 Hooks:PostHook(HUDTeammate,"set_grenade_cooldown","noblehud_set_grenade_cooldown",function(self,data)
 --sicario uses this instead of activate_ability
---also, this is called once at the start on use for things like stoic
-	if self._main_player then
-		if not PlayerBase.USE_GRENADES then
-			return
-		end
-		
-		NobleHUD:_set_grenade_cooldown(data)
+--also, this is called once at the start on use for things like stoic, since stoic's ability is an instant use event and not an active duration 
+	if not PlayerBase.USE_GRENADES then
+		return
 	end
---[[
-
-		local end_time = data and data.end_time
-		local duration = data and data.duration	
-		
-		if not (end_time and duration) then 
-			return
-		end
-
-		local complete_duration = 0.75
-		local complete_time = end_time + complete_duration
-		
-		
-		local grenades_panel = self._khud_grenades_panel:child("grenades_bg")
-		local grenades_border = grenades_panel:child("panel_borders")
-		local grenades_recharge = grenades_panel:child("grenades_recharge")
-		grenades_recharge:set_visible(true)
-				
-		local max_w = grenades_panel:w()
-		local max_h = grenades_panel:h()
-		
-		local function animate_recharge(o)
-			repeat
-				local now = managers.game_play_central:get_heist_timer()
-				local time_left = end_time - now
-				local progress = time_left / duration
-				
-	--			local streak = math.tan(now * -250)
-	--			local streak_color = Color.red:with_alpha(streak > 1 and (0.5 * (1 - math.sin((now - 2) * -500))) or 1)
-	--			local streak_color = Color.red:with_alpha(streak > 1 and (math.sin(now) + 0.5) or 0) 
-	--			math.clamp(streak,0,1)
-	--			local streak = math.clamp(math.tan(now * 100),0,1)
-					
-	--			local here = 1 + (progress - math.sin((100 * now) % 60))
-				local here = 1 - (math.sin((60 * now) % 60) * (1 - progress))
-							
-				
-				o:set_gradient_points({
-					0,
-					Color.black,
-					here,
-					Color.red,
-					progress + 0.01,
-					Color.white,
-					progress,
-					Color.black,
-					1,
-					Color.black
-				})
-				
-	--			o:set_w(grenades_panel:w() * progress)
-				
-				coroutine.yield()
-			until time_left <= 0
-			grenades_recharge:set_visible(false)
-
-			repeat
-				local nao = managers.game_play_central:get_heist_timer()
-				local thyme_left = complete_time - nao
-				local pawgress = thyme_left / complete_duration
-
-				panel_border(grenades_border,{
-					thickness = 2,
-					alpha = 0.7,
-					layer = 3,
-					margin = thyme_left * max_w
-				})
-			
-				coroutine.yield()
-			until thyme_left <= 0
-		end
-						
-		panel_border(grenades_border,{
-			thickness = 2,
-			alpha = 0.7,
-			layer = 3,
-			margin = 0
-		})
-		grenades_recharge:stop()
-		grenades_recharge:animate(animate_recharge)
-		--]]
+	if self._main_player then
+		NobleHUD:_set_grenade_cooldown(data)
+	else	
+		--todo teammates: pulse grenade icon w/ ghost when effect active
+	end
 end)
+
 
 
 --caution! under construction! 
@@ -826,44 +803,4 @@ if true then return end
 
 Hooks:PostHook(HUDTeammate,"set_teammate_weapon_firemode","noblehud_set_teammate_firemode",function(self,slot,firemode)
 --
-end)
-
-Hooks:PostHook(HUDTeammate,"set_ability_radial","khud_set_ability_radial",function(self,data)
---used for abilities' cooldowns (kingpin, stoic, tag team, hacker)
-	if self._main_player then
-		local current = data.current
-		local total = data.total
-		local progress = current / total	
-
-	NobleHUD:log("GRENADES DATA")
-	NobleHUD:log("grenades current: " .. current)
-	NobleHUD:log("grenades total: " .. total)
-	NobleHUD:log("grenades progress: " .. progress)
---[[		
-		local grenades_panel = self._khud_grenades_panel
-		local grenades_recharge = grenades_panel:child("grenades_bg"):child("grenades_recharge")		
-		
-		local here = 1 - (math.sin((60 * Application:time()) % 60) * (1 - progress))
-		grenades_recharge:set_gradient_points({
-			0,
-			Color.black,
-			here,
-			Color.red,
-			progress + 0.01,
-			Color.white,
-			progress,
-			Color.black,
-			1,
-			Color.black
-		})
---]]
---		grenades_recharge:set_h(grenades_panel:h() * progress)
---		grenades_recharge:set_alpha(progress)
-	end
-	--todo
-end)
-
-Hooks:PostHook(HUDTeammate,"set_name","noblehud_set_teammate_name",function(self,name)
-	
-	NobleHUD:_set_tabscreen_teammate_name(self._peer_id or self._id or 5,callsign)
 end)

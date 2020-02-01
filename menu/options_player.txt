@@ -60,6 +60,20 @@
 			"min" : 0,
 			"max" : 1,
 			"step" : 0.1
+		},
+		{
+			"type" : "button",
+			"id" : "id_noblehud_set_callsign_string",
+			"title" : "noblehud_set_callsign_string_title",
+			"description" : "noblehud_set_callsign_string_desc",
+			"callback" : "callback_noblehud_set_callsign_string"
+		},
+		{
+			"type" : "button",
+			"id" : "id_noblehud_about_callsign",
+			"title" : "noblehud_about_callsign_string_title",
+			"description" : "noblehud_menu_would_you_like_to_know_more_prompt",
+			"callback" : "callback_noblehud_about_callsign_string"
 		}
 	]
 }

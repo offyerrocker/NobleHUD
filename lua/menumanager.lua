@@ -9,6 +9,8 @@ Honestly, this was so much work that I feel like it deserves more than a +0.1 ve
 * Added toggle option for Halo shield recharge sound
 * Added toggle option to display heist payout instead of score in the bottom right, in case you don't care about that sort of thing
 * Added "Safe Mode" option, which can be activated for increased compatibility, at the cost of reduced feature functionality. Safe Mode disables a number of functions that I have personally determined to be of increased risk for mod incompatibility.
+* Added a grenade/perk deck ability duration timer
+* Added a grenade/perk deck ability cooldown timer
 
 	*Assault Panel*
 * Added assault wave popup indicator, which appears as an objective popup
@@ -34,7 +36,7 @@ Honestly, this was so much work that I feel like it deserves more than a +0.1 ve
 * Added medal for Headcase
 * Added medals + announcer lines for Hammer Sprees (Melee sprees)
 * Added option for Real Ammo Counter (does not conglomerate current magazine ammo count into reserve ammo counter)
-* Added Callsigns- four-character alphanumeric signifiers which replace usernames in waypoints and the teammate menu, to save space. Callsigns are generated automatically for players, but can be manually set by NobleHUD users in mod options (requires QuickKeyboardInput mod by TdlQ, or editing your NobleHUD save file in '/mods/saves/noblehud_settings.txt')
+* Added Callsigns- four-character alphanumeric signifiers which replace usernames in waypoints and the teammate menu, to save space. Callsigns are generated automatically for players, but can be manually set by NobleHUD users in mod options (requires QuickKeyboardInput mod by TdlQ, or editing your NobleHUD save file in '/mods/saves/noblehud_settings.txt'). More information is available in Mod Options.
 * Added basic scoreboard to tabscreen- right now it doesn't do a lot, but I have plans. Currently, it does show: Heist name, difficulty, Player/Teammate Downs (not revives), Player/Teammate Usernames, Player/Teammate Callsigns, Player/Teammate Steam Profile Pictures, Player/Teammate Peer Colors, and Teammate Ping (connection latency to other players, in ms).
 * Ammo ticks will use the bar if the ticks would visually exceed a certain percentage of the weapon panel's space. This is based on the size of the ammo tick texture.
 * Weapons that use an ammo bar instead of ticks (including through the overflow method described above) will show the mag counter in addition to the reserves counter.
@@ -54,7 +56,7 @@ Honestly, this was so much work that I feel like it deserves more than a +0.1 ve
 * 	Added Halo Plasma Cannon crosshair (the mounted type, ynno)
 *	Added Halo Plasma Rifle crosshair
 *	Added Halo Reach Plasma Repeater crosshair (default LMG category)
-*	Added Halo 2/3/ODST SMG crosshair (default SMG category autofire)
+*	Added Halo SMG crosshair (default SMG category autofire) (same as Halo: Combat Evolved Assault Rifle crosshair)
 *	Added Halo Reach Needle Rifle crosshair (default SMG category singlefire)
 *	Remade Halo Rocket Launcher crosshair (used specifically for RPG and Commando Rocket Launchers; this cannot yet be changed, but I'm working on it)
 *	Added Halo Reach Warthog crosshair (the chevron)
@@ -76,14 +78,14 @@ Honestly, this was so much work that I feel like it deserves more than a +0.1 ve
 * Fixed crash in Holdout related to HUDAssaultCorner
 * Fixed "Objective Reminder" being blank 
 * Fixed NobleHUD elements remaining visible whilst viewing a Camera Feed
-* Location readout no longer displays default location ("Porch" or whatever) constantly, and is now remains blank from the start of a heist until you enter a zone registered in the Cartographer
 * Fixed the mask-off hint text that was clipping with the vitals panel so that it's now invisible. I know how to put my mask on, thank you very much.
 * Fixed the Floating Ammo Panel having a mod option but showing no change. I disabled it because it was buggy, but I forgot to disable the menu option, but I fixed it for real now. 
 * Fixed popups from Athena and Blue Spider styles showing up when facing directly away from them
 * Fixed teammate panels not being properly reset on player leaving
 * Fixed teammate grenade counter not updating
-* Fixed a lot of other minor bugs which I did not name here
-
+* Fixed the size "pulse" animation not being centered in most applications (killfeed medals, mission equipments, etc), 
+* ...Fixed a lot of other minor bugs which I did not name here
+* Moved the stamina panel to the unused fourth teammate slot, at the bottom, where it is less in the way
 
 
 
@@ -108,9 +110,10 @@ Honestly, this was so much work that I feel like it deserves more than a +0.1 ve
 		
 			
 	&&& HIGH PRIORITY: &&&
-		* Add menu button to set teamname and callsign
+		* HUDTeammate:set_custom_radial() (swansong and what have you for teammates)
+		* Add menu button to set teamname
 		* Add menu button to set teamcolor (through beardlib)
-		* [ASSET] Flamethrower reticle looks like shit
+		* [ASSET] Created flamethrower reticle looks like shit, current one is extremely unoptimized
 		
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER 
 		* Layout HUD on disabling radar
@@ -207,9 +210,6 @@ Honestly, this was so much work that I feel like it deserves more than a +0.1 ve
 			* remove doubled letters
 		* Carry indicator is kind of hard to see
 		* Grenade/Ability
-			* Grenade cooldown animation circles
-			* Ability circle reduces with active ability time
-			* Ability activation animation
 			* Ability circle color should be colored blue by default
 			* Counter is unreadable- needs shadow or better placement
 				* shadow is better, to show during flashbangs
@@ -271,12 +271,10 @@ CODE:
 	* mutator multipliers
 
 --ability/deployable/grenade
-	* animate grenade movement
-	* animate grenade cooldown
-	* animate grenade duration
-	* grenade selection indicator
+	* animate grenade movement (i can't remember what this meant when I wrote it)
 	* grenade vs deployable layout
-	* secondary grenade panel
+		* grenade selection indicator
+		* secondary grenade panel
 
 --reticle bloom
 	* standardize reticle subparts
@@ -1536,10 +1534,179 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 	flamethrower = { --starburst ring of oblongs
 		parts = {
 			{
-				is_center = true,
-				texture = "guis/textures/flame_crosshair",
-				w = 48,
-				h = 48
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 0,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 2 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 3 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 4 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 5 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 6 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 7 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 8 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 9 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 10 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 11 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 12 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 13 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 14 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 15 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 16 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 17 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 18 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 19 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 20 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 21 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 22 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 23 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
+			},
+			{
+				texture = "guis/textures/ar_crosshair_2",
+				rotation = 24 * 360/25,
+				distance = 10,
+				w = 2,
+				h = 8
 			}
 		}
 	},
@@ -4175,6 +4342,43 @@ function NobleHUD:GetTeamColor()
 	return Color(0.5,0.2,0.2)
 end
 
+function NobleHUD:IsSkullActive(id)
+	if id == "birthday" then 
+		--yaaaaaay
+		if self._cache.birthday ~= nil then 
+			return self._cache.birthday --overrideable by user input ("birthday stop" in chat)
+		else
+			return ((tonumber(os.date("%d")) == 1) and (tonumber(os.date("%m")) == 4))
+		end
+	end
+end
+
+function NobleHUD:GetMaxRadarDecoyRange()
+	local m = self:GetRadarDistance() * 100
+	--values are [0-1] as a percentage of radar range
+	local x = 1
+	local y = 1
+	local z = 1
+	return m * x,m * y,m * z
+end
+
+function NobleHUD:GetRadarDecoyIntervalMin() 
+	return 0.15
+end
+
+function NobleHUD:GetRadarDecoyIntervalMax() 
+	return 1
+end
+
+function NobleHUD:GetRadarDecoyLifetimeMin() 
+	return 3
+end
+
+function NobleHUD:GetRadarDecoyLifetimeMax() 
+	return 10
+end
+
+
 		--SET SETTINGS
 function NobleHUD:SetCrosshairEnabled(enabled)
 	self.crosshair_enabled = enabled
@@ -4238,41 +4442,105 @@ function NobleHUD:SetKiller(unit,peer_id)
 	end
 end
 
-function NobleHUD:IsSkullActive(id)
-	if id == "birthday" then 
-		--yaaaaaay
-		if self._cache.birthday ~= nil then 
-			return self._cache.birthday --overrideable by user input ("birthday stop" in chat)
-		else
-			return ((tonumber(os.date("%d")) == 1) and (tonumber(os.date("%m")) == 4))
-		end
+
+--		MISC
+
+
+function NobleHUD:ShowMenu_AboutCallsign()
+	local function loc(s)
+		return managers.localization:text(s) --Look, that's a lot of times to type managers.localization:text(whatever). See, you made me type it again!
+	end
+	
+	local requirement_length = "* " .. loc("noblehud_menu_callsign_requirement_length")
+	requirement_length = string.gsub(requirement_length,"$MIN_CALLSIGN_LENGTH",self._MIN_CALLSIGN_LEN)
+	requirement_length = string.gsub(requirement_length,"$MAX_CALLSIGN_LENGTH",self._MAX_CALLSIGN_LEN)
+	local requirement_character = "* " .. loc("noblehud_menu_callsign_requirement_character")
+	
+	QuickMenu:new(loc("noblehud_menu_callsign_about_title"),loc("noblehud_menu_callsign_about_desc") .. requirement_length .. "\n" .. requirement_character,{
+		{
+			text = loc("menu_ok"),
+			is_cancel_button = true
+		}
+	},true)
+end
+
+function NobleHUD:EvaluateCallsignInput(callsign) -- from menu
+	local function loc(s)
+		return managers.localization:text(s)
+	end
+	callsign = utf8.to_upper(callsign)
+	if callsign ~= string.gsub(callsign,"%W","") then
+		local rejected_characters = string.gsub(callsign,"%w","")
+		QuickMenu:new(loc("noblehud_menu_callsign_error_character_title"),string.gsub(loc("noblehud_menu_callsign_error_character_desc"),"$REJECTED_CHARACTERS",rejected_characters) .. "\n" .. loc("noblehud_menu_callsign_requirement_character") .. "\n\n" .. loc("noblehud_menu_callsign_error_please_retry"),{
+			{
+				text = loc("noblehud_menu_ok_sarcastic"),
+				callback = callback(NobleHUD,NobleHUD,"ShowMenu_SetCallsign")
+			},
+			{
+				text = loc("noblehud_menu_cancel"),
+				is_cancel_button = true
+			}
+		},true)
+		return
+	elseif string.len(callsign) < self._MIN_CALLSIGN_LEN then 
+		local requirement_length = loc("noblehud_menu_callsign_requirement_length")
+		requirement_length = string.gsub(requirement_length,"$MIN_CALLSIGN_LENGTH",self._MIN_CALLSIGN_LEN)
+		requirement_length = string.gsub(requirement_length,"$MAX_CALLSIGN_LENGTH",self._MAX_CALLSIGN_LEN)
+		
+		QuickMenu:new(loc("noblehud_menu_callsign_error_length_title"),requirement_length .. "\n\n" .. loc("noblehud_menu_callsign_error_please_retry"),{
+			{
+				text = loc("noblehud_menu_ok_sarcastic"),
+				callback = callback(NobleHUD,NobleHUD,"ShowMenu_SetCallsign")
+			},
+			{
+				text = loc("noblehud_menu_cancel"),
+				is_cancel_button = true
+			}
+		},true)
+		return
+	end
+	
+	self.settings.callsign_string = callsign
+	self:SaveSettings()
+	if managers.network:session() then 
+--		self:SyncCallsignToPeers()
 	end
 end
 
-function NobleHUD:GetMaxRadarDecoyRange()
-	local m = self:GetRadarDistance() * 100
-	--values are [0-1] as a percentage of radar range
-	local x = 1
-	local y = 1
-	local z = 1
-	return m * x,m * y,m * z
+function NobleHUD:ShowMenu_SetCallsign()
+	local function loc(s)
+		return managers.localization:text(s)
+	end
+	if _G.QuickKeyboardInput then
+		local callsign
+		
+		local function evaluate_callsign(callsign)
+			self:EvaluateCallsignInput(callsign)
+		end
+		
+		local requirement_length = loc("noblehud_menu_callsign_requirement_length")
+		requirement_length = string.gsub(requirement_length,"$MIN_CALLSIGN_LENGTH",self._MIN_CALLSIGN_LEN)
+		requirement_length = string.gsub(requirement_length,"$MAX_CALLSIGN_LENGTH",self._MAX_CALLSIGN_LEN)
+		local requirement_character = loc("noblehud_menu_callsign_requirement_character")
+		
+		QuickKeyboardInput:new(loc("noblehud_menu_enter_callsign_title"), "* " .. requirement_character .. "\n* " .. requirement_length .. "\n" .. loc("noblehud_menu_prompt_callsign"), self:GetCallsign() or "S117", evaluate_callsign, self._MAX_CALLSIGN_LEN, true)
+	else
+		local function open_in_overlay()
+			Steam:overlay_activate("url","https://modworkshop.net/mod/22564")
+		end
+		QuickMenu:new(loc("noblehud_menu_missing_dependency_title"),loc("noblehud_menu_missing_qki_desc") .. string.gsub(loc("noblehud_menu_current_callsign"),"$CALLSIGN",self:GetCallsign()),{
+			{
+				text = loc("noblehud_menu_goto_url"),
+				callback = open_in_overlay
+			},
+			{
+				text = loc("noblehud_menu_ok_sarcastic"),
+				is_cancel_button = true
+			}
+		},true)
+	end
 end
 
-function NobleHUD:GetRadarDecoyIntervalMin() 
-	return 0.15
-end
-
-function NobleHUD:GetRadarDecoyIntervalMax() 
-	return 1
-end
-
-function NobleHUD:GetRadarDecoyLifetimeMin() 
-	return 3
-end
-
-function NobleHUD:GetRadarDecoyLifetimeMax() 
-	return 10
-end
 
 
 --		HUD UPDATE STUFF / EVENT FUNCTIONS
@@ -6845,7 +7113,7 @@ function NobleHUD:_create_grenades(hud)
 		name = "primary_grenade_panel"
 	})
 	
-	local secondary_grenade_panel = grenades_panel:panel({ --this one can be used for deployables if the player so chooses
+	local secondary_grenade_panel = grenades_panel:panel({ --this one can be used for deployables if the player so chooses (todo)
 		name = "secondary_grenade_panel",
 		visible = false
 	})
@@ -6858,8 +7126,8 @@ function NobleHUD:_create_grenades(hud)
 			color = self.color_data.hud_bluefill,
 			w = icon_size,
 			h = icon_size,
-			blend_mode = "add",
-			alpha = 0.75,
+--			blend_mode = "add",
+			alpha = 0.9,
 			x = 0,
 			y = 0
 		})
@@ -6873,21 +7141,35 @@ function NobleHUD:_create_grenades(hud)
 			font = self.fonts.eurostile_ext,
 			font_size = 24
 		})
-		local grenade_outline = panel:bitmap({
+		local grenade_cooldown = panel:bitmap({ --used for cooldown
+			name = "grenade_cooldown",
+			texture = "guis/textures/pd2/hud_cooldown_timer",
+			render_template = "VertexColorTexturedRadial",
+			color = Color.white,
+			visible = false, --set visible later
+			w = icon_size,
+			h = icon_size,
+			alpha = 0.8,
+			layer = -2
+		})
+		
+		local grenade_outline = panel:bitmap({ --used for duration of active abilities
 			name = "grenade_outline",
 			texture = "guis/textures/ability_circle_outline",
 			render_template = "VertexColorTexturedRadial",
 			layer = 2,
-			color = Color.white,
-			w = icon_size * 2,
-			h = icon_size * 2,
+			color = Color.black,
+			w = panel:w(),
+			h = panel:h(),
 			alpha = 0.8,
-			visible = false, --! temporarily disabled /!\ 
+			visible = true,
 			x = 0,
 			y = 0
 		})
-		grenade_outline:set_center(panel:w() / 2, panel:h() / 2)
-		grenade_icon:set_center(panel:w() / 2, panel:h() / 2)
+		local center_x,center_y = panel:center()
+		grenade_outline:set_center(center_x,center_y)
+		grenade_icon:set_center(center_x,center_y)
+		grenade_cooldown:set_center(center_x,center_y)
 		return grenade_icon,grenade_label,grenade_outline
 	end
 	
@@ -6940,66 +7222,141 @@ end
 
 function NobleHUD:_set_grenade_cooldown(data)
 
+--		NobleHUD:log("[set_grenade_cooldown () data: ")
+--		logall(data)
+--		NobleHUD:log("end data]")
+		
 	local grenades_panel = self._grenades_panel:child("primary_grenade_panel")
 	local grenades_outline = grenades_panel:child("grenade_outline")
-
+	local grenade_icon = grenades_panel:child("grenade_icon")
+	local grenade_cooldown = grenades_panel:child("grenade_cooldown")
+	if not grenade_cooldown:visible() then 
+		grenade_cooldown:set_color(Color.white)
+		grenade_cooldown:show()
+	end
 	local end_time = data and data.end_time
 	local duration = data and data.duration
-
-	if not (end_time and duration) then 
-		grenades_outline:show()
-		self:animate(grenades_outline,"animate_grenade_cooldown",
-			function(o) 
-				self:animate(o,"animate_fadeout",function(p)
-					p:hide()
-				end,
-				0.5)
-			end,
-		duration,end_time)
+	
+	local center_x,center_y = grenades_panel:center()
+	local function animate_cooldown_over(o)
+		o:hide()
+		self:animate(grenade_icon,"animate_killfeed_icon_pulse",nil,0.66,o:w(),1.5,center_x,center_y)
+		
 	end
-
-
---[[
-	if not end_time or not duration then
-		grenades_outline:stop()
-		grenades_outline:set_color(Color(0.5, 0, 1, 1))
-
-		return
+	
+	
+	
+	local t = managers.game_play_central:get_heist_timer()
+	local t_offset = Application:time() - t
+--	self:log("Heisttimer " .. t)
+--	self:log("Apptimer " .. Application:time())
+--	self:log("Diff " .. t_offset)
+	
+	local animate_target = self._animate_targets[tostring(grenade_cooldown)]
+	if (duration and duration > 0) then
+		if (end_time and end_time > t) then 
+			if animate_target then 
+				local duration_remaining = end_time - t
+				local elapsed = duration - duration_remaining
+	--			Console:SetTrackerValue("trackerb",duration_remaining)
+	--			self:log("duration_remaining " .. tostring(duration_remaining))
+	--			self:log("elapsed is " .. tostring(elapsed))
+--				self:log("end_time is " .. tostring(end_time))
+--				self:log("t is " .. tostring(t))
+				animate_target.start_t = end_time - duration + t_offset
+			else
+				self:animate(grenade_cooldown,"animate_color_fadeto",animate_cooldown_over,duration,Color.white,Color.black) --operates as countdown timer, so full circle shrinking radially to empty circle
+			end	
+		else
+			self:animate_stop(grenade_cooldown)
+			animate_cooldown_over(grenade_cooldown)
+		end
+	--[[
+			self:animate(grenade_icon,"animate_color_fadeto",animate_cooldown_over,end_time - t,self.color_data.normal,self.color_data.hud_blueoutline)
+			self:animate(grenade_cooldown,"animate_color_fadeto",function(p) p:hide() end,duration or (end_time - t),Color.white,Color.black)
+		if duration then 
+		end
+			local new_cooldown = end_time - t
+			self:log("new duration is " .. tostring(t - end_time))
+			self:log("New end_time is " .. tostring(end_time))
+			self:log("Original start time is " .. tostring(animate_target.args.start_t) .. ", changing to " .. tostring(t))
+			self:log("Original duration is " .. tostring(animate_target.args[1]) .. ", changing to " .. tostring(t - end_time))
+			animate_target.args.start_t = t
+			animate_target.args[1] = animate_target.args[1] - (duration - new_cooldown)
+		else
+		end
+		--]]
+--	elseif duration and duration > 0 then 
+--		self:animate(grenade_cooldown,"animate_color_fadeto",animate_cooldown_over,duration,Color.white,Color.black)
+--		NobleHUD:animate(grenade_icon,"animate_color_fadeto",animate_cooldown_over,duration,self.color_data.normal,self.color_data.hud_blueoutline)
+	else --if invalid data or over immediately
+--		grenade_cooldown:hide()
+		--since cooldown is over immediately, flash the yellow "in use" color and immediately cooldown it
+		local start_color = self.color_data.unique
+		grenade_icon:set_color(start_color)
+		self:animate(grenade_icon,"animate_killfeed_icon_pulse",function(o) 
+			self:animate(o,"animate_color_fadeto",function() grenade_cooldown:hide() end,0.25,start_color,self.color_data.hud_blueoutline)
+		end,0.66,grenade_icon:w(),1.5,center_x,center_y)
 	end
-
-	local function animate_radial(o)
-		repeat
-			local now = managers.game_play_central:get_heist_timer()
-			local time_left = end_time - now
-			local progress = 1 - time_left / duration
-
-			o:set_color(Color(0.5, progress, 1, 1))
-			coroutine.yield()
-		until time_left <= 0
-
-	end
-
-	grenades_outline:stop()
-	grenades_outline:animate(animate_radial)
+		--[[
+			while active, animate:
+				pulse icon color
+					color depends on duration remaining
+						orange/white normal, orange/red little time remainign
+				show duration text?
+				
+			when expired, animate:
+				icon color fades to grey?
+					ensure that normal set_amount does not interfere with color
+			
+			when cooldown done: 
+				animate (twirl-in + pulse ghost)
+				
+		
 	--]]
 end
 
-function NobleHUD:animate_grenade_cooldown(o,t,dt,start_t,duration,end_time)
-	if t >= end_time then 
+
+function NobleHUD:animate_color_fadeto(o,t,dt,start_t,duration,color1,color2)
+--	Console:SetTrackerValue("trackera",self.table_concat({t,start_t,duration}))
+	if t > (start_t + duration) then 
+		o:set_color(color2)
 		return true
-	else
-		local progress = end_time - start_t / duration
---		local progress = (t - start_t) / (t - end_t)
-		 o:set_color(Color(progress,0,0))
 	end
+	o:set_color(self.interp_colors(color1,color2,(t - start_t) / duration))
 end
 
+function NobleHUD:animate_wait(o,t,dt,start_t,duration)
+	if (t - start_t) >= duration then
+		return true
+	end
+	--that's it. that's the whole function. what did you think it was going to do
+end
 
 function NobleHUD:_activate_ability_radial(time_left,time_total)
+	self:log("activate_ability_radial(" .. self.table_concat({time_left = time_left,time_total = time_total},",","|") .. ")")
+end
+
+function NobleHUD:_set_ability_radial(time_left,time_total)
+--	NobleHUD:log("set_ability_radial(" .. NobleHUD.table_concat({current = current,total = total,progress = progress},",","|") .. ")")
 	local grenades_panel = self._grenades_panel:child("primary_grenade_panel")
-	local grenades_outline = grenades_panel:child("grenade_outline")
-	grenades_outline:set_visible(true)
-	grenades_outline:set_color(Color(time_left/time_total,time_total,0))
+	local grenade_outline = grenades_panel:child("grenade_outline")
+	local grenade_icon = grenades_panel:child("grenade_icon")
+	if (time_total == 0) or (time_left <= 0) then 
+		grenade_outline:set_color(Color.black)
+		grenade_icon:set_color( self.color_data.hud_vitalsfill_blue )
+	else
+		local ratio = time_left / time_total
+		local color1 = self.color_data.hud_vitalsfill_yellow
+		local color2 = self.color_data.hud_vitalsfill_blue
+		speed = 200
+		if ratio < 0.5 then 
+			color2 = self.color_data.hud_vitalsfill_red
+			speed = 400
+		end
+		grenade_icon:set_color( self.interp_colors(color1,color2,math.sin(math.pi * speed * Application:time()) + 0.5))
+		grenade_outline:set_color(Color(time_left/time_total,0,0))
+	end
 end
 
 
@@ -7240,7 +7597,7 @@ function NobleHUD:_create_stamina(hud)
 		h = icon_size,
 		alpha = 0,
 		x = 250,
-		y = 430
+		y = hud:h() - 78,--430
 --		x = 170,
 --		y = 430
 	})
@@ -7840,7 +8197,8 @@ function NobleHUD:_add_teammate_equipment(i,data)
 				vertical = "bottom"
 			})
 			local function pulse(o)
-				self:animate(o:child("icon"),"animate_killfeed_icon_pulse",animate_done,0.3,eq_size,1.5)
+				local center_x,center_y = o:center()
+				self:animate(o:child("icon"),"animate_killfeed_icon_pulse",animate_done,0.3,eq_size,1.5,center_x,center_y)
 			end
 			self:animate(new_equipment,"animate_fadein",pulse,0.5,1)
 		end
@@ -10501,7 +10859,8 @@ function NobleHUD:layout_equipments(special_equipments,new)
 		local x = self._equipment_panel:w() - (panel:w() * i) + -margin
 		if panel:name() == new then 
 			NobleHUD:animate(panel,"animate_add_equipment",function (o)
-				NobleHUD:animate(o:child("bitmap"),"animate_killfeed_icon_pulse",nil,0.2,panel:w(),1.5,x,panel:y())
+				local center_x,center_y = o:center()
+				NobleHUD:animate(o:child("bitmap"),"animate_killfeed_icon_pulse",nil,0.2,panel:w(),1.5,center_x,center_y)
 			end,0.1,x)
 		else
 			NobleHUD:animate(panel,"animate_add_equipment",nil,0.1,x)
@@ -10931,7 +11290,8 @@ function NobleHUD:AddMedalFromData(data,category) --direct reference to table pa
 		NobleHUD:animate_remove_done_cb(self._cache.newest_medal,
 			function(o)
 				o:set_rotation(0)
-				NobleHUD:animate(o,"animate_killfeed_icon_pulse",nil,0.3,icon_size,1.5)
+				local center_x,center_y = o:center()
+				NobleHUD:animate(o,"animate_killfeed_icon_pulse",nil,0.3,icon_size,1.5,center_x,center_y)
 			end
 		)
 		table.insert(self.killfeed_icons,1,{start_t = Application:time(),bitmap = self._cache.newest_medal})
@@ -10973,7 +11333,7 @@ function NobleHUD:animate_killfeed_icon_twirl(o,t,dt,start_t,duration,add_angle,
 	end
 end
 
-function NobleHUD:animate_killfeed_icon_pulse(o,t,dt,start_t,duration,icon_size,pulse_multiplier,x,y,...)
+function NobleHUD:animate_killfeed_icon_pulse(o,t,dt,start_t,duration,icon_size,pulse_multiplier,center_x,center_y,...)
 	duration = duration or 0.25
 	icon_size = icon_size or 24
 	pulse_multiplier = (pulse_multiplier or 2) - 1
@@ -10982,9 +11342,15 @@ function NobleHUD:animate_killfeed_icon_pulse(o,t,dt,start_t,duration,icon_size,
 	local sine = math.max(0,math.sin(math.deg(math.pi * ratio)))
 	local size = icon_size * (1 + (pulse_multiplier * sine))
 	if start_t + duration < t then 
+		if center_x and center_y then 
+			o:set_center(center_x,center_y)
+		end
 		o:set_size(icon_size,icon_size)
 		return true
 	else
+		if center_x and center_y then 
+			o:set_center(center_x,center_y)
+		end
 		o:set_size(size,size)
 	end
 end
@@ -11345,7 +11711,19 @@ Hooks:Add("NetworkReceivedData", "noblehud_onreceiveluanetworkingmessage", funct
 	elseif (message == NobleHUD.network_messages.sync_callsign) then
 		local peer = managers.network:session():peer(sender)
 		if peer then 
-			data = utf8.to_upper(data)
+			--incoming callsign validity check
+			data = utf8.to_upper(string.gsub(data,"+W%",""))
+			local callsign_len = string.len(data)
+			if callsign_len < NobleHUD._MIN_CALLSIGN_LEN then 
+				--callsign is invalid bc it's too short
+				return
+			end
+			if callsign_len > NobleHUD._MAX_CALLSIGN_LEN then --callsign is too long
+				data = string.sub(data,1,NobleHUD._MAX_CALLSIGN_LEN) -- snip snip motherfucker
+			end
+			
+			
+			
 			local id64 = peer:user_id()
 			if id64 then
 				NobleHUD._cache.callsigns[id64] = data
@@ -11622,7 +12000,16 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		NobleHUD:SaveSettings()
 	end
 
-
+	
+	MenuCallbackHandler.callback_noblehud_set_callsign_string = function(self,item)
+		NobleHUD:ShowMenu_SetCallsign()		
+		NobleHUD:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_noblehud_about_callsign_string = function(self,item)
+		NobleHUD:ShowMenu_AboutCallsign()
+	end
+	
 	MenuCallbackHandler.callback_noblehud_set_stamina_enabled = function(self,item)
 		local value = item:value() == "on"
 		NobleHUD.settings.stamina_enabled = value
