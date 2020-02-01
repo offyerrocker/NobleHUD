@@ -1,4 +1,3 @@
-if not NobleHUD then return end
 
 --local functions copypasted in entirety from vanilla 
 local function get_as_digested(amount)
