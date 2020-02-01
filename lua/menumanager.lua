@@ -1,7 +1,7 @@
 --[[ 
 Changelog
 **31 Jan 2020** v0.7b
-Honestly, this was so much work that I feel like it deserves more than a +0.1 version bump
+Honestly, this was so much work that I feel like it deserves more than a +0.1 version bump. Absolute unit of an update.
 
 	__**Features**__
 * Added healthpack sound, which triggers on using a Doctor Bag or First Aid Kit
@@ -11,6 +11,7 @@ Honestly, this was so much work that I feel like it deserves more than a +0.1 ve
 * Added "Safe Mode" option, which can be activated for increased compatibility, at the cost of reduced feature functionality. Safe Mode disables a number of functions that I have personally determined to be of increased risk for mod incompatibility.
 * Added a grenade/perk deck ability duration timer
 * Added a grenade/perk deck ability cooldown timer
+* Added a teammate down counter, which counts all teammate's downs individually, and resets the number when they use a doctor bag or are taken into custody. This down counter is visible in the tab screen.
 
 	*Assault Panel*
 * Added assault wave popup indicator, which appears as an objective popup
@@ -87,6 +88,14 @@ Honestly, this was so much work that I feel like it deserves more than a +0.1 ve
 * ...Fixed a lot of other minor bugs which I did not name here
 * Moved the stamina panel to the unused fourth teammate slot, at the bottom, where it is less in the way
 
+Known issues:
+	* Assault phase may not display/sync properly as client
+	* Vanilla HUD elements may be visible when in "spectate" mode (if you are a player waiting to spawn into a host's game, and the host has "prompt" or "stealth prompt" on)
+	* Floating ammo panel shows up even when you are not holding a gun (if you are in casing or civilian mode, for example)
+	* Down Counter Standalone compatibility with NobleHUD is a little wonky, I'm working on it
+	* Activating an underbarrel weapon (such as the Little Friend 762 grenade launcher) does not properly change weapon HUD elements such as the reticle or ammo ticks.
+	
+
 
 
 ***** TODO: *****
@@ -94,6 +103,9 @@ Honestly, this was so much work that I feel like it deserves more than a +0.1 ve
 -test has font with managers.dyn_resource:has_resource(Idstring("scene"), Idstring("core/environments/skies/" .. sky .. "/" .. sky), managers.dyn_resource.DYN_RESOURCES_PACKAGE)
 * "Speaking" icon for teammates and self
 
+	
+		* Equipment 
+	
 		* Sync data:
 			send assault phase
 		
@@ -126,7 +138,6 @@ Honestly, this was so much work that I feel like it deserves more than a +0.1 ve
 		%% BUGS:
 		
 			- Assault phase localization when not host
-			- hide HUD when in camera
 			- Vanilla HUD is visible in drop-in spectate mode
 			- Floating ammo panel is visible in casing/civilian mode
 			- ADS should maintain mostly still reticle, unusable otherwise
@@ -135,7 +146,7 @@ Honestly, this was so much work that I feel like it deserves more than a +0.1 ve
 
 		%% FEATURES: %%
 			* Tab screen
-				--move scoreboard based on score, not peerid? or basically anything
+				--move scoreboard based on score or peerid?
 			* Teammates panel
 				- center vertically to subpanel
 				- ammo?
@@ -5707,12 +5718,18 @@ function NobleHUD:OnTeammateKill(player_unit)
 
 	--if player_unit is in your car, give wheelman medal
 	local peer_id = alive(player_unit) and managers.criminals:character_peer_id_by_unit(player_unit)
-	local vehicle = peer_id and managers.player:get_vehicle_for_peer(peer_id) or {}
-	local my_vehicle = managers.player:get_vehicle()
-	if alive(my_vehicle) and alive(vehicle.vehicle_unit) and vehicle.vehicle_unit == my_vehicle.vehicle_unit then
-		if my_vehicle.seat == "driver" then 
-			NobleHUD:AddMedal("wheelman")
-			NobleHUD:AddMedal("spree_wheelman",NobleHUD:KillsCache("vehicle_assist",1))
+	local vehicle = peer_id and managers.player:get_vehicle_for_peer(peer_id)
+	local my_vehicle = managers.player:get_vehicle() or {}
+	if my_vehicle and my_vehicle.vehicle_unit then --
+		if vehicle and vehicle.vehicle_unit then 
+			if alive(vehicle.vehicle_unit) and alive(my_vehicle.vehicle_unit) then 
+				if vehicle.vehicle_unit == my_vehicle.vehicle_unit then
+					if my_vehicle.seat == "driver" then 
+						NobleHUD:AddMedal("wheelman")
+						NobleHUD:AddMedal("spree_wheelman",NobleHUD:KillsCache("vehicle_assist",1))
+					end
+				end
+			end
 		end
 	end
 end
@@ -7248,21 +7265,12 @@ function NobleHUD:_set_grenade_cooldown(data)
 	
 	local t = managers.game_play_central:get_heist_timer()
 	local t_offset = Application:time() - t
---	self:log("Heisttimer " .. t)
---	self:log("Apptimer " .. Application:time())
---	self:log("Diff " .. t_offset)
-	
 	local animate_target = self._animate_targets[tostring(grenade_cooldown)]
 	if (duration and duration > 0) then
 		if (end_time and end_time > t) then 
 			if animate_target then 
 				local duration_remaining = end_time - t
 				local elapsed = duration - duration_remaining
-	--			Console:SetTrackerValue("trackerb",duration_remaining)
-	--			self:log("duration_remaining " .. tostring(duration_remaining))
-	--			self:log("elapsed is " .. tostring(elapsed))
---				self:log("end_time is " .. tostring(end_time))
---				self:log("t is " .. tostring(t))
 				animate_target.start_t = end_time - duration + t_offset
 			else
 				self:animate(grenade_cooldown,"animate_color_fadeto",animate_cooldown_over,duration,Color.white,Color.black) --operates as countdown timer, so full circle shrinking radially to empty circle
@@ -7271,26 +7279,8 @@ function NobleHUD:_set_grenade_cooldown(data)
 			self:animate_stop(grenade_cooldown)
 			animate_cooldown_over(grenade_cooldown)
 		end
-	--[[
-			self:animate(grenade_icon,"animate_color_fadeto",animate_cooldown_over,end_time - t,self.color_data.normal,self.color_data.hud_blueoutline)
-			self:animate(grenade_cooldown,"animate_color_fadeto",function(p) p:hide() end,duration or (end_time - t),Color.white,Color.black)
-		if duration then 
-		end
-			local new_cooldown = end_time - t
-			self:log("new duration is " .. tostring(t - end_time))
-			self:log("New end_time is " .. tostring(end_time))
-			self:log("Original start time is " .. tostring(animate_target.args.start_t) .. ", changing to " .. tostring(t))
-			self:log("Original duration is " .. tostring(animate_target.args[1]) .. ", changing to " .. tostring(t - end_time))
-			animate_target.args.start_t = t
-			animate_target.args[1] = animate_target.args[1] - (duration - new_cooldown)
-		else
-		end
-		--]]
---	elseif duration and duration > 0 then 
---		self:animate(grenade_cooldown,"animate_color_fadeto",animate_cooldown_over,duration,Color.white,Color.black)
---		NobleHUD:animate(grenade_icon,"animate_color_fadeto",animate_cooldown_over,duration,self.color_data.normal,self.color_data.hud_blueoutline)
+
 	else --if invalid data or over immediately
---		grenade_cooldown:hide()
 		--since cooldown is over immediately, flash the yellow "in use" color and immediately cooldown it
 		local start_color = self.color_data.unique
 		grenade_icon:set_color(start_color)
@@ -7298,27 +7288,10 @@ function NobleHUD:_set_grenade_cooldown(data)
 			self:animate(o,"animate_color_fadeto",function() grenade_cooldown:hide() end,0.25,start_color,self.color_data.hud_blueoutline)
 		end,0.66,grenade_icon:w(),1.5,center_x,center_y)
 	end
-		--[[
-			while active, animate:
-				pulse icon color
-					color depends on duration remaining
-						orange/white normal, orange/red little time remainign
-				show duration text?
-				
-			when expired, animate:
-				icon color fades to grey?
-					ensure that normal set_amount does not interfere with color
-			
-			when cooldown done: 
-				animate (twirl-in + pulse ghost)
-				
-		
-	--]]
 end
 
 
 function NobleHUD:animate_color_fadeto(o,t,dt,start_t,duration,color1,color2)
---	Console:SetTrackerValue("trackera",self.table_concat({t,start_t,duration}))
 	if t > (start_t + duration) then 
 		o:set_color(color2)
 		return true
@@ -7330,15 +7303,14 @@ function NobleHUD:animate_wait(o,t,dt,start_t,duration)
 	if (t - start_t) >= duration then
 		return true
 	end
-	--that's it. that's the whole function. what did you think it was going to do
+	--that's it. that's the whole function. can i get my paycheck now
 end
 
 function NobleHUD:_activate_ability_radial(time_left,time_total)
-	self:log("activate_ability_radial(" .. self.table_concat({time_left = time_left,time_total = time_total},",","|") .. ")")
+--	self:log("activate_ability_radial(" .. self.table_concat({time_left = time_left,time_total = time_total},",","|") .. ")")
 end
 
 function NobleHUD:_set_ability_radial(time_left,time_total)
---	NobleHUD:log("set_ability_radial(" .. NobleHUD.table_concat({current = current,total = total,progress = progress},",","|") .. ")")
 	local grenades_panel = self._grenades_panel:child("primary_grenade_panel")
 	local grenade_outline = grenades_panel:child("grenade_outline")
 	local grenade_icon = grenades_panel:child("grenade_icon")
@@ -7948,19 +7920,19 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 		name = "equipment_subpanel",
 		x = grenade_subpanel:right(),
 		y = character_bitmap:y(),
-		w = 256,
+		w = teammate_w,
 		layer = 1,
 		h = panel:h(),
 		visible = true
 	})
-	--[[
-	local debug_subpanel4 = equipment_subpanel:rect({
-		name = "debug_subpanel4",
-		color = Color(1,1,0),
-		visible = false,
-		alpha = 0.2
-	})
-	--]]
+
+--	local debug_subpanel4 = equipment_subpanel:rect({
+--		name = "debug_subpanel4",
+--		color = Color(1,1,0),
+--		visible = false,
+--		alpha = 0.2
+--	})
+
 	local teammate_panel_debug = panel:rect({
 		name = "teammate_panel_debug",
 		visible = false,
@@ -7971,6 +7943,7 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 end
 
 function NobleHUD:_add_teammate() --i don't think this is even called...???
+	self:log("NobleHUD:_add_teammate(): Huh, I guess I am using this somewhere.",{color=Color.red})
 end
 
 function NobleHUD:_sort_teammates(num)
@@ -8127,18 +8100,6 @@ function NobleHUD:_set_teammate_equipment_amount(i,equipment_name,amount)
 	end
 end
 
---[[
-
-local i = 1; local data = {id = "sanks", icon = "equipment_planks",amount = 1}; NobleHUD:_add_teammate_equipment(i,data)
-local i = 1; local data = {id = "soda", icon = "equipment_soda",amount = 4}; NobleHUD:_add_teammate_equipment(i,data)
-local i = 1; local data = {id = "drill", icon = "equipment_drill",amount = math.huge}; NobleHUD:_add_teammate_equipment(i,data)
-local i = 1; local data = {id = "saw", icon = "equipment_saw",amount = math.huge}; NobleHUD:_add_teammate_equipment(i,data)
-local i = 1; local data = {id = "buhrbur", icon = "equipment_soda",amount = math.huge}; NobleHUD:_add_teammate_equipment(i,data)
-local i = 1; NobleHUD:_remove_teammate_equipment(1,"buhrbur")
-local i = 1; local data = {id = "president_key", icon = "equipment_president_key",amount = 1}; NobleHUD:_add_teammate_equipment(i,data)
-NobleHUD:_layout_teammate_equipments(1)
-
---]]
 function NobleHUD:_add_teammate_equipment(i,data)
 	local equipment_name = data.id and tostring(data.id)
 	local equipment_icon,equipment_rect = tweak_data.hud_icons:get_icon_data(data.icon)
@@ -8198,7 +8159,7 @@ function NobleHUD:_add_teammate_equipment(i,data)
 			})
 			local function pulse(o)
 				local center_x,center_y = o:center()
-				self:animate(o:child("icon"),"animate_killfeed_icon_pulse",animate_done,0.3,eq_size,1.5,center_x,center_y)
+				self:animate(icon,"animate_killfeed_icon_pulse",animate_done,0.3,eq_size,1.5,center_x,center_y)
 			end
 			self:animate(new_equipment,"animate_fadein",pulse,0.5,1)
 		end
@@ -8209,13 +8170,9 @@ function NobleHUD:_layout_teammate_equipments(i)
 	local player_panel = self:GetTeammatePanel(i)
 	if alive(player_panel) then 
 		local equipment_subpanel = player_panel:child("equipment_subpanel")
-		local next_x = 0
+		local eq_w = 24
 		for count,equipment_box in ipairs(equipment_subpanel:children()) do
-			if equipment_box:name() ~= "debug_subpanel4" then		
-				equipment_box:set_x(next_x)
-				next_x = next_x + equipment_box:child("icon"):w()
---				equipment_box:set_x(count * equipment_box:w())
-			end
+			equipment_box:set_x((count - 1) * eq_w)
 		end
 	end
 end
@@ -10860,7 +10817,7 @@ function NobleHUD:layout_equipments(special_equipments,new)
 		if panel:name() == new then 
 			NobleHUD:animate(panel,"animate_add_equipment",function (o)
 				local center_x,center_y = o:center()
-				NobleHUD:animate(o:child("bitmap"),"animate_killfeed_icon_pulse",nil,0.2,panel:w(),1.5,center_x,center_y)
+				NobleHUD:animate(o:child("bitmap"),"animate_killfeed_icon_pulse",nil,0.2,panel:w(),1.5) --center_x, center_y
 			end,0.1,x)
 		else
 			NobleHUD:animate(panel,"animate_add_equipment",nil,0.1,x)

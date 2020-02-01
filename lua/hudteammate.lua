@@ -198,7 +198,6 @@ Hooks:PostHook(HUDTeammate,"set_health","noblehud_set_health",function(self,data
 			else
 				label:set_font_size(19)
 			end
-	--		label:set_color(NobleHUD.interp_colors(NobleHUD.color_data.hud_vitalsoutline_blue,NobleHUD.color_data.hud_vitalsoutline_red,hp_r))
 		end
 	end
 end)
@@ -336,7 +335,7 @@ Hooks:PostHook(HUDTeammate,"set_stored_health","noblehud_set_stored_health",func
 	end
 	vitals_panel:child("stored_health_tick_center_outline"):set_visible(ratio > (1/NobleHUD._HUD_HEALTH_TICKS))
 end)
---
+
 Hooks:PostHook(HUDTeammate,"set_absorb_active","noblehud_set_absorb",function(self,absorb_amount)
 	if not self._main_player then 
 		return
@@ -354,9 +353,9 @@ Hooks:PostHook(HUDTeammate,"set_absorb_active","noblehud_set_absorb",function(se
 --[[
 		--add to buff instead?
 	if absorb_amount > 0 then
-		managers.player:add_buff("hysteria",{value = math.floor(absorb_amount * 100)})
+		NobleHUD:add_buff("hysteria",{value = math.floor(absorb_amount * 100)})
 	else 
-		managers.player:remove_buff("hysteria")
+		NobleHUD:remove_buff("hysteria")
 	end
 	--]]
 end)
@@ -509,8 +508,6 @@ Hooks:PostHook(HUDTeammate,"set_ammo_amount_by_type","noblehud_set_ammo",functio
 
 end)
 
---Hooks:PostHook(HUDTeammate,"set_ai","noblehud_set_teammate_ai",function(self,ai)
---end)
 
 --mission equipment stuff
 
@@ -680,39 +677,12 @@ Hooks:PostHook(HUDTeammate,"set_grenades_amount","noblehud_set_grenades_amount",
 end)
 
 Hooks:PostHook(HUDTeammate,"set_ability_radial","noblehud_set_ability_radial",function(self,data)
---used for abilities' cooldowns (kingpin, tag team, and hacker. NOT Stoic)
+--used for abilities' cooldowns -kingpin, tag team, and hacker. NOT Stoic since that's immediate activation + effect, not duration
 	if self._main_player then
 		NobleHUD:_set_ability_radial(data.current,data.total)
---[[		
-
-		local current = data.current
-		local total = data.total
-		local progress = current / total	
-		Console:SetTrackerValue("trackera","grenades current: " .. current)
-		Console:SetTrackerValue("trackerb","grenades total: " .. total)
-		Console:SetTrackerValue("trackerc","grenades progress: " .. progress)
-		Console:SetTrackerValue("trackerd",Application:time())
-		local grenades_panel = self._khud_grenades_panel
-		local grenades_recharge = grenades_panel:child("grenades_bg"):child("grenades_recharge")		
-		
-		local here = 1 - (math.sin((60 * Application:time()) % 60) * (1 - progress))
-		grenades_recharge:set_gradient_points({
-			0,
-			Color.black,
-			here,
-			Color.red,
-			progress + 0.01,
-			Color.white,
-			progress,
-			Color.black,
-			1,
-			Color.black
-		})
---]]
---		grenades_recharge:set_h(grenades_panel:h() * progress)
---		grenades_recharge:set_alpha(progress)
+	else
+		--todo teammate grenade ability display
 	end
-	--todo
 end)
 
 Hooks:PostHook(HUDTeammate,"activate_ability_radial","noblehud_activate_ability_radial",function(self,time_left,time_total)
@@ -727,60 +697,8 @@ Hooks:PostHook(HUDTeammate,"activate_ability_radial","noblehud_activate_ability_
 		--set timer countdown
 		NobleHUD:_activate_ability_radial(time_left,time_left)
 	end
---[[
---on activation i guess
---todo some effect for this
-	if self._main_player then
-		local grenades_panel = self._khud_grenades_panel
-		local grenades_recharge = grenades_panel:child("grenades_bg"):child("grenades_recharge")		
-		local grenades_amount = grenades_panel:child("grenades_amount")	
-		
-		if time_total then 
-			local progress = time_left / time_total
 
-			local here = 1 - (math.sin((60 * Application:time()) % 60) * (1 - progress))
-			
-			grenades_recharge:set_gradient_points({
-				0,
-				Color.black,
-				here,
-				Color.red,
-				progress + 0.01,
-				Color.white,
-				progress,
-				Color.black,
-				1,
-				Color.black
-			})	
-		elseif time_left then
---			local ability = managers.player:get_specialization_ability()
-			local ability = managers.blackmarket:equipped_grenade()
-			if ability then 
-				managers.player:add_buff(ability,{duration = time_left})
-			end
-		end
-	end
-	--]]
 end)
-
-
-Hooks:PostHook(HUDTeammate,"set_custom_radial","noblehud_set_custom_radial",function(self,data)
---[[
-		NobleHUD:log("set_custom_radial() [")
-		logall(data)
-		NobleHUD:log("]")
-function HUDTeammate:set_custom_radial(data)
-	local teammate_panel = self._panel:child("player")
-	local radial_health_panel = self._radial_health_panel
-	local radial_custom = radial_health_panel:child("radial_custom")
-	local red = data.current / data.total
-
-	radial_custom:set_color(Color(1, red, 1, 1))
-	radial_custom:set_visible(red > 0)
-end
---]]
-end)
-
 
 Hooks:PostHook(HUDTeammate,"set_grenade_cooldown","noblehud_set_grenade_cooldown",function(self,data)
 --sicario uses this instead of activate_ability
@@ -799,6 +717,17 @@ end)
 
 --caution! under construction! 
 if true then return end 
+
+--Hooks:PostHook(HUDTeammate,"set_ai","noblehud_set_teammate_ai",function(self,ai)
+--end)
+
+--[[
+Hooks:PostHook(HUDTeammate,"set_custom_radial","noblehud_set_custom_radial",function(self,data)
+		NobleHUD:log("set_custom_radial() [")
+		logall(data)
+		NobleHUD:log("]")
+end)
+--]]
 
 
 Hooks:PostHook(HUDTeammate,"set_teammate_weapon_firemode","noblehud_set_teammate_firemode",function(self,slot,firemode)

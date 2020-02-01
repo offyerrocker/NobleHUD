@@ -41,7 +41,7 @@
 		<texture path="guis/textures/plasma_crosshair_2"/>
 		<texture path="guis/textures/needler_crosshair_1"/>
 		<texture path="guis/textures/pis_crosshair_1"/>
-		<texture path="guis/textures/flame_crosshair"/>
+<!--		<texture path="guis/textures/flame_crosshair"/> -->
 		<texture path="guis/textures/trt_crosshair"/>
 		<texture path="guis/textures/smg_crosshair"/>
 		<texture path="guis/textures/ar_crosshair_1"/>
