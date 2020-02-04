@@ -634,42 +634,42 @@ NobleHUD.weapon_data = {
 
 NobleHUD.buff_data = {
 	["dmg_resist_total"] = { --aggregated
-		menu_title = "Show Total Damage Resistance [autodetect]",
+		menu_title = "noblehud_buff_dmg_aggregated_menu",
 		icon = "juggernaut", --naut too sure about this icon. --drop_soap?
 		icon_rect = {1,7},
-		label = "Damage Resist",
+		label = "noblehud_buff_dmg_aggregated_label",
 		buff_type = "buff",
 		value_type = "value",
 		source = "skill",
 		flash = false
 	},
 	["crit_chance_total"] = { --aggregated
-		menu_title = "Show Total Crit Chance [autodetect]",
+		menu_title = "noblehud_buff_crit_aggregated_menu",
 		icon = "backstab",
 		icon_rect = {1,7},
-		label = "Crit Chance",
+		label = "noblehud_buff_crit_aggregated_label",
 		buff_type = "buff",
 		value_type = "value",
 		source = "skill",
 		flash = false
 	},
 	["dodge_chance_total"] = {
-		menu_title = "Show Total Dodge Chance [autodetect]",
+		menu_title = "noblehud_buff_dodge_aggregated_menu",
 		icon = "jail_diet", --'dance_instructor' is pistol mag bonus
 		icon_rect = {1,7},
-		label = "Dodge Chance",
+		label = "noblehud_buff_dodge_aggregated_label",
 		buff_type = "buff",
 		value_type = "value",
 		source = "skill",
 		flash = false
 	},
 	["hp_regen"] = { --aggregated, standard timed-healing from multiple sources (muscle, hostage taker, etc)
-		menu_title = "Health Regen (Aggregated)",
+		menu_title = "noblehud_buff_regen_aggregated_menu",
 		icon = 17, --chico perk deck
 		icon_tier = 3, --heart with hollow +  
 		icon_rect = {1,1},
 		persistent_timer = true,
-		label = "Health Regen",
+		label = "noblehud_buff_regen_aggregated_label",
 		duration = 10,
 		value_type = "timer",
 		source = "perk",
@@ -677,10 +677,10 @@ NobleHUD.buff_data = {
 		flash = false
 	},
 	["long_dis_revive"] = { --cooldown; done
-		menu_title = "Inspire Aced Cooldown",
+		menu_title = "noblehud_buff_long_dis_revive_menu",
 		icon = "inspire",
 		icon_rect = {4,9},
-		label = "Inspire Cooldown",
+		label = "noblehud_buff_long_dis_revive_label",
 		value_type = "timer",
 		duration = 20,
 		source = "skill",
@@ -688,27 +688,27 @@ NobleHUD.buff_data = {
 		flash = true
 	},
 	["morale_boost"] = {
-		menu_title = "Inspire Basic",
+		menu_title = "noblehud_buff_morale_boost_menu",
 		icon = "inspire",
 		icon_rect = {4,9},
-		label = "Inspire Basic",
+		label = "noblehud_buff_morale_boost_label",
 		value_type = "timer",
 		duration = 4,
 		source = "skill",
 		flash = false
 	},
-	["flashbang"] = { --owww my eyes; temp disabled
-		menu_title = "Flashbang",
+	["flashbang"] = {
+		menu_title = "noblehud_buff_flashbang_menu",
 		icon = "concussion_grenade", --if no source is specified, use this icon tweak data
 		icon_rect = {1,7}, --if source is "manual" then use "icon" as path and "icon_rect" to find bitmap
-		label = "Blind", --display name
+		label = "noblehud_buff_flashbang_label", --display name
 		text_color = Color.black:with_alpha(0.3),
 		icon_color = NobleHUD.color_data.hud_buff_negative,
 		value_type = "timer", --value calculation type
 		source = "icon", --where to get icon (not directly related to where ingame buff came from)
 		flash = true --alpha sine flash if true
 	},
-	["downed"] = { --bleedout;  mugshot_in_custody; done
+	["downed"] = { --bleedout;  mugshot_in_custody;
 		menu_title = "Downed",
 		disabled = true,
 		icon = "mugshot_downed",
@@ -723,7 +723,7 @@ NobleHUD.buff_data = {
 	["tased"] = { --yellow icon?
 		icon = "mugshot_electrified",--skill icon "insulation",
 		icon_rect = {1,7},
-		label = "Tased",
+		label = "noblehud_buff_tased_label",
 		icon_color = Color.white,
 		text_color = NobleHUD.color_data.hud_buff_negative,
 		value_type = "timer",
@@ -733,7 +733,7 @@ NobleHUD.buff_data = {
 	["electrocuted"] = {--not referenced, probably
 		icon = "mugshot_electrified",
 		icon_rect = {1,7},
-		label = "Electrocuted",
+		label = "noblehud_buff_electrocuted_label",
 		icon_color = Color.yellow,
 		text_color = NobleHUD.color_data.hud_buff_negative,
 		buff_type = "debuff",
@@ -745,7 +745,7 @@ NobleHUD.buff_data = {
 		icon = "perseverance",
 		icon_rect = {1,7},
 		duration = 3, --6 aced
-		label = "Swan Song",
+		label = "noblehud_buff_swan_song_label",
 		text_color = NobleHUD.color_data.hud_buff_negative,
 		buff_type = "buff",
 		value_type = "timer",
@@ -755,7 +755,7 @@ NobleHUD.buff_data = {
 	["messiah_charge"] = { --has messiah charge left; TODO
 		icon = "messiah",
 		icon_rect = {1,7},
-		label = "Messiah Charge",
+		label = "noblehud_buff_messiah_charge_label",
 		buff_type = "buff",
 		value_type = "value", --just in case multiple messiah charges is ever implemented, or modded in
 		source = "skill",
@@ -764,7 +764,7 @@ NobleHUD.buff_data = {
 	["bullseye"] = { --cooldown; internally, "prison_wife"
 		icon = "prison_wife",
 		icon_rect = {6,11},
-		label = "Bullseye",
+		label = "noblehud_buff_bullseye_label",
 		buff_type = "buff",
 		value_type = "timer",
 		text_color = NobleHUD.color_data.hud_buff_negative,
@@ -777,7 +777,7 @@ NobleHUD.buff_data = {
 		icon = 16,
 		icon_tier = 1,
 		icon_rect = {1,7},
-		label = "Prospect",
+		label = "noblehud_buff_biker_label",
 		buff_type = "buff",
 		value_type = "value",
 		text_color = NobleHUD.color_data.hud_buff_neutral,
@@ -786,33 +786,33 @@ NobleHUD.buff_data = {
 		flash = true
 	},
 	["grinder"] = {
-		menu_title = "Grinder Healing over Time",
+		menu_title = "noblehud_buff_grinder_menu",
 		icon = 11,
 		icon_tier = 1, --overridden by tier_floors
 		tier_floors = {1,3,5,7,9},
 		icon_rect = {6,1},
-		label = "Grinder",
+		label = "noblehud_buff_grinder_label",
 		buff_type = "buff",
 		value_type = "value",
 		source = "perk",
 		flash = false
 	},
 	["uppers_aced_cooldown"] = { --20 seconds but tweakdata says 500???
-		menu_title = "Uppers Aced Cooldown",
+		menu_title = "noblehud_buff_uppers_menu",
 		icon = "tea_cookies",
 		icon_rect = {1,7},
-		label = "Uppers Cooldown",
+		label = "noblehud_buff_uppers_label",
 		text_color = NobleHUD.color_data.hud_buff_negative,
 		value_type = "timer",
 		source = "skill",
 		flash = false
 	},
 	["anarchist_armor_regen"] = {
-		menu_title = "Anarchist Armor Grinding",
+		menu_title = "noblehud_buff_anarchist_menu",
 		icon = 15,
 		icon_tier = 1,
 		icon_rect = {1,7},
-		label = "Blitzkrieg Bop",
+		label = "noblehud_buff_anarchist_label",
 		persistent_timer = true,
 		text_color = NobleHUD.color_data.hud_buff_status,
 		value_type = "timer",
@@ -820,11 +820,11 @@ NobleHUD.buff_data = {
 		flash = false
 	},
 	["armor_break_invulnerable"] = { --anarchist/armorer; game adds this buff as a cooldown for the invulnerability itself
-		menu_title = "Armorer 7/9 & Anarchist 1/9 Invulnerability",
+		menu_title = "noblehud_buff_armor_break_invulnerable_menu",
 		icon = 15,
 		icon_tier = 1,
 		icon_rect = {1,7},
-		label = "Invulnerable",
+		label = "noblehud_buff_armor_break_invulnerable_label",
 		text_color = NobleHUD.color_data.hud_buff_negative,--red for 15s cooldown; blue for 2s invuln period
 		value_type = "timer",
 		source = "perk",
@@ -834,7 +834,7 @@ NobleHUD.buff_data = {
 		icon = 17,--"chico_injector",
 		icon_tier = 1,
 		icon_rect = {1,7},
-		label = "Kingpin Injector",
+		label = "noblehud_buff_kingpin_menu",
 		icon_color = NobleHUD.color_data.hud_buff_status,
 		value_type = "timer",
 		source = "perk",
@@ -844,17 +844,17 @@ NobleHUD.buff_data = {
 		icon = 21,--"pocket_ecm_jammer",
 		icon_tier = 1,
 		icon_rect = {1,7},
-		label = "Pocket ECM Jammer",
+		label = "noblehud_buff_hacker_label",
 		value_type = "timer",
 		source = "perk",
 		flash = true
 	},
 	["pocket_ecm_kill_dodge"] = {
-		menu_title = "Pocket ECM Dodge Bonus",
+		menu_title = "noblehud_buff_hacker_menu",
 		icon = 21,--"pocket_ecm_jammer",
 		icon_tier = 7,
 		icon_rect = {1,7},
-		label = "Kluge",
+		label = "noblehud_buff_hacker_label",
 		buff_type = "buff",
 		value_type = "timer",
 		source = "perk",
@@ -864,7 +864,7 @@ NobleHUD.buff_data = {
 		icon = 14, --index for perk deck "maniac". todo recategorize
 		icon_rect = {1,7},
 		icon_tier = 1,
-		label = "Damage Absorption",
+		label = "noblehud_buff_maniac_label",
 		buff_type = "buff",
 		value_type = "value",
 		source = "perk",
@@ -872,21 +872,21 @@ NobleHUD.buff_data = {
 	
 	},
 	["berserker_damage_multiplier"] = { --low health; show damage %l DONE
-		menu_title = "Berserker Melee Damage Boost % [autodetect]",
+		menu_title = "noblehud_buff_berserker_damage_menu",
 		icon = "wolverine",
 		icon_rect = {1,7},
-		label = "Berserker",
+		label = "noblehud_buff_berserker_damage_label",
 		buff_type = "buff",
 		value_type = "value",
 		source = "skill",
 		flash = true
 	},
 	["berserker_melee_damage_multiplier"] = {
-		disabled = true,
-		menu_title = "Berserker Hitscan Damage Boost % [autodetect]",
+		disabled = false,
+		menu_title = "noblehud_buff_berserker_melee_menu",
 		icon = "wolverine",
 		icon_rect = {1,7},
-		label = "Berserker",
+		label = "noblehud_buff_berserker_label",
 		buff_type = "buff",
 		value_type = "value",
 		source = "skill",
@@ -895,7 +895,7 @@ NobleHUD.buff_data = {
 	["throwable_cooldown"] = { --perk deck ability cooldown timer; TODO? probably best to do for every individual one
 		icon = "grenade",
 		icon_rect = {1,7},
-		label = "Ability Cooldown",
+		label = "ability_cooldown",
 		buff_type = "debuff",
 		value_type = "timer",
 		source = "special",
@@ -904,7 +904,7 @@ NobleHUD.buff_data = {
 	["bullet_storm"] = { --infinite ammo; DONE
 		icon = "ammo_reservoir",
 		icon_rect = {0,3},
-		label = "Bulletstorm",
+		label = "noblehud_buff_bulletstorm_label",
 		buff_type = "buff",
 		value_type = "timer",
 		source = "skill",
@@ -913,7 +913,7 @@ NobleHUD.buff_data = {
 	["unseen_strike"] = { --show duration; TODO remove buff when cancelled
 		icon = "unseen_strike",
 		icon_rect = {1,7},
-		label = "Unseen Strike",
+		label = "noblehud_buff_unseen_strike_label",
 		duration = 18, --debug purposes only; t is passed
 		buff_type = "buff",
 		value_type = "timer",
@@ -923,17 +923,17 @@ NobleHUD.buff_data = {
 	["overkill_damage_multiplier"] = { -- shotgun damage buff; anything below here is probably not done
 		icon = "overkill",
 		icon_rect = {1,7},
-		label = "Overkill",
+		label = "noblehud_buff_overkill_label",
 		buff_type = "buff",
 		value_type = "timer",
 		source = "skill",
 		flash = false
 	},
 	["bloodthirst_melee"] = { --gun kills increase melee damage stacks; TODO
-		disabled = true, --todo
+		disabled = false, --todo
 		icon = "bloodthirst", --assassin?
 		icon_rect = {1,7},
-		label = "Bloodthirst",
+		label = "noblehud_buff_bloodthirst_melee_label",
 		buff_type = "buff",
 		value_type = "value", --not sure
 		source = "skill",
@@ -942,7 +942,7 @@ NobleHUD.buff_data = {
 	["bloodthirst_reload_speed"] = { --reload speed increase after melee; DONE
 		icon = "bloodthirst",
 		icon_rect = {1,7},
-		label = "Bloodthirst Aced",
+		label = "noblehud_buff_bloodthirst_reload_label",
 		buff_type = "buff",
 		value_type = "timer",
 		duration = 10,
@@ -952,7 +952,7 @@ NobleHUD.buff_data = {
 	["team_damage_speed_multiplier_received"] = {
 		icon = "scavenger",
 		icon_rect = {10,9},
-		label = "Second Wind",
+		label = "noblehud_buff_second_wind_label",
 		buff_type = "buff",
 		value_type = "timer",
 		duration = 5,
@@ -962,7 +962,7 @@ NobleHUD.buff_data = {
 	["damage_speed_multiplier"] = { --movespeed on armor break
 		icon = "scavenger",
 		icon_rect = {10,9},
-		label = "Second Wind",
+		label = "noblehud_buff_second_wind_label",
 		buff_type = "buff",
 		value_type = "timer",
 		duration = 5,
@@ -973,7 +973,7 @@ NobleHUD.buff_data = {
 		disabled = true,
 		icon = "chameleon",
 		icon_rect = {1,7},
-		label = "Sixth Sense",
+		label = "noblehud_buff_sixth_sense_label",
 		buff_type = "buff",
 		value_type = "timer",
 		source = "skill",
@@ -983,7 +983,7 @@ NobleHUD.buff_data = {
 		duration = 10, --debug purposes only, as t is passed
 		icon = "up_you_go",
 		icon_rect = {1,7},
-		label = "Up You Go",
+		label = "noblehud_buff_up_you_go_label",
 		buff_type = "buff",
 		value_type = "timer",
 		source = "skill",
@@ -993,7 +993,7 @@ NobleHUD.buff_data = {
 		icon = "up_you_go",
 		disabled = true,
 		icon_rect = {1,7},
-		label = "Combat Medic",
+		label = "combat_medic",
 		buff_type = "buff",
 		value_type = "timer",
 		duration = 5,
@@ -1003,7 +1003,7 @@ NobleHUD.buff_data = {
 	["running_from_death"] = { --reload + swap faster after revive
 		icon = "running_from_death",
 		icon_rect = {1,7},
-		label = "Running From Death",
+		label = "noblehud_buff_running_from_death_label",
 		buff_type = "buff",
 		value_type = "timer",
 		duration = 10,
@@ -1013,7 +1013,7 @@ NobleHUD.buff_data = {
 	["running_from_death_aced"] = { --run faster after revive; not called?
 		icon = "running_from_death",
 		icon_rect = {1,7},
-		label = "Running From Death Aced",
+		label = "noblehud_buff_running_from_death_label",
 		buff_type = "buff",
 		value_type = "timer",
 		duration = 10,
@@ -1023,7 +1023,7 @@ NobleHUD.buff_data = {
 	["trigger_happy"] = { --damage boost on pistol hit
 		icon = "trigger_happy",
 		icon_rect = {1,7},
-		label = "Trigger Happy",
+		label = "noblehud_buff_trigger_happy_label",
 		buff_type = "buff",
 		value_type = "timer",
 		duration = 2, --4 aced
@@ -1033,7 +1033,7 @@ NobleHUD.buff_data = {
 	["desperado"] = { --accuracy boost on pistol hit
 		icon = "expert_handling",
 		icon_rect = {1,7},
-		label = "Desperado",
+		label = "noblehud_buff_desperado_label",
 		buff_type = "buff",
 		value_type = "timer",
 		duration = 10,
@@ -1043,7 +1043,7 @@ NobleHUD.buff_data = {
 	["partners_in_crime"] = { --move speed w/ hostage; todo
 		icon = "control_freak",
 		icon_rect = {1,7},
-		label = "Partners In Crime",
+		label = "noblehud_buff_partners_in_crime_label",
 		buff_type = "buff",
 		value_type = "status",
 		source = "skill",
@@ -1052,7 +1052,7 @@ NobleHUD.buff_data = {
 	["partners_in_crime_aced"] = { --hp+ with hostage; todo
 		icon = "control_freak",
 		icon_rect = {1,7},
-		label = "Partners In Crime Aced",
+		label = "noblehud_buff_partners_in_crime_aced_label",
 		buff_type = "buff",
 		value_type = "status",
 		source = "skill",
@@ -1061,7 +1061,7 @@ NobleHUD.buff_data = {
 	["single_shot_fast_reload"] = { --single headshot reload speed; DONE
 		icon = "speedy_reload",
 		icon_rect = {1,7},
-		label = "Aggressive Reload",
+		label = "noblehud_buff_aggressive_reload_menu",
 		buff_type = "buff",
 		value_type = "timer",
 		duration = 4,
@@ -1069,7 +1069,7 @@ NobleHUD.buff_data = {
 		flash = false
 	},
 	["reload_weapon_faster"] = { --revenant skill tree thing
-		disabled = true,
+		disabled = false,
 		icon = "speedy_reload",
 		icon_rect = {1,7},
 		label = "reload_weapon_faster",
@@ -1080,7 +1080,7 @@ NobleHUD.buff_data = {
 		flash = false
 	},
 	["swap_weapon_faster"] = { --revenant skill tree thing
-		disabled = true,
+		disabled = false,
 		icon = "speedy_reload",
 		icon_rect = {1,7},
 		label = "swap_weapon_faster",
@@ -1091,7 +1091,7 @@ NobleHUD.buff_data = {
 		flash = false
 	},
 	["revived_damage_resist"] = { --revenant skill tree thing
-		disabled = true,
+		disabled = false,
 --		icon = "speedy_reload",
 		icon_rect = {1,7},
 		label = "swap_weapon_faster",
@@ -1102,10 +1102,10 @@ NobleHUD.buff_data = {
 		flash = false
 	},
 	["increased_movement_speed"] = { --revenant skill tree thing
-		disabled = true,
+		disabled = false,
 		icon = "running_from_death",
 		icon_rect = {1,7},
-		label = "Running From Death 2",
+		label = "running_from_death_2",
 		buff_type = "buff",
 		value_type = "timer",
 		duration = 4,
@@ -1115,7 +1115,7 @@ NobleHUD.buff_data = {
 	["lock_n_load"] = { --auto multikills reload speed from skilltree "lock n load"; DONE
 		icon = "shock_and_awe",
 		icon_rect = {1,7},
-		label = "Lock N Load",
+		label = "noblehud_buff_lock_n_load_label",
 		buff_type = "buff",
 		value_type = "value",
 		source = "skill",
@@ -1124,7 +1124,7 @@ NobleHUD.buff_data = {
 	["dmg_multiplier_outnumbered"] = { --underdog dmg boost; DONE
 		icon = "underdog",
 		icon_rect = {1,7},
-		label = "Underdog Basic",
+		label = "noblehud_buff_underdog_label",
 		buff_type = "buff",
 		value_type = "timer",
 		source = "skill",
@@ -1133,14 +1133,14 @@ NobleHUD.buff_data = {
 	["dmg_dampener_outnumbered"] = { --underdog dmg resist; DONE
 		icon = "underdog",
 		icon_rect = {1,7},
-		label = "Underdog Aced",
+		label = "noblehud_buff_underdog_aced_label",
 		buff_type = "buff",
 		value_type = "timer",
 		source = "skill",
 		flash = false
 	}, --todo stockholm syndrome aced charge
 	["dmg_dampener_close_contact"] = { --dmg resist; activates in conjuction with underdog but lasts 5 seconds??? ovk y u do dis
-		disabled = true,
+		disabled = false,
 		icon = "underdog",
 		icon_rect = {1,7},
 		label = "I have no idea",
@@ -1150,7 +1150,7 @@ NobleHUD.buff_data = {
 		flash = false
 	},	
 	["dmg_dampener_outnumbered_strong"] = { --same as above, but aced
-		disabled = true,
+		disabled = false,
 		icon = "underdog",
 		icon_rect = {1,7},
 		label = "I have no idea Aced",
@@ -1168,7 +1168,7 @@ NobleHUD.buff_data = {
 	["first_aid_damage_reduction"] = { --120s 10% damage reduction from using fak/docbag
 		icon = "tea_time",
 		icon_rect = { 1,11 },
-		label = "Quick Fix Aced",
+		label = "noblehud_buff_quick_fix_label",
 		value_type = "timer",
 		source = "skill",
 		flash = false	
@@ -4676,7 +4676,7 @@ function NobleHUD:UpdateHUD(t,dt)
 		end
 		
 		--close call medal stuff
-		if self:KillsCache("close_call") and player:character_damage():armor_ratio() >= 1 then 
+		if self:KillsCache("close_call") and player_damage:armor_ratio() >= 1 then 
 			self:KillsCache("close_call",false,true)
 			self:AddMedal("close_call")
 		end
@@ -5143,6 +5143,180 @@ function NobleHUD:UpdateHUD(t,dt)
 				end
 			end
 		end
+		
+-- ************** BUFFS ************** 
+		if self:IsBuffTrackerEnabled() then	
+			local buff_y = 0
+			local buffs_panel_master = self._buffs_panel
+			for buff_id,buff_data in pairs(self._active_buffs) do 
+				local _t = t
+				local buff_tweak_data = self.buff_data[buff_id] 
+				local buff_panel = buffs_panel_master:child(buff_id)
+				local function remove_buff()
+					self._active_buffs[buff_id] = nil
+					buffs_panel_master:remove(buff_panel)
+--					table.remove(self._active_buffs,buff_id)
+				end
+				if not buff_tweak_data then 
+					self:log("Removing: " .. buff_id .. ". Bad buff tweak data")
+					self._active_buffs[buff_id] = nil
+				elseif not alive(buff_panel) then 
+					self:log("Removing: " .. buff_id .. ". Bad buff panel")
+					remove_buff()
+				else
+					--buff is valid... SO FAR. [ominous violin music]
+					local buff_type = buff_tweak_data.value_type
+					local buff_text = buff_tweak_data.label
+					
+					local buff_icon = buff_panel:child("icon")
+					local buff_label = buff_panel:child("label")
+					
+					
+					local buff_value
+					local buff_time
+					
+					if buff_type == "timer" then 
+						if not buff_data.end_t then 
+							remove_buff()
+						else
+							if buff_tweak_data.use_heist_timer then  --nothing uses this yet
+							--some buffs, such as grenade abilities, are calculated by a timer other than the application's. great stuff.
+							--honestly i should probably just always be using heist_timer for things related to in-game time.
+								_t = managers.game_play_central:get_heist_timer()
+							end
+							local time_left = buff.end_t - _t
+							if buff_data.end_t < _t and not buff_tweak_data.persistent_timer then 
+								remove_buff()
+							else
+								buff_time = self.format_seconds(1 + time_left)
+								if buff_id == "armor_break_invulnerable" then 
+									if invuln_timer and invuln_timer > 0 then 
+										buff_label:set_text(string.gsub(buff_text,"$TIMER",format_seconds(math.ceil(invuln_timer))))
+										buff_label:set_color(Color("2B8EFF"))
+										buff_label:set_alpha(1 + (math.sin(_t * 800) * 0.5))
+									else
+										buff_label:set_text(string.gsub(managers.localization:text(noblehud_buff_armor_break_invulnerable_cooldown_label),"$TIMER",buff_time))
+										buff_label:set_color(buff_tweak_data.text_color)
+										buff_label:set_alpha(1)
+									end
+								elseif buff_id == "hp_regen" then 
+									local hp_regained = (buff_data.value) and (" +" .. tostring(buff_data.value) .. "%   ") or ""
+									buff_text = string.gsub(buff_text,"$VALUE",hp_regained)
+									buff_text = string.gsub(buff_text,"$TIMER",buff_time)
+									buff_label:set_text(buff_text)
+								elseif buff_id == "anarchist_armor_regen" then 
+									local armor_regen_amount = (buff_data.value) and (" +" .. tostring(buff_data.value) .. "%   ") or ""
+									buff_text = string.gsub(buff_text,"$VALUE",armor_regen_amount)
+									buff_text = string.gsub(buff_text,"$TIMER",buff_time)
+									buff_label:set_text(buff_text)
+								else
+									buff_text = string.gsub(buff_text,"$VALUE",buff_data.value or "")
+									buff_text = string.gsub(buff_text,"$TIMER",buff_time)
+									buff_label:set_text(buff_text)
+									if buff_tweak_data.flash then 
+										local flash_time = 800
+										if type(buff_tweak_data.flash) == "number" then 
+											flash_time = buff_tweak_data.flash
+										end
+										buff_label:set_alpha(1 + (math.sin((buff_data.end_t + _t) * flash_time) * 0.5))
+									elseif (buff_tweak_data.flash ~= false) and (time_left <= (buff_tweak_data.flash_threshold or 3)) then 
+										buff_label:set_alpha(1 + (math.sin((buff_data.end_t + _t) * 800) * 0.5))
+									else
+										buff_label:set_alpha(1)
+									end
+								end
+							end
+						end
+					elseif buff_type == "value" then 
+						if buff_id == "berserker_damage_multiplier" then 
+							local health_ratio = managers.player:get_damage_health_ratio(player_damage:health_ratio(),"damage")
+							buff_icon:set_color(Color(1,1 - health_ratio,1 - health_ratio))
+							if buff_tweak_data.flash then
+								if health_ratio > 0.7 then 
+									buff_icon:set_alpha(1 + (math.sin(_t * 800) * 0.5)) --todo increasing flash severity
+								elseif health_ratio <= 0 then 
+									remove_buff()
+								else
+									buff_icon:set_alpha(buff_tweak_data.alpha or 1) --probably don't need alpha as a manual option
+								end
+							end
+							buff_label:set_text(string.gsub(buff_text,"$VALUE",tostring(buff_data.value or 0)))
+						elseif buff_id == "dmg_resist_total" then
+							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%i",100 * (1 - managers.player:damage_reduction_skill_multiplier("bullet")))))
+						elseif buff_id == "dodge_chance_total" then
+							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%i",100 * managers.player:skill_dodge_chance(player:movement():running(),player:movement():crouching(),is_zipline) + managers.player:body_armor_value("dodge"))))
+						elseif buff_id == "crit_chance_total" then
+							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%i",100 * managers.player:critical_hit_chance())))
+						elseif buff_id == "grinder" then 
+							buff_label:set_text(string.gsub(buff_text,"$VALUE",tostring(buff_data.value or 0)))
+							if buff_data.value <= 0 then 
+								remove_buff()
+							end
+						elseif buff_id == "lock_n_load" then 
+							buff_label:set_text(buff_text)
+						elseif buff_id == "hysteria" then 
+							buff_label:set_text(string.gsub(buff_text,"$VALUE",tostring(buff_data.value or 1)))
+							local max_stacks = tweak_data.upgrades.max_total_cocaine_stacks
+							
+							if buff_tweak_data.flash and buff_data.value >= max_stacks then 
+								local min_alpha = 0.5 --desired minimum alpha; trough
+								local b = 1 - (2 / min_alpha) --denominator
+								local frequency = 10 --wavelength; lower is more often
+								local label_alpha = (0.5 - (1 / b)) + ((math.cos(100 * frequency * _t) / math.pi) / b)
+								buff_label:set_alpha(label_alpha) --todo increasing flash severity
+							elseif buff_icon:alpha() < 1 then 
+								buff_label:set_alpha(1)
+							end
+						elseif buff_id == "wild_kill_counter" then
+						--[[ --temp disabled til i reverse engineer it again
+							local wild_kill_counter = managers.player:get_wild_kill_counter()
+							local wild_kills_left = tweak_data.upgrades.wild_max_triggers_per_time - #wild_kill_counter
+							if wild_kill_counter[1] and wild_kill_counter[1] <= _t then 
+								table.remove(wild_kill_counter,1)
+								--turns out ovk doesn't update the biker kill counter until you get a kill. efficient, but bad for info huds.
+								--so... guess i'll be putting some biker stuff in here
+							end
+							if wild_kill_counter[1] then 
+			--					buff_icon:set_h(((_t / wild_kill_counter[1]) - 1) / max_h)
+								local latest_wild_t = wild_kill_counter[#wild_kill_counter]
+								local max_wild_t = tweak_data.upgrades.wild_trigger_time
+								local ratio = 1 - ((latest_wild_t - _t) / max_wild_t)
+								buff_icon:set_color(Color(1,ratio,ratio))
+							else
+								buff_icon:set_color(buff_tweak_data.icon_color)
+							end
+							buff_label:set_text(buff_text .. " x" .. tostring(wild_kills_left))
+							if buff_tweak_data.flash then 
+							
+								if wild_kills_left <= 0 then 
+									buff_label:set_alpha(1 + math.sin(_t * 800) * 0.4)				
+								else
+			--						buff_icon:set_color(interp_col(buff_icon:color(),buff_tweak_data.icon_color,10))
+									buff_label:set_alpha(1)
+								end
+							end
+							--]]
+						else
+							buff_label:set_text(string.gsub(buff_text,"$VALUE",tostring(buff_data.value or 0)))
+			--				self:log("Unknown status for buff " .. buff_id)
+						end
+					elseif buff_type == "status" then 
+						--display text as long as status is present
+						buff_label:set_text(buff_text)
+					else
+						self:log("UpdateHUD(): Unknown buff value type " .. tostring(buff_type) .. " for id " .. tostring(buff_id),{color=Color.red})
+					end
+				end
+				buff_panel:set_y(buff_y)
+				buff_y = buff_y + buff_panel:h()
+			end
+		end
+		
+--[[		
+			NobleHUD:AddBuff("messiah_charge",{})
+		
+		
+--]]		
 -- ************** CROSSHAIR ************** 
 		if self:IsCrosshairEnabled() then --crosshair enabled
 			local fwd_ray = player:movement():current_state()._fwd_ray	
@@ -11344,20 +11518,38 @@ function NobleHUD:_create_buffs(hud) --buffs, cloned from khud (not implemented)
 	})
 	local debug_buffs = buffs_panel:rect({
 		color = Color.green,
-		visible = false,
+		visible = true,
 		alpha = 0.1
 	})
+	self._buffs_panel = buffs_panel
+end
+
+
+function NobleHUD:IsBuffDisabled(id)
+	--get setting for if buff display is disabled
 end
 
 function NobleHUD:AddBuff(id,params)
-	local buff_data = self.buff_data
-	if not buff_data[id] then 
+
+	params = params or {}
+	--if tweak_data says heist timer blah blah blah
+
+	self:log("Adding Buff " .. tostring(id) .. self.table_concat(params,",","="))
+	
+	if not self.buff_data[id] then 
 		self:log("AddBuff(" .. tostring(id) .. "): Bad buff!",{color=Color.red})
 		return
-	elseif buff_data[id].disabled then 
+	elseif self.buff_data[id].disabled then 
 		self:log("AddBuff(" .. tostring(id) .. "): Buff is disabled!",{color=Color.red})
 		return
+	elseif self:IsBuffDisabled(id) then 
+--		self:log("AddBuff(" .. tostring(id) .. "): Buff is disabled due to user pref!",{color=Color.red})
+		return
 	end
+	
+	
+	
+	if true then return end
 	
 	--check validity of buff id and data
 	if self._active_buffs[id] then 
@@ -11366,6 +11558,161 @@ function NobleHUD:AddBuff(id,params)
 	else
 		self._active_buffs[id] = params
 	end
+	self:CreateBuff(id,params)
+end
+--i had to write this because get_specialization_icon_data() always picks the top tier. booooo
+
+function NobleHUD:get_specialization_icon_data_with_fallback(spec, no_fallback, tier, tier_floors)
+	
+	spec = spec or managers.skilltree:get_specialization_value("current_specialization")
+
+	local data = tweak_data.skilltree.specializations[spec]
+	local max_tier = managers.skilltree:get_specialization_value(spec, "tiers", "max_tier")
+	
+	if tier_floors and type(tier_floors) == "table" then
+	--this code-nugget takes optional input "tier_floors" (table) which is a whitelist for icon tiers to use.
+	--it takes the highest possible unlocked tier from this whitelist, and uses that. 
+	--this is helpful for if you want to get the highest tier icon but do not want to use the "generic" perks (eg 2,4,6,8), for instance. 
+		tier = max_tier
+		local result
+		for _,max_eligible in pairs(tier_floors) do 
+			if max_eligible <= tier then 
+				result = max_eligible
+			end
+		end
+		tier = result
+	end
+	
+	local tier_data = data and data[tier or max_tier] --this, the arg tier, and the tier_floors option are the only things i changed. :|
+
+	if not tier_data then
+		if no_fallback then
+			return
+		else
+			return tweak_data.hud_icons:get_icon_data("fallback")
+		end
+	end
+
+	local guis_catalog = "guis/" .. (tier_data.texture_bundle_folder and "dlcs/" .. tostring(tier_data.texture_bundle_folder) .. "/" or "")
+	local x = tier_data.icon_xy and tier_data.icon_xy[1] or 0
+	local y = tier_data.icon_xy and tier_data.icon_xy[2] or 0
+
+	return guis_catalog .. "textures/pd2/specialization/icons_atlas", {
+		x * 64,
+		y * 64,
+		64,
+		64
+	}
+end
+
+function NobleHUD:IsBuffTrackerEnabled()
+	return true
+end
+
+function NobleHUD:CreateBuff(id,params)
+	local buffs_panel = self._buffs_panel
+	if alive(buffs_panel:child(id)) then 
+		self:log("CreateBuff(" .. tostring(id) .. "," .. self.table_concat(params,",","=") .. "): Buff element already exists!",{color=Color.red})
+--		buffs_panel:remove(buffs_panel:child(id))
+		return
+	end
+	local buff_data = self.buff_data[id]
+	if not buff_data then 
+		self:log("Bad buff to CreateBuff(" .. tostring(id) .. "," .. self.table_concat(params,",","=") .. ")",{color=Color.red})
+		return
+	end
+	local buff_w = 175
+	local buff_h = 32
+	
+	local icon_size = 32
+	local icon = buff_data.icon or "mugshot_normal"
+	local source = buff_data.source
+	local icon_tier = buff.icon_tier --for perk decks
+	local tier_floors = buff_data.tier_floors --max_tier but with a whitelist/fallback
+	
+	local text_color = buff_data.text_color or Color.white
+	local icon_color = buff_data.icon_color or Color.white
+	local label = buff_data.label
+	local blend_mode = buff_data.blend_mode or "add" --not specified for the vast majority of buffs
+	
+	local font_size = 16
+	local texture_rect = {0,0,64,64}
+	local skill_atlas = "guis/textures/pd2/skilltree/icons_atlas"
+	local skill_atlas_2 = "guis/textures/pd2/skilltree_2/icons_atlas_2"
+	local perkdeck_atlas = "guis/textures/pd2/specialization/icons_atlas"	
+	
+	if source == "skill" then 
+		texture = skill_atlas_2
+		local icon_x,icon_y = unpack(tweak_data.skilltree.skills[icon].icon_xy)
+		texture_rect = {x * 80,y * 80,80,80}
+	elseif source == "perk" then 
+		texture,texture_rect = self:get_specialization_icon_data_with_fallback(tonumber(icon),nil,icon_tier,tier_floors)
+	elseif source == "icon" then 
+		texture,rect = tweak_data.hud_icons:get_icon_data(icon)
+	else
+		texture = "guis/textures/ability_circle_fill"
+		texture_rect = nil
+	end
+	
+	local buff_panel = buffs_panel:panel({
+		name = tostring(id),
+		x = -1000,
+		y = -1000,
+		w = buff_w,
+		h = buff_h
+	})
+	
+	local buff_icon = buff_panel:bitmap({
+		name = "icon",
+		w = icon_size,
+		h = icon_size,
+		texture = texture,
+		texture_rect = texture_rect,
+		blend_mode = blend_mode,
+		color = icon_color
+	})
+	
+	local buff_timer_text = ""
+	if params.duration then 
+		buff_timer_text = self.format_seconds(params.duration)
+	elseif params.end_t then 
+		buff_timer_text = self.format_seconds(params.end_t - Application:time())
+	elseif params.start_t then 
+		buff_timer_text = self.format_seconds(Application:time() - params.start_t)
+	end
+	
+	local buff_text = managers.localization:text(label)
+	buff_text = string.gsub(buff_text,"$TIMER",buff_timer_text)
+	buff_text = string.gsub(buff_text,"$VALUE",params.value or "")
+	local buff_label = buff_panel:text({
+		name = "label",
+		layer = 3,
+		font_size = font_size,
+		font = tweak_data.hud_players.ammo_font,
+		text = buff_text,
+		x = buff_icon:right() + 4, --4 is horizontal margin
+		align = "left",
+		vertical = "center",
+		color = text_color
+	})
+	local debug_buff = buff_panel:rect({
+		name = "debug_buff",
+		color = Color(math.random(),math.random(),math.random()),
+		alpha = 0.25,
+		visible = true
+	})
+end
+
+function NobleHUD:GetMaxBuffRows()
+	return 2
+end
+
+function NobleHUD:GetBuffXY()
+--	return self.settings.buff_x,self.settings.buff_y
+end
+
+function NobleHUD:GetMaxBuffColumns()
+	return 9
 end
 
 function NobleHUD:RemoveBuff(id)
@@ -11379,6 +11726,16 @@ function NobleHUD:RemoveBuff(id)
 	end
 end
 
+function NobleHUD:ClearBuffs()
+	for id,buff_data in pairs(self._active_buffs) do 
+		local panel = self._buffs_panel:child(id)
+		if panel and alive(panel) then 
+			self._buffs_panel:remove(panel)
+		end
+		table.remove(self._active_buffs,id)
+		self:log("ClearBuffs(): Removing buff " .. tostring(id) .. "...")
+	end
+end
 
 function NobleHUD:SetBuff(id,params) --set existing buff panel information, but NOT position; position is handled in update
 	local panel = self._active_buffs[id].panel
