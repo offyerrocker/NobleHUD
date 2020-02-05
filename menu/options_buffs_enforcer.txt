@@ -1,0 +1,49 @@
+{
+	"menu_id" : "noblehud_buffs_enforcer_options",
+	"parent_menu_id" : "noblehud_buffs_all_options",
+	"title" : "noblehud_buffs_enforcer_options_title",
+	"description" : "noblehud_buffs_enforcer_options_desc",
+	"back_callback" : "noblehud_buffs_enforcer_options_close",
+	"items" : [
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_enforcer_underdog_enabled",
+			"title" : "noblehud_set_buffs_enforcer_underdog_enabled_title",
+			"description" : "noblehud_set_buffs_enforcer_underdog_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_enforcer_underdog_enabled",
+			"value" : "dmg_multiplier_outnumbered"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_enforcer_overkill_enabled",
+			"title" : "noblehud_set_buffs_enforcer_overkill_enabled_title",
+			"description" : "noblehud_set_buffs_enforcer_overkill_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_enforcer_overkill_enabled",
+			"value" : "overkill"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_enforcer_bullseye_enabled",
+			"title" : "noblehud_set_buffs_enforcer_bullseye_enabled_title",
+			"description" : "noblehud_set_buffs_enforcer_bullseye_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_enforcer_bullseye_enabled",
+			"value" : "bullseye"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_enforcer_bulletstorm_enabled",
+			"title" : "noblehud_set_buffs_enforcer_bulletstorm_enabled_title",
+			"description" : "noblehud_set_buffs_enforcer_bulletstorm_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_enforcer_bulletstorm_enabled",
+			"value" : "bulletstorm"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_enforcer_fully_loaded_enabled",
+			"title" : "noblehud_set_buffs_enforcer_fully_loaded_enabled_title",
+			"description" : "noblehud_set_buffs_enforcer_fully_loaded_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_enforcer_fully_loaded_enabled",
+			"value" : "fully_loaded"
+		}
+	]
+}

@@ -1,0 +1,41 @@
+{
+	"menu_id" : "noblehud_buffs_ghost_options",
+	"parent_menu_id" : "noblehud_buffs_all_options",
+	"title" : "noblehud_buffs_ghost_options_title",
+	"description" : "noblehud_buffs_ghost_options_desc",
+	"back_callback" : "noblehud_buffs_ghost_options_close",
+	"items" : [
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_ghost_sixth_sense_enabled",
+			"title" : "noblehud_set_buffs_ghost_sixth_sense_enabled_title",
+			"description" : "noblehud_set_buffs_ghost_sixth_sense_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_ghost_sixth_sense_enabled",
+			"value" : "sixth_sense"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_ghost_dire_need_enabled",
+			"title" : "noblehud_set_buffs_ghost_dire_need_enabled_title",
+			"description" : "noblehud_set_buffs_ghost_dire_need_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_ghost_dire_need_enabled",
+			"value" : "dire_need"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_ghost_second_wind_enabled",
+			"title" : "noblehud_set_buffs_ghost_second_wind_enabled_title",
+			"description" : "noblehud_set_buffs_ghost_second_wind_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_ghost_second_wind_enabled",
+			"value" : "second_wind"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_ghost_unseen_strike_enabled",
+			"title" : "noblehud_set_buffs_ghost_unseen_strike_enabled_title",
+			"description" : "noblehud_set_buffs_ghost_unseen_strike_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_ghost_unseen_strike_enabled",
+			"value" : "unseen_strike"
+		}
+	]
+}

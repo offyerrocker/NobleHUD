@@ -1,0 +1,77 @@
+{
+	"menu_id" : "noblehud_buffs_misc_options",
+	"parent_menu_id" : "noblehud_buffs_all_options",
+	"title" : "noblehud_buffs_misc_options_title",
+	"description" : "noblehud_buffs_misc_options_desc",
+	"back_callback" : "noblehud_buffs_misc_options_close",
+	"items" : [
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_misc_dodge_chance_total_enabled",
+			"title" : "noblehud_set_buffs_misc_dodge_chance_total_enabled_title",
+			"description" : "noblehud_set_buffs_misc_dodge_chance_total_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_misc_dodge_chance_total_enabled",
+			"value" : "dodge_chance_total"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_misc_crit_chance_total_enabled",
+			"title" : "noblehud_set_buffs_misc_crit_chance_total_enabled_title",
+			"description" : "noblehud_set_buffs_misc_crit_chance_total_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_misc_crit_chance_total_enabled",
+			"value" : "crit_chance_total"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_misc_dmg_resist_total_enabled",
+			"title" : "noblehud_set_buffs_misc_dmg_resist_total_enabled_title",
+			"description" : "noblehud_set_buffs_misc_dmg_resist_total_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_misc_dmg_resist_total_enabled",
+			"value" : "dmg_resist_total"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_mastermind_regen_aggregated_enabled",
+			"title" : "noblehud_set_buffs_mastermind_regen_aggregated_enabled_title",
+			"description" : "noblehud_set_buffs_mastermind_regen_aggregated_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_mastermind_regen_aggregated_enabled",
+			"value" : "hp_regen"
+		},
+		{
+			"type" : "divider",
+			"size" : 16
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_misc_flashbang_enabled",
+			"title" : "noblehud_set_buffs_misc_flashbang_enabled_title",
+			"description" : "noblehud_set_buffs_misc_flashbang_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_misc_flashbang_enabled",
+			"value" : "flashbang"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_misc_downed_enabled",
+			"title" : "noblehud_set_buffs_misc_downed_enabled_title",
+			"description" : "noblehud_set_buffs_misc_downed_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_misc_downed_enabled",
+			"value" : "downed"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_misc_tased_enabled",
+			"title" : "noblehud_set_buffs_misc_tased_enabled_title",
+			"description" : "noblehud_set_buffs_misc_tased_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_misc_tased_enabled",
+			"value" : "tased"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_misc_electrocuted_enabled",
+			"title" : "noblehud_set_buffs_misc_electrocuted_enabled_title",
+			"description" : "noblehud_set_buffs_misc_electrocuted_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_misc_electrocuted_enabled",
+			"value" : "electrocuted"
+		}
+	]
+}

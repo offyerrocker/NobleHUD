@@ -1,0 +1,45 @@
+{
+	"menu_id" : "noblehud_buffs_all_options",
+	"parent_menu_id" : "noblehud_options",
+	"title" : "noblehud_buffs_all_options_title",
+	"description" : "noblehud_buffs_all_options_desc",
+	"back_callback" : "noblehud_buffs_all_options_close",
+	"items" : [
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_master_enabled",
+			"title" : "noblehud_set_buffs_master_enabled_title",
+			"description" : "noblehud_set_buffs_master_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_master_enabled",
+			"value" : "buffs_master_enabled"
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_buffs_panel_x",
+			"title" : "noblehud_set_buffs_panel_x_title",
+			"description" : "noblehud_set_buffs_panel_x_desc",
+			"callback" : "callback_noblehud_set_buffs_panel_x",
+			"value" : "buffs_panel_x",
+			"default_value" : 10,
+			"min" : 0,
+			"max" : 1280,
+			"step" : 1
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_buffs_panel_y",
+			"title" : "noblehud_set_buffs_panel_y_title",
+			"description" : "noblehud_set_buffs_panel_y_desc",
+			"callback" : "callback_noblehud_set_buffs_panel_y",
+			"value" : "buffs_panel_y",
+			"default_value" : 0,
+			"min" : 0,
+			"max" : 720,
+			"step" : 1
+		},
+		{
+			"type" : "divider",
+			size = 32
+		}
+	]
+}

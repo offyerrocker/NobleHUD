@@ -1,0 +1,81 @@
+{
+	"menu_id" : "noblehud_buffs_fugitive_options",
+	"parent_menu_id" : "noblehud_buffs_all_options",
+	"title" : "noblehud_buffs_fugitive_options_title",
+	"description" : "noblehud_buffs_fugitive_options_desc",
+	"back_callback" : "noblehud_buffs_fugitive_options_close",
+	"items" : [
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_fugitive_desperado_enabled",
+			"title" : "noblehud_set_buffs_fugitive_desperado_enabled_title",
+			"description" : "noblehud_set_buffs_fugitive_desperado_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_fugitive_desperado_enabled",
+			"value" : "desperado"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_fugitive_trigger_happy_enabled",
+			"title" : "noblehud_set_buffs_fugitive_trigger_happy_enabled_title",
+			"description" : "noblehud_set_buffs_fugitive_trigger_happy_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_fugitive_trigger_happy_enabled",
+			"value" : "trigger_happy"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_fugitive_running_from_death_enabled",
+			"title" : "noblehud_set_buffs_fugitive_running_from_death_enabled_title",
+			"description" : "noblehud_set_buffs_fugitive_running_from_death_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_fugitive_running_from_death_enabled",
+			"value" : "running_from_death"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_fugitive_up_you_go_enabled",
+			"title" : "noblehud_set_buffs_fugitive_up_you_go_enabled_title",
+			"description" : "noblehud_set_buffs_fugitive_up_you_go_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_fugitive_up_you_go_enabled",
+			"value" : "up_you_go"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_fugitive_swan_song_enabled",
+			"title" : "noblehud_set_buffs_fugitive_swan_song_enabled_title",
+			"description" : "noblehud_set_buffs_fugitive_swan_song_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_fugitive_swan_song_enabled",
+			"value" : "swan_song"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_fugitive_messiah_enabled",
+			"title" : "noblehud_set_buffs_fugitive_messiah_enabled_title",
+			"description" : "noblehud_set_buffs_fugitive_messiah_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_fugitive_messiah_enabled",
+			"value" : "messiah_charge"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_fugitive_bloodthirst_melee_enabled",
+			"title" : "noblehud_set_buffs_fugitive_bloodthirst_melee_enabled_title",
+			"description" : "noblehud_set_buffs_fugitive_bloodthirst_melee_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_fugitive_bloodthirst_melee_enabled",
+			"value" : "bloodthirst_melee"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_fugitive_bloodthirst_reload_enabled",
+			"title" : "noblehud_set_buffs_fugitive_bloodthirst_reload_enabled_title",
+			"description" : "noblehud_set_buffs_fugitive_bloodthirst_reload_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_fugitive_bloodthirst_reload_enabled",
+			"value" : "bloodthirst_reload"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_fugitive_berserker_enabled",
+			"title" : "noblehud_set_buffs_fugitive_berserker_enabled_title",
+			"description" : "noblehud_set_buffs_fugitive_berserker_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_fugitive_berserker_enabled",
+			"value" : "berserker_damage_multiplier"
+		}
+	]
+}

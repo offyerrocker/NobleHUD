@@ -1,0 +1,97 @@
+{
+	"menu_id" : "noblehud_buffs_specialization_options",
+	"parent_menu_id" : "noblehud_buffs_all_options",
+	"title" : "noblehud_buffs_specialization_options_title",
+	"description" : "noblehud_buffs_specialization_options_desc",
+	"back_callback" : "noblehud_buffs_specialization_options_close",
+	"items" : [
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_misc_armor_break_invulnerable_enabled",
+			"title" : "noblehud_set_buffs_misc_armor_break_invulnerable_enabled_title",
+			"description" : "noblehud_set_buffs_misc_armor_break_invulnerable_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_misc_armor_break_invulnerable_enabled",
+			"value" : "armor_break_invulnerable"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_specialization_hitman_enabled",
+			"title" : "noblehud_set_buffs_specialization_hitman_enabled_title",
+			"description" : "noblehud_set_buffs_specialization_hitman_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_specialization_hitman_enabled",
+			"value" : "hitman"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_specialization_infiltrator_overdog_enabled",
+			"title" : "noblehud_set_buffs_specialization_infiltrator_overdog_enabled_title",
+			"description" : "noblehud_set_buffs_specialization_infiltrator_overdog_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_specialization_infiltrator_overdog_enabled",
+			"value" : "overdog"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_specialization_infiltrator_life_drain_enabled",
+			"title" : "noblehud_set_buffs_specialization_infiltrator_life_drain_enabled_title",
+			"description" : "noblehud_set_buffs_specialization_infiltrator_life_drain_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_specialization_infiltrator_life_drain_enabled",
+			"value" : "life_drain"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_specialization_biker_enabled",
+			"title" : "noblehud_set_buffs_specialization_biker_enabled_title",
+			"description" : "noblehud_set_buffs_specialization_biker_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_specialization_biker_enabled",
+			"value" : "wild_kill_counter"
+		},	
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_specialization_kingpin_enabled",
+			"title" : "noblehud_set_buffs_specialization_kingpin_enabled_title",
+			"description" : "noblehud_set_buffs_specialization_kingpin_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_specialization_kingpin_enabled",
+			"value" : "chico_injector"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_specialization_sicario_enabled",
+			"title" : "noblehud_set_buffs_specialization_sicario_enabled_title",
+			"description" : "noblehud_set_buffs_specialization_sicario_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_specialization_sicario_enabled",
+			"value" : "sicario"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_specialization_delayed_damage_enabled",
+			"title" : "noblehud_set_buffs_specialization_delayed_damage_enabled_title",
+			"description" : "noblehud_set_buffs_specialization_delayed_damage_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_specialization_delayed_damage_enabled",
+			"value" : "delayed_damage"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_specialization_tag_team_enabled",
+			"title" : "noblehud_set_buffs_specialization_tag_team_enabled_title",
+			"description" : "noblehud_set_buffs_specialization_tag_team_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_specialization_tag_team_enabled",
+			"value" : "tag_team"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_specialization_hacker_ecm_enabled",
+			"title" : "noblehud_set_buffs_specialization_hacker_ecm_enabled_title",
+			"description" : "noblehud_set_buffs_specialization_hacker_ecm_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_specialization_hacker_ecm_enabled",
+			"value" : "pocket_ecm_jammer"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_specialization_hacker_kluge_enabled",
+			"title" : "noblehud_set_buffs_specialization_hacker_kluge_enabled_title",
+			"description" : "noblehud_set_buffs_specialization_hacker_kluge_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_specialization_hacker_kluge_enabled",
+			"value" : "pocket_ecm_kill_dodge"
+		}
+	]
+}

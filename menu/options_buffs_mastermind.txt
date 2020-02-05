@@ -1,0 +1,81 @@
+{
+	"menu_id" : "noblehud_buffs_mastermind_options",
+	"parent_menu_id" : "noblehud_buffs_all_options",
+	"title" : "noblehud_buffs_mastermind_options_title",
+	"description" : "noblehud_buffs_mastermind_options_desc",
+	"back_callback" : "noblehud_buffs_mastermind_options_close",
+	"items" : [
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_mastermind_inspire_basic_enabled",
+			"title" : "noblehud_set_buffs_mastermind_inspire_basic_enabled_title",
+			"description" : "noblehud_set_buffs_mastermind_inspire_basic_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_mastermind_inspire_basic_enabled",
+			"value" : "morale_boost"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_mastermind_inspire_aced_enabled",
+			"title" : "noblehud_set_buffs_mastermind_inspire_aced_enabled_title",
+			"description" : "noblehud_set_buffs_mastermind_inspire_aced_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_mastermind_inspire_aced_enabled",
+			"value" : "long_dis_revive"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_mastermind_uppers_cooldown_enabled",
+			"title" : "noblehud_set_buffs_mastermind_uppers_cooldown_enabled_title",
+			"description" : "noblehud_set_buffs_mastermind_uppers_cooldown_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_mastermind_uppers_cooldown_enabled",
+			"value" : "uppers_aced_cooldown"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_mastermind_uppers_ready_enabled",
+			"title" : "noblehud_set_buffs_mastermind_uppers_ready_enabled_title",
+			"description" : "noblehud_set_buffs_mastermind_uppers_ready_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_mastermind_uppers_ready_enabled",
+			"value" : "uppers_ready"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_mastermind_quick_fix_enabled",
+			"title" : "noblehud_set_buffs_mastermind_quick_fix_enabled_title",
+			"description" : "noblehud_set_buffs_mastermind_quick_fix_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_mastermind_quick_fix_enabled",
+			"value" : "first_aid_damage_reduction"
+		},
+		{
+			"type" : "DISABLED_toggle",
+			"id" : "noblehud_set_buffs_mastermind_stockholm_ready_enabled",
+			"title" : "noblehud_set_buffs_mastermind_stockholm_ready_enabled_title",
+			"description" : "noblehud_set_buffs_mastermind_stockholm_ready_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_mastermind_stockholm_ready_enabled",
+			"value" : "stockholm_ready"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_mastermind_partners_in_crime_enabled",
+			"title" : "noblehud_set_buffs_mastermind_partners_in_crime_enabled_title",
+			"description" : "noblehud_set_buffs_mastermind_partners_in_crime_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_mastermind_partners_in_crime_enabled",
+			"value" : "partners_in_crime"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_mastermind_regen_aggregated_enabled",
+			"title" : "noblehud_set_buffs_mastermind_regen_aggregated_enabled_title",
+			"description" : "noblehud_set_buffs_mastermind_regen_aggregated_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_mastermind_regen_aggregated_enabled",
+			"value" : "hp_regen"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_mastermind_aggressive_reload_enabled",
+			"title" : "noblehud_set_buffs_mastermind_aggressive_reload_enabled_title",
+			"description" : "noblehud_set_buffs_mastermind_aggressive_reload_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_mastermind_aggressive_reload_enabled",
+			"value" : "single_shot_fast_reload"
+		}
+	]
+}
