@@ -14,6 +14,10 @@
 			"value" : "buffs_master_enabled"
 		},
 		{
+			"type" : "divider",
+			size = 4
+		},
+		{
 			"type" : "slider",
 			"id" : "id_noblehud_set_buffs_panel_x",
 			"title" : "noblehud_set_buffs_panel_x_title",
@@ -36,6 +40,64 @@
 			"min" : 0,
 			"max" : 720,
 			"step" : 1
+		},
+		{
+			"type" : "divider",
+			size = 4
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_buffs_panel_max_rows",
+			"title" : "noblehud_set_buffs_panel_max_rows_title",
+			"description" : "noblehud_set_buffs_panel_max_rows_desc",
+			"callback" : "callback_noblehud_set_buffs_panel_max_rows",
+			"value" : "buffs_panel_max_rows",
+			"default_value" : 3,
+			"min" : 1,
+			"max" : 10,
+			"step" : 1
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_buffs_panel_max_columns",
+			"title" : "noblehud_set_buffs_panel_max_columns_title",
+			"description" : "noblehud_set_buffs_panel_max_columns_desc",
+			"callback" : "callback_noblehud_set_buffs_panel_max_columns",
+			"value" : "buffs_panel_max_columns",
+			"default_value" : 1,
+			"min" : 0,
+			"max" : 10,
+			"step" : 1
+		},
+		{
+			"type" : "divider",
+			size = 4
+		},
+		{
+			"type" : "multiple_choice",
+			"id" : "id_noblehud_set_buffs_panel_align",
+			"title" : "noblehud_set_buffs_panel_align_title",
+			"description" : "noblehud_set_buffs_panel_align_desc",
+			"callback" : "callback_noblehud_set_buffs_panel_align",
+			"items" : [
+				"noblehud_left",
+				"noblehud_center",
+				"noblehud_right"
+			],
+			"value" : "buffs_panel_align"
+		},
+		{
+			"type" : "multiple_choice",
+			"id" : "id_noblehud_set_buffs_panel_vertical",
+			"title" : "noblehud_set_buffs_panel_vertical_title",
+			"description" : "noblehud_set_buffs_panel_vertical_desc",
+			"callback" : "callback_noblehud_set_buffs_panel_vertical",
+			"items" : [
+				"noblehud_top",
+				"noblehud_center",
+				"noblehud_bottom"
+			],
+			"value" : "buffs_panel_vertical"
 		},
 		{
 			"type" : "divider",

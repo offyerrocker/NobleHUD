@@ -32,6 +32,7 @@
 		* Buff placement menu
 		* Reorganize buffs tweak table
 		* Add default setting for each buff
+		* Buff master panel placement and v/h bounds
 		
 		* Aggregated DMG Resist
 		* Aggregated Crit Chance
@@ -109,7 +110,6 @@
 			* Mod options
 				* Placement and Scaling
 		
-			
 	&& LOW PRIORITY FEATURES: &&
 		* Show other things, such as equipment, on radar? check slotmask 
 		* Adjust overshield color to be more green (check MCC screenshots)
@@ -317,7 +317,11 @@ NobleHUD.settings = {
 	crosshair_type_crossbow = 1,
 	buffs_master_enabled = true,
 	buffs_panel_x = 0,
-	buffs_panel_y = 0
+	buffs_panel_y = 0,
+	buffs_panel_max_columns = 1,
+	buffs_panel_max_rows = 1,
+	buffs_panel_vertical = 2,
+	buffs_panel_align = 2
 }
 
 
@@ -481,6 +485,9 @@ NobleHUD._RADAR_GHOST_INTERVAL = 0.066
 NobleHUD._RADAR_GHOST_FADEIN = 0.15
 NobleHUD._RADAR_GHOST_FADEOUT = 0.45
 NobleHUD._radar_ghost_t = 0
+
+NobleHUD._BUFF_ITEM_W = 175
+NobleHUD._BUFF_ITEM_H = 32
 
 local kills_cache_empty = {
 	multipliers = {
@@ -4094,6 +4101,49 @@ function NobleHUD.correct_weapon_selection(num,default)
 	return ((num == 1) and 2) or (default or 1)
 end
 
+function NobleHUD.get_specialization_icon_data_with_fallback(spec, no_fallback, tier, tier_floors)
+	
+	spec = spec or managers.skilltree:get_specialization_value("current_specialization")
+
+	local data = tweak_data.skilltree.specializations[spec]
+	local max_tier = managers.skilltree:get_specialization_value(spec, "tiers", "max_tier")
+	
+	if tier_floors and type(tier_floors) == "table" then
+	--this code-nugget takes optional input "tier_floors" (table) which is a whitelist for icon tiers to use.
+	--it takes the highest possible unlocked tier from this whitelist, and uses that. 
+	--this is helpful for if you want to get the highest tier icon but do not want to use the "generic" perks (eg 2,4,6,8), for instance. 
+		tier = max_tier
+		local result
+		for _,max_eligible in pairs(tier_floors) do 
+			if max_eligible <= tier then 
+				result = max_eligible
+			end
+		end
+		tier = result
+	end
+	
+	local tier_data = data and data[tier or max_tier] --this, the arg tier, and the tier_floors option are the only things i changed. :|
+
+	if not tier_data then
+		if no_fallback then
+			return
+		else
+			return tweak_data.hud_icons:get_icon_data("fallback")
+		end
+	end
+
+	local guis_catalog = "guis/" .. (tier_data.texture_bundle_folder and "dlcs/" .. tostring(tier_data.texture_bundle_folder) .. "/" or "")
+	local x = tier_data.icon_xy and tier_data.icon_xy[1] or 0
+	local y = tier_data.icon_xy and tier_data.icon_xy[2] or 0
+
+	return guis_catalog .. "textures/pd2/specialization/icons_atlas", {
+		x * 64,
+		y * 64,
+		64,
+		64
+	}
+end
+
 --		SETTINGS
 
 		--GET SETTINGS
@@ -4366,6 +4416,51 @@ end
 
 function NobleHUD:GetRadarDecoyLifetimeMax() 
 	return 10
+end
+
+function NobleHUD:IsBuffTrackerEnabled()
+	return self.settings.buffs_master_enabled
+end
+
+function NobleHUD:GetBuffPanelAlign()
+	local setting = self.settings.buffs_panel_align
+	if setting == 1 then 
+		return "left"
+	elseif setting == 2 then
+		return "center"
+	elseif setting == 3 then 
+		return "right"
+	end
+	return "center"
+end
+
+function NobleHUD:GetBuffPanelVertical()
+	local setting = self.settings.buffs_panel_vertical
+	if setting == 1 then 
+		return "top"
+	elseif setting == 2 then
+		return "center"
+	elseif setting == 3 then 
+		return "bottom"
+	end
+	return "center"
+end
+
+function NobleHUD:GetMaxBuffRows()
+	return self.settings.buffs_panel_max_rows
+end
+
+function NobleHUD:GetBuffXY()
+	return self.settings.buffs_panel_x,self.settings.buffs_panel_y
+end
+
+function NobleHUD:GetMaxBuffColumns()
+	return self.settings.buffs_panel_max_columns
+end
+
+function NobleHUD:IsBuffDisabled(id)
+	--get setting for if buff display is disabled
+	return self.buff_settings[id]
 end
 
 
@@ -5224,8 +5319,31 @@ function NobleHUD:UpdateHUD(t,dt)
 		
 -- ************** BUFFS ************** 
 		if self:IsBuffTrackerEnabled() then	
-			local buff_y = 0
 			local buffs_panel_master = self._buffs_panel
+			
+			--todo placement
+			local buff_count = 0
+			local buff_column = 0
+			local buff_row = 0
+			local buff_x = 0
+			local buff_y = 0
+			local buff_align = self:GetBuffPanelAlign()
+			local buff_vertical = self:GetBuffPanelVertical()
+			if buff_align == "left" then 
+				buff_x = 0
+			elseif buff_align == "center" then 
+				buff_x = buffs_panel_master:w() / 2
+			elseif buff_align == "right" then
+				buff_x = buffs_panel_master:w()
+			end
+			if buff_vertical == "top" then 
+				buff_y = 0
+			elseif buff_vertical == "center" then 
+				buff_y = buffs_panel_master:h() / 2
+			elseif buff_vertical == "bottom" then
+				buff_y = buffs_panel_master:h()
+			end
+			
 			for buff_id,buff_data in pairs(self._active_buffs) do 
 				local _t = t
 				local buff_tweak_data = self._buff_data[buff_id] 
@@ -8336,9 +8454,31 @@ function NobleHUD:_layout_teammate_equipments(i)
 	end
 end
 
+function NobleHUD:GetPeerIdFromPanelId(panel_id)
+	if managers.criminals then
+		for id, data in pairs(managers.criminals._characters or {}) do 
+--			self:log("GetPeerIdFromPanelId() " .. tostring(data.taken) .. " " .. tostring(panel_id) .. " " .. tostring(data.data.panel_id))
+			if data.taken and panel_id and data.data and (data.data.panel_id == panel_id) then 
+				return data.peer_id
+			end
+		end
+	end
+end
 
-function NobleHUD:_add_convert(params)
---todo
+--for id, data in pairs(managers.criminals._characters or {}) do if data.taken and data.peer_id then logall(data) Log("-") logall(data.data) Log("---") end end
+
+function NobleHUD:GetPanelIdFromPeerId(peer_id)
+	if not peer_id or peer_id == managers.network:session():local_peer():id() then
+		return HUDManager.PLAYER_PANEL
+	end
+	if managers.criminals then
+		for id, data in pairs(managers.criminals._characters or {}) do 
+			if data.taken and (data.peer_id == peer_id) then 
+			--todo if ai get panel anyway somehow
+				return data.data and data.data.panel_id
+			end
+		end
+	end
 end
 
 
@@ -11567,7 +11707,7 @@ function NobleHUD:_create_waiting(hud)
 	})
 	local waiting_text = waiting_panel:text({
 		name = "waiting_text",
-		text = "butt butt butt butt butt",
+		text = "",
 		x = 24 + 4,
 		font_size = tweak_data.hud_players.name_size,
 		font = tweak_data.hud_players.name_font
@@ -11608,11 +11748,6 @@ function NobleHUD:_create_buffs(hud) --buffs, cloned from khud (not implemented)
 	self._buffs_panel = buffs_panel
 end
 
-
-function NobleHUD:IsBuffDisabled(id)
-	--get setting for if buff display is disabled
-end
-
 function NobleHUD:AddBuff(id,params)
 
 	params = params or {}
@@ -11647,53 +11782,6 @@ function NobleHUD:AddBuff(id,params)
 end
 --i had to write this because get_specialization_icon_data() always picks the top tier. booooo
 
-function NobleHUD:get_specialization_icon_data_with_fallback(spec, no_fallback, tier, tier_floors)
-	
-	spec = spec or managers.skilltree:get_specialization_value("current_specialization")
-
-	local data = tweak_data.skilltree.specializations[spec]
-	local max_tier = managers.skilltree:get_specialization_value(spec, "tiers", "max_tier")
-	
-	if tier_floors and type(tier_floors) == "table" then
-	--this code-nugget takes optional input "tier_floors" (table) which is a whitelist for icon tiers to use.
-	--it takes the highest possible unlocked tier from this whitelist, and uses that. 
-	--this is helpful for if you want to get the highest tier icon but do not want to use the "generic" perks (eg 2,4,6,8), for instance. 
-		tier = max_tier
-		local result
-		for _,max_eligible in pairs(tier_floors) do 
-			if max_eligible <= tier then 
-				result = max_eligible
-			end
-		end
-		tier = result
-	end
-	
-	local tier_data = data and data[tier or max_tier] --this, the arg tier, and the tier_floors option are the only things i changed. :|
-
-	if not tier_data then
-		if no_fallback then
-			return
-		else
-			return tweak_data.hud_icons:get_icon_data("fallback")
-		end
-	end
-
-	local guis_catalog = "guis/" .. (tier_data.texture_bundle_folder and "dlcs/" .. tostring(tier_data.texture_bundle_folder) .. "/" or "")
-	local x = tier_data.icon_xy and tier_data.icon_xy[1] or 0
-	local y = tier_data.icon_xy and tier_data.icon_xy[2] or 0
-
-	return guis_catalog .. "textures/pd2/specialization/icons_atlas", {
-		x * 64,
-		y * 64,
-		64,
-		64
-	}
-end
-
-function NobleHUD:IsBuffTrackerEnabled()
-	return true
-end
-
 function NobleHUD:CreateBuff(id,params)
 	local buffs_panel = self._buffs_panel
 	if alive(buffs_panel:child(id)) then 
@@ -11706,10 +11794,10 @@ function NobleHUD:CreateBuff(id,params)
 		self:log("Bad buff to CreateBuff(" .. tostring(id) .. "," .. self.table_concat(params,",","=") .. ")",{color=Color.red})
 		return
 	end
-	local buff_w = 175
-	local buff_h = 32
+	local buff_w = self._BUFF_ITEM_W
+	local buff_h = self.BUFF_ITEM_H
 	
-	local icon_size = 32
+	local icon_size = buff_w
 	local icon = buff_data.icon or "mugshot_normal"
 	local source = buff_data.source
 	local icon_tier = buff_data.icon_tier --for perk decks
@@ -11720,7 +11808,7 @@ function NobleHUD:CreateBuff(id,params)
 	local label = buff_data.label
 	local blend_mode = buff_data.blend_mode or "add" --not specified for the vast majority of buffs
 	
-	local font_size = 16
+	local font_size = buff_w / 2
 	local texture_rect = {0,0,64,64}
 	local skill_atlas = "guis/textures/pd2/skilltree/icons_atlas"
 	local skill_atlas_2 = "guis/textures/pd2/skilltree_2/icons_atlas_2"
@@ -11731,7 +11819,7 @@ function NobleHUD:CreateBuff(id,params)
 		local icon_x,icon_y = unpack(tweak_data.skilltree.skills[icon].icon_xy)
 		texture_rect = {icon_x * 80,icon_y * 80,80,80}
 	elseif source == "perk" then 
-		texture,texture_rect = self:get_specialization_icon_data_with_fallback(tonumber(icon),nil,icon_tier,tier_floors)
+		texture,texture_rect = self.get_specialization_icon_data_with_fallback(tonumber(icon),nil,icon_tier,tier_floors)
 	elseif source == "icon" then 
 		texture,texture_rect = tweak_data.hud_icons:get_icon_data(icon)
 	else
@@ -11739,10 +11827,28 @@ function NobleHUD:CreateBuff(id,params)
 		texture_rect = nil
 	end
 	
+	local buff_x = 0
+	local buff_y = 0
+	local buff_align = self:GetBuffPanelAlign()
+	local buff_vertical = self:GetBuffPanelVertical() 
+	if buff_align == "left" then 
+		buff_x = 0
+	elseif buff_align == "center" then
+		buff_x = (buffs_panel:w() - buff_w) / 2
+	elseif buff_align == "right" then 
+		buff_x = buffs_panel:w() - buff_w
+	end
+	if buff_vertical == "top" then 
+		buff_y = 0
+	elseif buff_vertical == "center" then 
+		buff_y = (buffs_panel:h() - buff_h) / 2
+	elseif buff_vertical == "bottom" then 
+		buff_y = buffs_panel:h() - buff_h
+	end
 	local buff_panel = buffs_panel:panel({
 		name = tostring(id),
-		x = 0,
-		y = 0,
+		x = buff_x,
+		y = buff_y,
 		w = buff_w,
 		h = buff_h
 	})
@@ -11775,7 +11881,7 @@ function NobleHUD:CreateBuff(id,params)
 		font_size = font_size,
 		font = tweak_data.hud_players.ammo_font,
 		text = buff_text,
-		x = buff_icon:right() + 4, --4 is horizontal margin
+		x = buff_icon:right() + 4,
 		align = "left",
 		vertical = "center",
 		color = text_color
@@ -11787,18 +11893,6 @@ function NobleHUD:CreateBuff(id,params)
 		visible = true
 	})
 	return buffs_panel
-end
-
-function NobleHUD:GetMaxBuffRows()
-	return 2
-end
-
-function NobleHUD:GetBuffXY()
---	return self.settings.buff_x,self.settings.buff_y
-end
-
-function NobleHUD:GetMaxBuffColumns()
-	return 9
 end
 
 function NobleHUD:RemoveBuff(id)
@@ -11933,7 +12027,7 @@ function NobleHUD:_create_helper(hud) --auntie dot avatar and subtitles
 
 end
 
-
+--[[
 --not implemented; see hudpresenter
 function NobleHUD:animate_helper_subtitle_in(o,str)
 	local text = o:text()
@@ -11973,32 +12067,292 @@ function NobleHUD:helper_is_typing()
 	--return not self._helper_current_event
 end
 
-function NobleHUD:GetPeerIdFromPanelId(panel_id)
-	if managers.criminals then
-		for id, data in pairs(managers.criminals._characters or {}) do 
---			self:log("GetPeerIdFromPanelId() " .. tostring(data.taken) .. " " .. tostring(panel_id) .. " " .. tostring(data.data.panel_id))
-			if data.taken and panel_id and data.data and (data.data.panel_id == panel_id) then 
-				return data.peer_id
+function NobleHUD:_add_convert(params)
+--todo
+end
+function HUDManager:_set_helper_pattern(pattern_name)
+	local pattern = NobleHUD._helper_patterns_even[pattern_name or NobleHUD._current_helper_pattern or "dot"]
+--	local pattern = NobleHUD._helper_patterns[pattern_name]
+	if pattern then 
+		local changed_tubes = {}
+		local center_r = math.floor((NobleHUD._HELPER_ROWS - 8) / 2) + 1
+		local center_c = math.floor((NobleHUD._HELPER_COLUMNS - 8) / 2) + 1
+	--do row and column offsets based on grid size
+		for row,c in pairs(pattern) do 
+			for _,column in pairs(c) do 
+				local tube_name = "tube_" .. (row + center_r) .. "_" .. (column + center_c)
+				local tube = NobleHUD._helper_panel:child(tube_name)
+				if tube then 
+					changed_tubes[tube_name] = true
+					tube:stop()
+					tube:animate(callback(self,self,"_animate_helper_tube_on"))
+				end
+			end
+		end
+		
+		for k,v in pairs(NobleHUD._helper_tubes) do 
+			if v.tube then 
+				if not changed_tubes[v.tube:name()]then 
+					v.tube:stop()
+					v.tube:animate(callback(self,self,"_animate_helper_tube_off"))
+				end
 			end
 		end
 	end
 end
 
---for id, data in pairs(managers.criminals._characters or {}) do if data.taken and data.peer_id then logall(data) Log("-") logall(data.data) Log("---") end end
+function HUDManager:_set_helper_sequence()
+	NobleHUD._helper_last_sequence = math.max(1,(1 + NobleHUD._helper_last_sequence) % #NobleHUD._helper_sequences)
+	local pattern_name = NobleHUD._helper_last_sequence
 
-function NobleHUD:GetPanelIdFromPeerId(peer_id)
-	if not peer_id or peer_id == managers.network:session():local_peer():id() then
-		return HUDManager.PLAYER_PANEL
-	end
-	if managers.criminals then
-		for id, data in pairs(managers.criminals._characters or {}) do 
-			if data.taken and (data.peer_id == peer_id) then 
-			--todo if ai get panel anyway somehow
-				return data.data and data.data.panel_id
+	local pattern = NobleHUD._helper_sequences[pattern_name or ""]
+	if pattern then 
+		local changed_tubes = {}
+		local center_r = math.floor((NobleHUD._HELPER_ROWS - 10) / 2)
+		local center_c = math.floor((NobleHUD._HELPER_COLUMNS - 10) / 2) + 1
+	--do row and column offsets based on grid size
+		for row,c in pairs(pattern) do 
+			for _,column in pairs(c) do 
+				local tube_name = "tube_" .. (row + center_r) .. "_" .. (column + center_c)
+				local tube = NobleHUD._helper_panel:child(tube_name)
+				if tube then 
+					changed_tubes[tube_name] = true
+					tube:stop()
+					tube:animate(callback(self,self,"_animate_helper_tube_on_fast")) --non-flicker is broken. great
+				end
+			end
+		end
+		
+		for k,v in pairs(NobleHUD._helper_tubes) do 
+			if v.tube then 
+				if not changed_tubes[v.tube:name()]then 
+					v.tube:stop()
+					v.tube:animate(callback(self,self,"_animate_helper_tube_off_fast"))
+				end
 			end
 		end
 	end
 end
+
+
+function HUDManager:_animate_dot_tube_off_broken(tube) --broken
+	
+	local MAX_ALPHA = 0.2
+
+	local duration = 1
+	local elapsed = 0
+	local tube_color = tube:color()
+	local desired_color = Color((0.1 * math.random()),0.25 + (math.random() * 0.15),0.9 + (0.1 * math.random()))
+	local tube_alpha = tube:alpha()
+	while elapsed < duration do 
+		local dt = coroutine.yield()
+		elapsed = elapsed + dt
+		tube:set_alpha(tube_alpha + ((MAX_ALPHA - tube_alpha) * (elapsed / duration)))
+		tube:set_color(NobleHUD.interp_colors(tube_color,desired_color,elapsed/duration))
+	end
+	tube:set_alpha(MAX_ALPHA)
+	
+end
+
+function HUDManager:_animate_dot_tube_interp(tube) --why doesn't this work
+	if (not NobleHUD._selected_tube) or (math.random() > 0.75) then
+		NobleHUD._selected_tube = tube --todo reset tube at some point
+	end
+	local duration = 1
+	local elapsed = 0
+	local tube_alpha = tube:alpha()
+	local tube_color = tube:color()
+	local MIN_ALPHA = 0.95
+	local desired_color = Color(math.random(155)/255,math.random(209)/255,math.random(255)/255)
+	local rate = 1.4
+	
+	while elapsed < duration do 
+--		Console:SetTrackerValue("trackera",elapsed)
+		local dt = coroutine.yield()
+--		Console:SetTrackerValue("trackerb",dt)
+		elapsed = elapsed + dt
+		tube:set_alpha(tube_alpha + ((MIN_ALPHA - tube_alpha) * (elapsed / duration)))
+		tube:set_color(NobleHUD.interp_colors(tube_color,desired_color,elapsed/duration))
+	end
+	NobleHUD:log("elapsed: " .. tostring(elapsed) .. "," .. "duration: " .. tostring(duration))
+	tube:set_alpha(1)
+	
+end
+
+function HUDManager:_animate_dot_tube_on_broken(tube) --broken
+	if (not NobleHUD._selected_tube) or (math.random() > 0.75) then
+		NobleHUD._selected_tube = tube --todo reset tube at some point
+	end
+	local t = 1
+	local tube_alpha = tube:alpha()
+	local tube_color = tube:color()
+	local MIN_ALPHA = 0.95
+	local desired_color = Color(math.random(155)/255,math.random(209)/255,math.random(255)/255)
+	local rate = 1.4
+	
+	while t > 0 do 
+		local dt = coroutine.yield()
+		t = t - dt
+--		Console:SetTrackerValue("trackera",t)
+--		Console:SetTrackerValue("trackerb",dt)
+		tube:set_alpha(tube_alpha + ((MIN_ALPHA - tube_alpha) * t))
+		tube:set_color(NobleHUD.interp_colors(tube_color,desired_color,t))
+	end
+	tube:set_alpha(1)
+	
+end
+
+function HUDManager:_animate_helper_tube_on_fast(tube) --reduced delay; used for sequence
+	if (not NobleHUD._selected_tube) or (math.random() > 0.75) then
+		NobleHUD._selected_tube = tube --todo reset tube when
+	end
+	local MIN_ALPHA = 0.95
+	local delay = 0 --math.random() / 10
+	local tube_alpha = tube:alpha()
+	local desired_color = Color(159/255,210/255,255/255)--Color(math.random(155)/255,math.random(209)/255,math.random(255)/255)
+	local rate = 2
+	
+	while tube_alpha < MIN_ALPHA do --slight flicker when alpha jumps from MIN_ALPHA to 1
+		local dt = coroutine.yield()
+		if delay <= 0 then 
+			tube_alpha = (tube_alpha + 0.15) * rate
+			tube:set_alpha(tube_alpha)
+--			NobleHUD:log(tube:name() .. "," .. dt)
+			tube:set_color(NobleHUD.interp_colors(tube:color(),desired_color,0.5)) --gradually progress toward "lit" color; effectively a logarithmic function
+--			tube:set_color(interp_col(tube:color(),desired_color,dt * 1.5)) --gradually progress toward "lit" color; effectively a logarithmic function
+		else
+			delay = delay - dt
+		end
+	end
+	tube:set_alpha(1)
+	
+end
+
+function HUDManager:_animate_helper_tube_off_fast(tube) --reduce delay; used for sequence
+	
+	local MAX_ALPHA = 0.2
+	local delay = 0 -- math.random() / 10
+
+	local current_color = tube:color()
+	local desired_color = Color((0.1 * math.random()),0.25 + (math.random() * 0.15),0.9 + (0.1 * math.random()))
+	local tube_alpha = tube:alpha()
+	tube:set_color(desired_color)
+	while tube_alpha > MAX_ALPHA do
+		local dt = coroutine.yield()
+		if delay <= 0 then 
+			tube_alpha = tube_alpha * 0.5
+			tube:set_alpha(tube_alpha)
+		else
+			delay = delay - dt
+		end
+	end
+	tube:set_alpha(MAX_ALPHA)
+	
+end
+
+function HUDManager:_animate_helper_tube_on(tube)
+	if (not NobleHUD._selected_tube) or (math.random() > 0.75) then
+		NobleHUD._selected_tube = tube --todo reset tube when
+	end
+	local MIN_ALPHA = 0.95
+	local delay = math.random()
+	local tube_alpha = tube:alpha()
+	local desired_color = Color(math.random(155)/255,math.random(209)/255,math.random(255)/255)
+	local rate = 1.2
+	
+	while tube_alpha < MIN_ALPHA do --slight flicker when alpha jumps from MIN_ALPHA to 1
+		local dt = coroutine.yield()
+		if delay <= 0 then 
+			tube_alpha = tube_alpha * rate
+			tube:set_alpha(tube_alpha)
+			tube:set_color(NobleHUD.interp_colors(tube:color(),desired_color,dt * 1.5)) --gradually progress toward "lit" color; effectively a logarithmic function
+		else
+			delay = delay - dt
+		end
+	end
+	tube:set_alpha(1)
+	
+end
+
+function HUDManager:_animate_helper_tube_off_nice(tube)
+	
+	local MAX_ALPHA = 0.15
+	local delay = (math.random() * 1.25) + 1
+	
+	local tube_alpha = tube:alpha()
+	while tube_alpha > MAX_ALPHA do
+		local dt = coroutine.yield()
+		if delay <= 0 then 
+			tube_alpha = tube_alpha * 0.9
+			tube:set_alpha(tube_alpha)
+		else
+			delay = delay - dt
+		end
+	end
+	tube:set_alpha(0.2) --normal max alpha
+	
+end
+
+function HUDManager:_animate_helper_tube_off(tube)
+	
+	local MAX_ALPHA = 0.2
+	local delay = math.random()
+
+	local current_color = tube:color()
+	local desired_color = Color((0.1 * math.random()),0.25 + (math.random() * 0.15),0.9 + (0.1 * math.random()))
+	local tube_alpha = tube:alpha()
+	while tube_alpha > MAX_ALPHA do
+		local dt = coroutine.yield()
+		if delay <= 0 then 
+			tube_alpha = tube_alpha * 0.8
+			tube:set_alpha(tube_alpha)
+--			tube:set_color(
+		else
+			delay = delay - dt
+		end
+	end
+	tube:set_alpha(MAX_ALPHA)
+	
+end
+
+function HUDManager:_set_helper_all_off()
+	for k,v in pairs(NobleHUD._helper_tubes) do 
+		if v.tube then 
+			v.tube:stop()
+			v.tube:animate(callback(self,self,"_animate_helper_tube_off"))
+		end
+	end
+end
+
+function HUDManager:_set_helper_all_on()
+	for k,v in pairs(NobleHUD._helper_tubes) do 
+		if v.tube then 
+			v.tube:stop()
+			v.tube:animate(callback(self,self,"_animate_helper_tube_on"))
+		end
+	end
+end
+
+function HUDManager:_set_helper_off_nice() --todo randomly select highlighted tube when turn on, instead of random method
+	--get one from somewhere in the middle four rows/columns
+--	local row = math.random(4)
+--	local column = math.random(4)
+--	local selected = math.random(#Console._tubes)
+	for k,v in pairs(NobleHUD._helper_tubes) do 
+		if v.tube then 
+			v.tube:stop()
+			if NobleHUD._selected_tube and NobleHUD._selected_tube:name() == v.tube:name()  then 
+				v.tube:animate(callback(self,self,"_animate_helper_tube_off_nice"))
+			else
+				v.tube:animate(callback(self,self,"_animate_helper_tube_off"))
+			end
+		end
+	end
+end
+--]]
+
+
+
 
 Hooks:Add("NetworkReceivedData", "noblehud_onreceiveluanetworkingmessage", function(sender, message, data)
 	local panel_id = NobleHUD:GetPanelIdFromPeerId(sender)
@@ -12543,6 +12897,22 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	end
 	MenuCallbackHandler.callback_noblehud_set_buffs_panel_y = function(self,item)
 		NobleHUD.settings.buffs_panel_y = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+	MenuCallbackHandler.callback_noblehud_set_buffs_panel_max_rows = function(self,item)
+		NobleHUD.settings.buffs_panel_max_rows = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+	MenuCallbackHandler.callback_noblehud_set_buffs_panel_max_columns = function(self,item)
+		NobleHUD.settings.buffs_panel_max_columns = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+	MenuCallbackHandler.callback_noblehud_set_buffs_panel_align = function(self,item)
+		NobleHUD.settings.buffs_panel_align = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+	MenuCallbackHandler.callback_noblehud_set_buffs_panel_vertical = function(self,item)
+		NobleHUD.settings.buffs_panel_vertical = tonumber(item:value())
 		NobleHUD:SaveSettings()
 	end
 	MenuCallbackHandler.noblehud_buffs_all_options_close = function(self)
