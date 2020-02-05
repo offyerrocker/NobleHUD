@@ -521,6 +521,7 @@ NobleHUD._cache = { --buffer type deal, holds IMPORTANT THINGS tm
 		[3] = 0,
 		[4] = 0
 	},
+	num_buffs = 0,
 	killer = {},
 	score_timer_mult = 1,
 	score_popups_count = 0,
@@ -5158,7 +5159,7 @@ function NobleHUD:UpdateHUD(t,dt)
 								if player:movement():current_state_name() == "driving" then  
 									--NOTHING' 
 								elseif state:get_movement_state() == "moving_crouching" then
-									if ((math.floor(t) % 2) == 0) or (math.random() > 0.5) then
+									if NobleHUD.even(math.floor(t)) or (math.random() > 0.5) then
 										--NOTHIN'
 									else
 										self:remove_radar_blip(blip_unit)										
@@ -5322,11 +5323,7 @@ function NobleHUD:UpdateHUD(t,dt)
 			local buffs_panel_master = self._buffs_panel
 			
 			--todo placement
-			local buff_count = 0
-			local buff_column = 0
-			local buff_row = 0
-			local buff_x = 0
-			local buff_y = 0
+			--[[
 			local buff_align = self:GetBuffPanelAlign()
 			local buff_vertical = self:GetBuffPanelVertical()
 			if buff_align == "left" then 
@@ -5343,8 +5340,10 @@ function NobleHUD:UpdateHUD(t,dt)
 			elseif buff_vertical == "bottom" then
 				buff_y = buffs_panel_master:h()
 			end
-			
+			--]]
+			local num_buffs = 0
 			for buff_id,buff_data in pairs(self._active_buffs) do 
+				local removed_buff = false
 				local _t = t
 				local buff_tweak_data = self._buff_data[buff_id] 
 				local buff_panel = buffs_panel_master:child(buff_id)
@@ -5354,7 +5353,6 @@ function NobleHUD:UpdateHUD(t,dt)
 						buffs_panel_master:remove(buff_panel)
 					end
 					buff_panel = nil
-					
 --					table.remove(self._active_buffs,buff_id)
 				end
 				if not buff_tweak_data then 
@@ -5507,12 +5505,41 @@ function NobleHUD:UpdateHUD(t,dt)
 						self:log("UpdateHUD(): Unknown buff value type " .. tostring(buff_type) .. " for id " .. tostring(buff_id),{color=Color.red})
 					end
 				end
+				if not removed_buff then 
+					num_buffs = num_buffs + 1
+					if NobleHUD.even(self._cache.num_buffs) == NobleHUD.even(num_buffs)
+					
+						local buff_column = self._cache.num_buffs % self:GetMaxBuffColumns()
+						local buff_row = self._cache.num_buffs % self:GetMaxBuffRows()
+						
+						if buff_align == "center" then 
+							--todo menu option for primary/secondary sort:
+							--top to bottom/left to right, etc
+						end
+						if buff_vertical == "center" then 
+							
+						end
+						
+						local buff_x = self._BUFF_ITEM_W * buff_column
+						local buff_y = self._BUFF_ITEM_H * buff_row
+						local d_x = buff_x - buff_panel:x()
+						local d_y = buff_y - buff_panel:y()
+						
+						buff_panel:set_x(buff_panel:x() + math.round(d_x / 3))
+						buff_panel:set_y(buff_panel:y() + math.round(d_y / 3))
+						
+					end
+					
+				end
+--[[				
 				if buff_panel and alive(buff_panel) then 
 					buff_panel:set_y(buff_y)
 					buff_y = buff_y + buff_panel:h()
 				end
+				--]]
 			end
 		end
+		self._cache.num_buffs = num_buffs
 		
 --[[		
 			NobleHUD:AddBuff("messiah_charge",{})
