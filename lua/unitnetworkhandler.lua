@@ -17,7 +17,6 @@ Hooks:PreHook(UnitNetworkHandler, "sync_player_movement_state", "noblehud_unitne
 	end
 end)
 
-
 Hooks:PostHook(UnitNetworkHandler,"on_sole_criminal_respawned","noblehud_unitnetworkhandler_onsolecriminalrespawned",function(self,peer_id, sender)
 	NobleHUD:SetTeammateDowns(peer_id,0)
 end)

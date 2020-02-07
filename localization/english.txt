@@ -392,6 +392,10 @@
 	"noblehud_set_buffs_panel_align_desc" : "Choose how to align the Buffs Panel",
 	"noblehud_set_buffs_panel_vertical_title" : "Buffs: Align Vertical",
 	"noblehud_set_buffs_panel_vertical_desc" : "Choose how to align the Buffs Panel",
+	"noblehud_set_buffs_per_rows_title" : "Max Buffs per Row",
+	"noblehud_set_buffs_per_rows_desc" : "Set Max Buffs per Row",
+	"noblehud_set_buffs_per_columns_title" : "Max Buffs per Column",
+	"noblehud_set_buffs_per_columns_desc" : "Set Max Buffs per Column",
 	"noblehud_left" : "Left",
 	"noblehud_center" : "Center",
 	"noblehud_right" : "Right",
@@ -439,6 +443,10 @@
 	"noblehud_set_buffs_misc_tased_enabled_desc" : "Show Tased Timer",
 	"noblehud_set_buffs_misc_electrocuted_enabled_title" : "Electrocuted Status",
 	"noblehud_set_buffs_misc_electrocuted_enabled_desc" : "Show Electrocuted Timer",
+	"noblehud_set_buff_align_center_title" : "Horizontal Center",
+	"noblehud_set_buff_align_center_desc" : "Center Horizontally",
+	"noblehud_set_buff_vertical_center_title" : "Vertical Center",
+	"noblehud_set_buff_vertical_center_desc" : "Center vertically",
 	
 	"noblehud_buffs_mastermind_options_title" : "Mastermind...",
 	"noblehud_buffs_mastermind_options_desc" : "Select Mastermind Skilltree Buffs",
@@ -590,8 +598,6 @@
 	"noblehud_buff_underdog_aced_menu" : "Underdog Aced Damage Resist",
 	"noblehud_buff_underdog_aced_label" : "Underdog Aced $TIMER",
 	"noblehud_buff_quick_fix_menu" : "Quick Fix Aced Damage Reduction",
-	"noblehud_buff_quick_fix_label" : "Quick Fix Aced $TIMER",
-	
-	
-	
+	"noblehud_buff_quick_fix_label" : "Quick Fix Aced $TIMER"
+
 }
