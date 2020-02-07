@@ -32,9 +32,8 @@
 			- Priority
 			- First-in, first-out (time)
 			- Duration remaining
-		* Grow buff panel from left/right, top/bottom
-			* Buff placement menu
-		* Buff v/h bounds
+			
+		* Replace X/Y/W/H/rows/columns with v/h bounds
 		* Reorganize buffs tweak table
 		* Add default setting for each buff
 		
@@ -320,16 +319,18 @@ NobleHUD.settings = {
 	crosshair_type_bow = 1,
 	crosshair_type_crossbow = 1,
 	buffs_master_enabled = true,
-	buffs_panel_x = 0,
-	buffs_panel_y = 0,
-	buffs_panel_max_columns = 1,
-	buffs_panel_max_rows = 1,
+	buffs_panel_x = 440,
+	buffs_panel_y = 22,
+	buffs_panel_w = 1280,
+	buffs_panel_h = 720,
+	buffs_panel_max_columns = 1, --remove this
+	buffs_panel_max_rows = 1, --remove this
+	buffs_per_column = 6, --remove this
+	buffs_per_row = 4, --remove this
+	buffs_panel_align = 1,
 	buffs_panel_vertical = 2,
-	buffs_panel_align = 2,
-	buffs_per_column = 6,
-	buffs_per_row = 4,
-	buff_align_center = true,
-	buff_align_vertical = false
+	buff_align_center = true, --doesn't do anything 
+	buff_align_vertical = false --doesn't do anything
 }
 
 
@@ -1239,8 +1240,11 @@ NobleHUD._buff_data = {
 		source = "skill",
 		flash = false
 	},
+	["combat_medic"] = {
+		disabled = true
+	},
 	["combat_medic_damage_multiplier"] = {
-		disabled = false
+		disabled = true
 	},
 	["combat_medic_enter_steelsight_speed_multiplier"] = {
 		disabled = true
@@ -4479,6 +4483,10 @@ function NobleHUD:GetBuffXY()
 	return self.settings.buffs_panel_x,self.settings.buffs_panel_y
 end
 
+function NobleHUD:GetBuffWH()
+	return self.settings.buffs_panel_w,self.settings.buffs_panel_h
+end
+
 function NobleHUD:IsBuffEnabled(id)
 	--get setting for if buff display is disabled
 	return self.buff_settings[id]
@@ -4755,7 +4763,7 @@ function NobleHUD:OnLoaded()
 	else
 		self._crosshair_panel:hide()
 	end
-	
+	self:LayoutBuffPanel()
 	local level_data = managers.job:current_level_data()
 	local level_name = level_data and level_data.name_id
 	self:set_mission_name(level_name and managers.localization:text(level_name) or "")
@@ -5343,6 +5351,13 @@ function NobleHUD:UpdateHUD(t,dt)
 			local buffs_panel_master = self._buffs_panel
 
 			
+			local buff_h = self._BUFF_ITEM_H
+			local buff_w = self._BUFF_ITEM_W
+			
+			local MAX_PER_COLUMN = self:GetMaxBuffsPerColumn()
+			local MAX_PER_ROW = self:GetMaxBuffsPerRow()
+			
+			
 			local num_buffs = 0
 			for buff_id,buff_data in pairs(self._active_buffs) do 
 				local removed_buff = false
@@ -5388,7 +5403,7 @@ function NobleHUD:UpdateHUD(t,dt)
 							end
 							local time_left = buff_data.end_t - _t
 							if buff_data.end_t < _t and not buff_tweak_data.persistent_timer then 
-								self:log("Buff expired! Removing...",{color=Color.red})
+								self:log("Buff " .. buff_id .. " expired! Removing...",{color=Color.red})
 								remove_buff()
 							else
 								buff_time = self.format_seconds(1 + time_left)
@@ -5512,122 +5527,20 @@ function NobleHUD:UpdateHUD(t,dt)
 						self:log("UpdateHUD(): Unknown buff value type " .. tostring(buff_type) .. " for id " .. tostring(buff_id),{color=Color.red})
 					end
 				end
+				
 				if not removed_buff then 
 					num_buffs = num_buffs + 1
-					local buff_h = self._BUFF_ITEM_H
-					local buff_w = self._BUFF_ITEM_W
-					
-					local MAX_PER_COLUMN = self:GetMaxBuffsPerColumn()
-					local MAX_PER_ROW = self:GetMaxBuffsPerRow()
-					local buff_column = num_buffs % MAX_PER_ROW
-					local buff_row = math.floor(num_buffs / MAX_PER_ROW)
-					local in_this_line = buff_row * MAX_PER_ROW
+					local buff_column = (num_buffs - 1) % MAX_PER_ROW
+					local buff_row = math.floor((num_buffs - 1) / MAX_PER_ROW)
+					local in_this_line = self._cache.num_buffs - (buff_row * MAX_PER_ROW)
 					if in_this_line > math.floor(self._cache.num_buffs / MAX_PER_ROW) then 
---						self:log("current row " .. in_this_line .. " is greater than number of cached: " .. math.floor(self._cache.num_buffs / MAX_PER_ROW))
 						in_this_line = MAX_PER_ROW
 					else
---						self:log("current row " .. buff_row .. " is less than or equal to number of cached: " .. self._cache.num_buffs)
 						in_this_line = self._cache.num_buffs % MAX_PER_ROW
 					end
-					
-					--[[
-					local in_this_line = (self._cache.num_buffs - num_buffs) --this is a problem line
-					if in_this_line > 0 then 
-						if in_this_line >= MAX_PER_ROW then 
-							in_this_line = MAX_PER_ROW
-							self:log(num_buffs .. " / " .. self._cache.num_buffs .. " / " .. in_this_line .. " IS MAX")
-						else
-							self:log(num_buffs .. " / " .. self._cache.num_buffs .. " / " .. in_this_line .. " TOTAL SLIGHTLY ABOVE MAX")
-						end
-					else
-						in_this_line = num_buffs % MAX_PER_ROW
-						self:log(num_buffs .. " / " .. self._cache.num_buffs .. " / " .. in_this_line .. " CURRENT ABOVE CACHED")
-					end
-					--]]
---					Console:SetTrackerValue("trackera",in_this_line)
-					
-					
-					local buff_x = buff_w * (math.floor((MAX_PER_ROW - in_this_line) / 2) + buff_column)
-					self:log(num_buffs .. ": Placing id " .. buff_id .. " into buff_x " .. buff_x)
-					local buff_y = buff_h * buff_row
---					local buff_x = (buff_column - (MAX_PER_COLUMN - in_this_line)) * buff_w
---					local buff_x = buff_column * buff_w
---					local buff_y = buff_row * buff_h
-					
 
---[[		
-	NobleHUD:AddBuff("bullseye",{end_t = Application:time() + 5})
-	NobleHUD:AddBuff("bullseye",{end_t = Application:time() + 5}); 
-	
-	NobleHUD:AddBuff("long_dis_revive",{end_t = Application:time() + 5})
-	NobleHUD:AddBuff("pocket_ecm_jammer",{end_t = Application:time() + 5});
-	NobleHUD:AddBuff("long_dis_revive",{end_t = Application:time() + 5});
-	NobleHUD:AddBuff("morale_boost",{end_t = Application:time() + 5})
-	NobleHUD:AddBuff("bullet_storm",{end_t = Application:time() + 5}); 
-			NobleHUD:AddBuff("messiah_charge",{})
-			
-
-		
-					if NobleHUD.even(in_this_line) ~= NobleHUD.even(MAX_PER_COLUMN) then 
-						buff_x = buff_x + (buff_w / 2)
-					end
---]]							
-					
-					
-
-
-					
-					local d_x = buff_x - buff_panel:x()
-					local d_y = buff_y - buff_panel:y()
-					buff_panel:set_x(buff_panel:x() + math.round(d_x / 3))
-					buff_panel:set_y(buff_panel:y() + math.round(d_y / 3))
-				
-					--
-					--in_this_line = 
-					--if even(in_this_line) then offset = buff_w / 2
-					--
-					
-					--[[
-					
-					2. allot
-					3. calculate delta and place
-					
-					
-					
-					
-					--]]
-				--[[
-					if NobleHUD.even(self._cache.num_buffs) == NobleHUD.even(num_buffs) then
-					end
-					
-					local placement_sign_hor = 1
-					local placement_sign_ver = 1
-					local buff_column 
-					local buff_row
-					local buff_start_x = 0
-					local buff_start_y = 0
-					local align_axis = "horizontal"
-					if align_axis == "horizontal" then 
-						buff_column = num_buffs % self:GetMaxBuffsPerColumn()
-						buff_row = math.floor(num_buffs / self:GetMaxBuffsPerRow())
-						if self:GetBuffPanelAlign() == "left" then 
-							placement_sign_hor = 1
-						else
-							placement_sign_hor = -1
-						end
-					else
-						buff_column = math.floor(num_buffs / self:GetMaxBuffsPerColumn())
-						buff_row = num_buffs % self:GetMaxBuffsPerRow()
-						if self:GetBuffPanelVertical() == "top" then
-							placement_sign_ver = 1
-						else
-							placement_sign_ver = -1
-						end
-					end
-					--]]
-					--[[
-					local buff_origin_x
-					local buff_origin_y
+--align left/right bs
+--[[
 					local buff_align = self:GetBuffPanelAlign()
 					local buff_vertical = self:GetBuffPanelVertical()
 					if buff_align == "left" then 
@@ -5644,64 +5557,28 @@ function NobleHUD:UpdateHUD(t,dt)
 					elseif buff_vertical == "bottom" then
 						buff_origin_y = buffs_panel_master:h()
 					end
-					local placement_sign_hor = 1
-					local placement_sign_ver = 1
-					if align_axis == "horizontal" then 
-						if buff_align == "right" then 
-							--todo menu option for primary/secondary sort:
-							--top to bottom/left to right, etc
-							placement_sign_hor = -1
-						else
-							placement_sign_hor = 1
-						end
-					else
-						if buff_vertical == "bottom" then 
-							placement_sign_ver = -1
-						else
-							placement_sign_ver = 1
-						
-						end
+--]]
+					local buff_x = buff_w * buff_column
+					local buff_y = buff_h * buff_row
+					if self:GetBuffPanelVertical() == "bottom" then 
+						buff_y = buffs_panel_master:h() - (buff_y + 64)
 					end
---]]					
---[[
-					local align_axis = "horizontal"
-					
-					local current_buff_row
-					local current_buff_column
-					local num_in_this_line --number in this row or column, depending on align_axis
-					if align_axis == "horizontal" then 
-						current_buff_column = num_buffs % self:GetMaxBuffsPerColumn()
-						current_buff_row = math.floor(num_buffs / self:GetMaxBuffsPerRow())
-						
-						if self._cache.num_buffs > self:GetMaxBuffsPerColumn() * current_buff_column then 
-							num_in_this_line = self:GetMaxBuffsPerColumn()
-						elseif self._cache.num_buffs % self:GetMaxBuffsPerColumn() > current_buff_column then
-							num_in_this_line = self._cache.num_buffs 
-						else
-							num_in_this_line = current_buff_column
-						end
-						
-						num_in_this_line = num_buffs % self:GetMaxBuffsPerColumn()
-						if self:GetBuffPanelAlign() == "left" then 
-							--
-						end
-					else
-						current_buff_column = math.floor(num_buffs / self:GetMaxBuffsPerColumn())
-						current_buff_row = num_buffs % self:GetMaxBuffsPerRow()
-						num_in_this_line = num_buffs % self:GetMaxBuffsPerColumn()
-						if self:GetBuffPanelVertical() == "top" then
-						end
+					if self:GetBuffPanelAlign() == "right" then 
+						buff_x = buffs_master_panel:w() - (buff_x + buff_w)
 					end
-					--]]					
-					--todo add this to buff start position; get buff start position from align
-
+					local d_x = buff_x - buff_panel:x()
+					local d_y = buff_y - buff_panel:y()
+					if math.abs(d_x) < 1 then 
+						buff_panel:set_x(buff_x)
+					else
+						buff_panel:set_x(buff_panel:x() + (d_x / 3))
+					end
+					if math.abs(d_y) < 1 then 
+						buff_panel:set_y(buff_y)
+					else
+						buff_panel:set_y(buff_panel:y() + (d_y / 3))
+					end
 				end
---[[				
-				if buff_panel and alive(buff_panel) then 
-					buff_panel:set_y(buff_y)
-					buff_y = buff_y + buff_panel:h()
-				end
-				--]]
 			end
 			self._cache.num_buffs = num_buffs
 		end
@@ -11928,11 +11805,19 @@ function NobleHUD:_create_buffs(hud) --buffs, cloned from khud (not implemented)
 		alpha = self:GetHUDAlpha()
 	})
 	local debug_buffs = buffs_panel:rect({
+		name = "debug_buffs",
 		color = Color.green,
-		visible = true,
+		visible = false,
 		alpha = 0.1
 	})
 	self._buffs_panel = buffs_panel
+end
+
+function NobleHUD:LayoutBuffPanel()
+	if self._buffs_panel and alive(self._buffs_panel) then 
+		self._buffs_panel:set_position(self:GetBuffXY())
+		self._buffs_panel:set_size(self:GetBuffWH())
+	end
 end
 
 function NobleHUD:AddBuff(id,params)
@@ -12085,7 +11970,7 @@ function NobleHUD:CreateBuff(id,params)
 		name = "debug_buff",
 		color = Color(math.random(),math.random(),math.random()),
 		alpha = 0.25,
-		visible = true
+		visible = false
 	})
 	return buffs_panel
 end
@@ -12120,6 +12005,8 @@ function NobleHUD:SetBuff(id,params) --set existing buff panel information, but 
 		self:RemoveBuff(id)
 	end
 end
+
+
 
 
 --		HELPER
@@ -13084,52 +12971,67 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	--ALL
 	MenuCallbackHandler.callback_noblehud_set_buffs_master_enabled = function(self,item)
 		NobleHUD.settings.buffs_master_enabled = item:value() == "on"
-		NobleHUD:SaveSettings()
 	end
 	MenuCallbackHandler.callback_noblehud_set_buff_align_center = function(self,item)
 		NobleHUD.settings.buff_align_center = item:value() == "on"
-		NobleHUD:SaveSettings()
 	end
 	MenuCallbackHandler.callback_noblehud_set_buff_vertical_center = function(self,item)
 		NobleHUD.settings.buff_vertical_center = item:value() == "on"
-		NobleHUD:SaveSettings()
 	end
 	MenuCallbackHandler.callback_noblehud_set_buffs_panel_x = function(self,item)
 		NobleHUD.settings.buffs_panel_x = tonumber(item:value())
-		NobleHUD:SaveSettings()
+		NobleHUD:LayoutBuffPanel()
+		if NobleHUD._buffs_panel and alive(NobleHUD._buffs_panel) then 
+			NobleHUD._buffs_panel:child("debug_buffs"):show()
+		end
 	end
 	MenuCallbackHandler.callback_noblehud_set_buffs_panel_y = function(self,item)
 		NobleHUD.settings.buffs_panel_y = tonumber(item:value())
-		NobleHUD:SaveSettings()
+		NobleHUD:LayoutBuffPanel()
+		if NobleHUD._buffs_panel and alive(NobleHUD._buffs_panel) then 
+			NobleHUD._buffs_panel:child("debug_buffs"):show()
+		end
+	end
+	MenuCallbackHandler.callback_noblehud_set_buffs_panel_w = function(self,item)
+		NobleHUD.settings.buffs_panel_w = tonumber(item:value())
+		NobleHUD:LayoutBuffPanel()
+		if NobleHUD._buffs_panel and alive(NobleHUD._buffs_panel) then 
+			NobleHUD._buffs_panel:child("debug_buffs"):show()
+		end
+	end
+	MenuCallbackHandler.callback_noblehud_set_buffs_panel_h = function(self,item)
+		NobleHUD.settings.buffs_panel_h = tonumber(item:value())
+		NobleHUD:LayoutBuffPanel()
+		if NobleHUD._buffs_panel and alive(NobleHUD._buffs_panel) then 
+			NobleHUD._buffs_panel:child("debug_buffs"):show()
+		end
 	end
 	MenuCallbackHandler.callback_noblehud_set_buffs_panel_max_rows = function(self,item)
 		NobleHUD.settings.buffs_panel_max_rows = tonumber(item:value())
-		NobleHUD:SaveSettings()
 	end
 	MenuCallbackHandler.callback_noblehud_set_buffs_panel_max_columns = function(self,item)
 		NobleHUD.settings.buffs_panel_max_columns = tonumber(item:value())
-		NobleHUD:SaveSettings()
 	end
 	MenuCallbackHandler.callback_noblehud_set_buffs_per_rows = function(self,item)
 		NobleHUD.settings.buffs_per_column = tonumber(item:value())
-		NobleHUD:SaveSettings()
 	end
 	MenuCallbackHandler.callback_noblehud_set_buffs_per_columns = function(self,item)
 		NobleHUD.settings.buffs_per_row = tonumber(item:value())
-		NobleHUD:SaveSettings()
 	end
 	
 	
 	
 	MenuCallbackHandler.callback_noblehud_set_buffs_panel_align = function(self,item)
 		NobleHUD.settings.buffs_panel_align = tonumber(item:value())
-		NobleHUD:SaveSettings()
 	end
 	MenuCallbackHandler.callback_noblehud_set_buffs_panel_vertical = function(self,item)
 		NobleHUD.settings.buffs_panel_vertical = tonumber(item:value())
-		NobleHUD:SaveSettings()
 	end
 	MenuCallbackHandler.noblehud_buffs_all_options_close = function(self)
+		if NobleHUD._buffs_panel and alive(NobleHUD._buffs_panel) then 
+			NobleHUD._buffs_panel:child("debug_buffs"):hide()
+		end
+		NobleHUD:SaveSettings()
 	end
 	
 	
