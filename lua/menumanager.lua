@@ -62,7 +62,6 @@
 		* Berserker Damage Mult
 		* Berserker Melee Damage Mult
 		* Bullet Storm
-		* Overkill
 		* Bloodthirst Melee Stacks
 		* Bloodthirst Reload Bonus
 		* Second Wind (from teammate)
@@ -990,9 +989,10 @@ NobleHUD._buff_data = {
 		flash = false
 	},
 	["berserker_damage_multiplier"] = {
+	
 		icon = "wolverine",
 		icon_rect = {1,7},
-		label = "noblehud_buff_berserker_damage_label",
+		label = "noblehud_buff_berserker_label",
 		value_type = "value",
 		source = "skill",
 		flash = true
@@ -1089,7 +1089,7 @@ NobleHUD._buff_data = {
 		icon = "up_you_go",
 		disabled = false,
 		icon_rect = {1,7},
-		label = "combat_medic",
+		label = "noblehud_buff_combat_medic_label",
 		value_type = "timer",
 		duration = 5,
 		source = "skill",
@@ -1215,6 +1215,7 @@ NobleHUD._buff_data = {
 		flash = false
 	},
 	["dmg_dampener_outnumbered"] = { --underdog dmg resist; DONE
+		disabled = true,
 		icon = "underdog",
 		icon_rect = {1,7},
 		label = "noblehud_buff_underdog_aced_label",
@@ -1232,7 +1233,7 @@ NobleHUD._buff_data = {
 		flash = false
 	},	
 	["dmg_dampener_outnumbered_strong"] = { --same as above, but aced
-		disabled = false,
+		disabled = true,
 		icon = "underdog",
 		icon_rect = {1,7},
 		label = "dmg_dampener_outnumbered_strong",
@@ -4764,6 +4765,12 @@ function NobleHUD:OnLoaded()
 		self._crosshair_panel:hide()
 	end
 	self:LayoutBuffPanel()
+	self:LayoutRadar()
+	
+	self:AddBuff("dmg_resist_total")
+	self:AddBuff("crit_chance_total")
+	self:AddBuff("dodge_chance_total")
+	
 	local level_data = managers.job:current_level_data()
 	local level_name = level_data and level_data.name_id
 	self:set_mission_name(level_name and managers.localization:text(level_name) or "")
@@ -5449,6 +5456,7 @@ function NobleHUD:UpdateHUD(t,dt)
 						if buff_id == "berserker_damage_multiplier" then 
 							local health_ratio = managers.player:get_damage_health_ratio(player_damage:health_ratio(),"damage")
 							buff_icon:set_color(Color(1,1 - health_ratio,1 - health_ratio))
+							buff_label:set_text(string.gsub(buff_text,"$VALUE",tostring(buff_data.value or 0)))
 							if buff_tweak_data.flash then
 								if health_ratio > 0.7 then 
 									buff_icon:set_alpha(1 + (math.sin(_t * 800) * 0.5)) --todo increasing flash severity
@@ -5459,7 +5467,6 @@ function NobleHUD:UpdateHUD(t,dt)
 									buff_icon:set_alpha(buff_tweak_data.alpha or 1) --probably don't need alpha as a manual option
 								end
 							end
-							buff_label:set_text(string.gsub(buff_text,"$VALUE",tostring(buff_data.value or 0)))
 						elseif buff_id == "dmg_resist_total" then
 							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%i",100 * (1 - managers.player:damage_reduction_skill_multiplier("bullet")))))
 						elseif buff_id == "dodge_chance_total" then
@@ -5764,6 +5771,7 @@ end
 
 function NobleHUD:OnPlayerStateChanged(state)
 --	self:log("Changed player state to " .. tostring(state),{color = Color(0,1,1)})
+	
 	if state == "bleed_out" then 
 		self:SetTeammateDowns(1,1,true,true)
 	end
@@ -10502,17 +10510,21 @@ function NobleHUD:_create_radar(hud)
 		alpha = self:GetHUDAlpha()
 	})
 	
+	local radar_size = 200 * self:GetRadarScale()
 	local radar_bg = radar_panel:bitmap({
 		name = "radar_bg",
 		texture = "guis/textures/radar_bg",
 		layer = 2,
+		x = (radar_panel:w() - radar_size) / 2,
+		y = (radar_panel:h() - radar_size),
+		w = radar_size,
+		h = radar_size,
 		color = self.color_data.hud_vitalsfill_blue,
 		alpha = 0.8
 	})
-	radar_bg:set_size(192 * self:GetRadarScale(),192 * self:GetRadarScale())
 --	radar_bg:set_center(radar_panel:w()/2,radar_panel:h()/2)
-	radar_bg:set_x((radar_panel:w() - radar_bg:w()) / 2)
-	radar_bg:set_y(radar_panel:h() - radar_bg:h())
+--	radar_bg:set_x((radar_panel:w() - radar_bg:w()) / 2)
+--	radar_bg:set_y(radar_panel:h() - radar_bg:h())
 	local radar_range_label = radar_panel:text({
 		name = "radar_range_label",
 		text = "25m",
@@ -10716,6 +10728,20 @@ end
 
 function NobleHUD:_set_radar_range(text)
 	self._radar_panel:child("radar_range_label"):set_text(string.gsub(managers.localization:text("noblehud_hud_radar_distance_label"),"$DISTANCE",text))	
+end
+
+function NobleHUD:LayoutRadar()
+	local panel = self._radar_panel
+	local scale = self:GetRadarScale()
+	local panel_size = scale * 200
+	local bg_size = scale * 196
+	local bg = self._radar_panel:child("radar_bg")
+	
+	panel:set_size(panel_size,panel_size)
+	panel:set_position(0,panel:parent():h() - panel_size)
+		
+	bg:set_size(bg_size,bg_size)
+	bg:set_position((panel:w() - bg_size) / 2,panel:h() - bg_size)
 end
 
 
@@ -11847,17 +11873,16 @@ function NobleHUD:AddBuff(id,params)
 		params.end_t = params.end_t or (Application:time() + params.duration)
 	end
 	
-	if not panel then 
-		self:log("AddBuff(" .. tostring(id) .. "): could not create panel",{color=Color.red})
-		return 
-	end
 	--check validity of buff id and data
 	if self._active_buffs[id] then 
 		--refresh
 --		self:SetBuff(id,params)
 		self._active_buffs[id] = params
-	else
+	elseif panel then 
 		self._active_buffs[id] = params
+	else
+		self:log("AddBuff(" .. tostring(id) .. "): could not create panel",{color=Color.red})
+		return 
 	end
 end
 --i had to write this because get_specialization_icon_data() always picks the top tier. booooo
@@ -11865,7 +11890,7 @@ end
 function NobleHUD:CreateBuff(id,params)
 	local buffs_panel = self._buffs_panel
 	if alive(buffs_panel:child(id)) then 
-		self:log("CreateBuff(" .. tostring(id) .. "," .. self.table_concat(params,",","=") .. "): Buff element already exists!",{color=Color.red})
+--		self:log("CreateBuff(" .. tostring(id) .. "," .. self.table_concat(params,",","=") .. "): Buff element already exists!",{color=Color.red})
 --		buffs_panel:remove(buffs_panel:child(id))
 		return
 	end
@@ -12006,7 +12031,21 @@ function NobleHUD:SetBuff(id,params) --set existing buff panel information, but 
 	end
 end
 
+function NobleHUD:ToggleBuff(state,id,...) --really just a shortcut for menu callbacks
+	if state then 
+		self:AddBuff(id,...)
+	else
+		self:RemoveBuff(id,...)
+	end
+end
 
+function NobleHUD:CheckBuff(id) --again mostly used for menu callbacks
+	if not self:IsBuffEnabled(id) then 
+		self:RemoveBuff(id)
+		return false
+	end
+	return self._active_buffs[id]
+end
 
 
 --		HELPER
@@ -12712,26 +12751,27 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	MenuCallbackHandler.callback_noblehud_set_radar_enabled = function(self,item)
 		NobleHUD.settings.radar_enabled = item:value() == "on"
 		NobleHUD:SetRadarEnabled(NobleHUD.settings.radar_enabled)
-		NobleHUD:SaveSettings()
 	end
 
 	MenuCallbackHandler.callback_noblehud_set_radar_style = function(self,item)
 		NobleHUD.settings.radar_style = tonumber(item:value())
-		NobleHUD:SaveSettings()
+		NobleHUD:LayoutRadar()
 	end	
 	
 	MenuCallbackHandler.callback_noblehud_set_radar_scale = function(self,item)
 		NobleHUD.settings.radar_scale = tonumber(item:value())
 --		set radar size here
-		NobleHUD:SaveSettings()
+		NobleHUD:LayoutRadar()
 	end	
 	
 	MenuCallbackHandler.callback_noblehud_set_radar_distance = function(self,item)
 		NobleHUD.settings.radar_distance = tonumber(item:value())
 		NobleHUD:SetRadarDistance(NobleHUD.settings.radar_distance)
-		NobleHUD:SaveSettings()
 	end	
 
+	MenuCallbackHandler.callback_noblehud_radar_options_close = function(self)
+		NobleHUD:SaveSettings()
+	end
 
 --WEAPONS
 	MenuCallbackHandler.callback_noblehud_set_floating_ammo_enabled = function(self,item)
@@ -12839,7 +12879,6 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		end
 		NobleHUD:SaveSettings()
 	end
-
 	MenuCallbackHandler.callback_noblehud_set_crosshair_bloom_enabled = function(self,item)
 		NobleHUD.settings.crosshair_bloom = item:value() == "on"
 		NobleHUD:SaveSettings()
@@ -12847,13 +12886,11 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	MenuCallbackHandler.callback_noblehud_set_steelsight_hides_reticle_enabled = function(self,item)
 		NobleHUD.settings.steelsight_hides_reticle_enabled = item:value() == "on"
 		NobleHUD:SaveSettings()
-	end
-	
+	end	
 	MenuCallbackHandler.callback_noblehud_set_crosshair_shake_enabled = function(self,item)
 		NobleHUD.settings.crosshair_shake = item:value() == "on"
 		NobleHUD:SaveSettings()
 	end
-
 	MenuCallbackHandler.callback_noblehud_set_crosshair_stability = function(self,item)
 		NobleHUD.settings.crosshair_stability = tonumber(item:value())
 		NobleHUD:SaveSettings()
@@ -12867,99 +12904,79 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	MenuCallbackHandler.callback_noblehud_crosshair_type_assaultrifle_auto = function(self,item)
 		NobleHUD.settings.crosshair_type_assaultrifle_auto = tonumber(item:value())
 		NobleHUD:SaveSettings()
-	end
-	
+	end	
 	MenuCallbackHandler.callback_noblehud_crosshair_type_pistol_single = function(self,item)
 		NobleHUD.settings.crosshair_type_pistol_single = tonumber(item:value())
 		NobleHUD:SaveSettings()
 	end
-
 	MenuCallbackHandler.callback_noblehud_crosshair_type_pistol_auto = function(self,item)
 		NobleHUD.settings.crosshair_type_pistol_auto = tonumber(item:value())
 		NobleHUD:SaveSettings()
 	end
-
 	MenuCallbackHandler.callback_noblehud_crosshair_type_revolver = function(self,item)
 		NobleHUD.settings.crosshair_type_revolver = tonumber(item:value())
 		NobleHUD:SaveSettings()
 	end
-
 	MenuCallbackHandler.callback_noblehud_crosshair_type_smg_single = function(self,item)
 		NobleHUD.settings.crosshair_type_smg_single = tonumber(item:value())
 		NobleHUD:SaveSettings()
 	end
-
 	MenuCallbackHandler.callback_noblehud_crosshair_type_smg_auto = function(self,item)
 		NobleHUD.settings.crosshair_type_smg_auto = tonumber(item:value())
 		NobleHUD:SaveSettings()
 	end
-
 	MenuCallbackHandler.callback_noblehud_crosshair_type_shotgun_single = function(self,item)
 		NobleHUD.settings.crosshair_type_shotgun_single = tonumber(item:value())
 		NobleHUD:SaveSettings()
 	end
-
 	MenuCallbackHandler.callback_noblehud_crosshair_type_shotgun_auto = function(self,item)
 		NobleHUD.settings.crosshair_type_shotgun_auto = tonumber(item:value())
 		NobleHUD:SaveSettings()
-	end
-	
+	end	
 	MenuCallbackHandler.callback_noblehud_crosshair_type_lmg_single = function(self,item)
 		NobleHUD.settings.crosshair_type_lmg_single = tonumber(item:value())
 		NobleHUD:SaveSettings()
 	end
-	
 	MenuCallbackHandler.callback_noblehud_crosshair_type_lmg_auto = function(self,item)
 		NobleHUD.settings.crosshair_type_lmg_auto = tonumber(item:value())
 		NobleHUD:SaveSettings()
 	end
-
 	MenuCallbackHandler.callback_noblehud_crosshair_type_snp = function(self,item)
 		NobleHUD.settings.crosshair_type_snp = tonumber(item:value())
 		NobleHUD:SaveSettings()
 	end
-	
 	MenuCallbackHandler.callback_noblehud_crosshair_type_rocket = function(self,item)
 		NobleHUD.settings.crosshair_type_rocket = tonumber(item:value())
 		NobleHUD:SaveSettings()
-	end
-	
+	end	
 	MenuCallbackHandler.callback_noblehud_crosshair_type_minigun = function(self,item)
 		NobleHUD.settings.crosshair_type_minigun = tonumber(item:value())
 		NobleHUD:SaveSettings()
-	end
-	
+	end	
 	MenuCallbackHandler.callback_noblehud_crosshair_type_flamethrower = function(self,item)
 		NobleHUD.settings.crosshair_type_flamethrower = tonumber(item:value())
 		NobleHUD:SaveSettings()
 	end
-
 	MenuCallbackHandler.callback_noblehud_crosshair_type_saw = function(self,item)
 		NobleHUD.settings.crosshair_type_saw = tonumber(item:value())
 		NobleHUD:SaveSettings()
 	end
-
 	MenuCallbackHandler.callback_noblehud_crosshair_type_grenade_launcher = function(self,item)
 		NobleHUD.settings.crosshair_type_grenade_launcher = tonumber(item:value())
 		NobleHUD:SaveSettings()
 	end
-
 	MenuCallbackHandler.callback_noblehud_crosshair_type_bow = function(self,item)
 		NobleHUD.settings.crosshair_type_bow = tonumber(item:value())
 		NobleHUD:SaveSettings()
 	end
-
 	MenuCallbackHandler.callback_noblehud_crosshair_type_crossbow = function(self,item)
 		NobleHUD.settings.crosshair_type_crossbow = tonumber(item:value())
 		NobleHUD:SaveSettings()
 	end
-
-
 	MenuCallbackHandler.callback_noblehud_set_crosshair_alpha = function(self,item)
 		NobleHUD.settings.crosshair_alpha = tonumber(item:value())
 		NobleHUD:SaveSettings()
 	end
-
 	MenuCallbackHandler.noblehud_crosshair_options_close = function(self)
 		--NobleHUD:SaveSettings()
 	end
@@ -13039,31 +13056,41 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	--MISC
 
 	MenuCallbackHandler.callback_noblehud_set_buffs_misc_dodge_chance_total_enabled = function(self,item)
-		NobleHUD.buff_settings.dodge_chance_total = item:value() == "on"
+		local state = item:value() == "on"
+		NobleHUD.buff_settings.dodge_chance_total = state
+		NobleHUD:ToggleBuff(state,"dodge_chance_total")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_misc_crit_chance_total_enabled = function(self,item)
-		NobleHUD.buff_settings.crit_chance_total = item:value() == "on"
+		local state = item:value() == "on"
+		NobleHUD.buff_settings.crit_chance_total = state
+		NobleHUD:ToggleBuff(state,"crit_chance_total")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_misc_dmg_resist_total_enabled = function(self,item)
-		NobleHUD.buff_settings.dmg_resist_total = item:value() == "on"
+		local state = item:value() == "on"
+		NobleHUD.buff_settings.dmg_resist_total = state
+		NobleHUD:ToggleBuff(state,"dmg_resist_total")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_misc_flashbang_enabled = function(self,item)
 		NobleHUD.buff_settings.flashbang = item:value() == "on"
+		NobleHUD:CheckBuff("flashbang")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_misc_downed_enabled = function(self,item)
 		NobleHUD.buff_settings.downed = item:value() == "on"
+		NobleHUD:CheckBuff("downed")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_misc_tased_enabled = function(self,item)
 		NobleHUD.buff_settings.tased = item:value() == "on"
+		NobleHUD:CheckBuff("tased")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_misc_electrocuted_enabled = function(self,item)
 		NobleHUD.buff_settings.electrocuted = item:value() == "on"
+		NobleHUD:CheckBuff("electrocuted")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.noblehud_buffs_misc_options_close = function(self)
@@ -13075,46 +13102,57 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	--PERKDECKS
 	MenuCallbackHandler.callback_noblehud_set_buffs_misc_armor_break_invulnerable_enabled = function(self,item)
 		NobleHUD.buff_settings.armor_break_invulnerable = item:value() == "on"
+		NobleHUD:CheckBuff("armor_break_invulnerable")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_specialization_hitman_enabled = function(self,item)
 		NobleHUD.buff_settings.hitman = item:value() == "on"
+		NobleHUD:CheckBuff("hitman")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_specialization_infiltrator_overdog_enabled = function(self,item)
 		NobleHUD.buff_settings.overdog = item:value() == "on"
+		NobleHUD:CheckBuff("overdog")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_specialization_infiltrator_life_drain_enabled = function(self,item)
 		NobleHUD.buff_settings.life_drain = item:value() == "on"
+		NobleHUD:CheckBuff("life_drain")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_specialization_biker_enabled = function(self,item)
 		NobleHUD.buff_settings.wild_kill_counter = item:value() == "on"
+		NobleHUD:CheckBuff("wild_kill_counter")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_specialization_kingpin_enabled = function(self,item)
 		NobleHUD.buff_settings.chico_injector = item:value() == "on"
+		NobleHUD:CheckBuff("chico_injector")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_specialization_sicario_enabled = function(self,item)
 		NobleHUD.buff_settings.sicario = item:value() == "on"
+		NobleHUD:CheckBuff("sicario")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_specialization_delayed_damage_enabled = function(self,item)
 		NobleHUD.buff_settings.delayed_damage = item:value() == "on"
+		NobleHUD:CheckBuff("delayed_damage")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_specialization_tag_team_enabled = function(self,item)
 		NobleHUD.buff_settings.tag_team = item:value() == "on"
+		NobleHUD:CheckBuff("tag_team")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_specialization_hacker_ecm_enabled = function(self,item)
 		NobleHUD.buff_settings.pocket_ecm_jammer = item:value() == "on"
+		NobleHUD:CheckBuff("pocket_ecm_jammer")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_specialization_hacker_kluge_enabled = function(self,item)
 		NobleHUD.buff_settings.pocket_ecm_kill_dodge = item:value() == "on"
+		NobleHUD:CheckBuff("pocket_ecm_kill_dodge")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.noblehud_buffs_specialization_options_close = function(self)
@@ -13123,38 +13161,47 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	--MASTERMIND
 	MenuCallbackHandler.callback_noblehud_set_buffs_mastermind_inspire_basic_enabled = function(self,item)
 		NobleHUD.buff_settings.morale_boost = item:value() == "on"
+		NobleHUD:CheckBuff("morale_boost")
 		NobleHUD:SaveBuffSettings()
 	end
 	MenuCallbackHandler.callback_noblehud_set_buffs_mastermind_inspire_aced_enabled = function(self,item)
 		NobleHUD.buff_settings.long_dis_revive = item:value() == "on"
+		NobleHUD:CheckBuff("long_dis_revive")
 		NobleHUD:SaveBuffSettings()
 	end
 	MenuCallbackHandler.callback_noblehud_set_buffs_mastermind_uppers_cooldown_enabled = function(self,item)
 		NobleHUD.buff_settings.uppers_aced_cooldown = item:value() == "on"
+		NobleHUD:CheckBuff("uppers_aced_cooldown")
 		NobleHUD:SaveBuffSettings()
 	end
 	MenuCallbackHandler.callback_noblehud_set_buffs_mastermind_uppers_ready_enabled = function(self,item)
 		NobleHUD.buff_settings.uppers_ready = item:value() == "on"
+		NobleHUD:CheckBuff("uppers_ready")
 		NobleHUD:SaveBuffSettings()
 	end
 	MenuCallbackHandler.callback_noblehud_set_buffs_mastermind_quick_fix_enabled = function(self,item)
 		NobleHUD.buff_settings.first_aid_damage_reduction = item:value() == "on"
+		NobleHUD:CheckBuff("first_aid_damage_reduction")
 		NobleHUD:SaveBuffSettings()
 	end
 	MenuCallbackHandler.callback_noblehud_set_buffs_mastermind_stockholm_ready_enabled = function(self,item)
 		NobleHUD.buff_settings.stockholm_ready = item:value() == "on"
+		NobleHUD:CheckBuff("stockholm_ready")
 		NobleHUD:SaveBuffSettings()
 	end
 	MenuCallbackHandler.callback_noblehud_set_buffs_mastermind_partners_in_crime_enabled = function(self,item)
 		NobleHUD.buff_settings.partners_in_crime = item:value() == "on"
+		NobleHUD:CheckBuff("partners_in_crime")
 		NobleHUD:SaveBuffSettings()
 	end
 	MenuCallbackHandler.callback_noblehud_set_buffs_mastermind_regen_aggregated_enabled = function(self,item)
 		NobleHUD.buff_settings.hp_regen = item:value() == "on"
+		NobleHUD:CheckBuff("hp_regen")
 		NobleHUD:SaveBuffSettings()
 	end
 	MenuCallbackHandler.callback_noblehud_set_buffs_mastermind_aggressive_reload_enabled = function(self,item)
 		NobleHUD.buff_settings.single_shot_fast_reload = item:value() == "on"
+		NobleHUD:CheckBuff("single_shot_fast_reload")
 		NobleHUD:SaveBuffSettings()
 	end
 	MenuCallbackHandler.noblehud_buffs_mastermind_options_close = function(self)
@@ -13166,22 +13213,27 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 
 	MenuCallbackHandler.callback_noblehud_set_buffs_enforcer_underdog_enabled = function(self,item)
 		NobleHUD.buff_settings.dmg_multiplier_outnumbered = item:value() == "on"
+		NobleHUD:CheckBuff("dmg_multiplier_outnumbered")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_enforcer_overkill_enabled = function(self,item)
 		NobleHUD.buff_settings.overkill = item:value() == "on"
+		NobleHUD:CheckBuff("overkill")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_enforcer_bullseye_enabled = function(self,item)
 		NobleHUD.buff_settings.bullseye = item:value() == "on"
+		NobleHUD:CheckBuff("bullseye")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_enforcer_bulletstorm_enabled = function(self,item)
 		NobleHUD.buff_settings.bulletstorm = item:value() == "on"
+		NobleHUD:CheckBuff("bulletstorm")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_enforcer_fully_loaded_enabled = function(self,item)
 		NobleHUD.buff_settings.fully_loaded = item:value() == "on"
+		NobleHUD:CheckBuff("fully_loaded")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.noblehud_buffs_enforcer_options_close = function(self)
@@ -13191,6 +13243,7 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	--TECHNICIAN
 	MenuCallbackHandler.callback_noblehud_set_buffs_technician_lock_n_load_enabled = function(self,item)
 		NobleHUD.buff_settings.lock_n_load = item:value() == "on"
+		NobleHUD:CheckBuff("lock_n_load")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.noblehud_buffs_technician_options_close = function(self)
@@ -13199,18 +13252,22 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	--GHOST	
 	MenuCallbackHandler.callback_noblehud_set_buffs_ghost_sixth_sense_enabled = function(self,item)
 		NobleHUD.buff_settings.sixth_sense = item:value() == "on"
+		NobleHUD:CheckBuff("sixth_sense")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_ghost_dire_need_enabled = function(self,item)
 		NobleHUD.buff_settings.dire_need = item:value() == "on"
+		NobleHUD:CheckBuff("dire_need")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_ghost_second_wind_enabled = function(self,item)
 		NobleHUD.buff_settings.second_wind = item:value() == "on"
+		NobleHUD:CheckBuff("second_wind")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_ghost_unseen_strike_enabled = function(self,item)
 		NobleHUD.buff_settings.unseen_strike = item:value() == "on"
+		NobleHUD:CheckBuff("unseen_strike")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.noblehud_buffs_ghost_options_close = function(self)
@@ -13219,38 +13276,47 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	--FUGITIVE	
 	MenuCallbackHandler.callback_noblehud_set_buffs_fugitive_desperado_enabled = function(self,item)
 		NobleHUD.buff_settings.desperado = item:value() == "on"
+		NobleHUD:CheckBuff("desperado")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_fugitive_trigger_happy_enabled = function(self,item)
 		NobleHUD.buff_settings.trigger_happy = item:value() == "on"
+		NobleHUD:CheckBuff("trigger_happy")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_fugitive_running_from_death_enabled = function(self,item)
 		NobleHUD.buff_settings.running_from_death = item:value() == "on"
+		NobleHUD:CheckBuff("running_from_death")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_fugitive_up_you_go_enabled = function(self,item)
 		NobleHUD.buff_settings.up_you_go = item:value() == "on"
+		NobleHUD:CheckBuff("up_you_go")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_fugitive_swan_song_enabled = function(self,item)
 		NobleHUD.buff_settings.swan_song = item:value() == "on"
+		NobleHUD:CheckBuff("swan_song")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_fugitive_messiah_enabled = function(self,item)
 		NobleHUD.buff_settings.messiah_charge = item:value() == "on"
+		NobleHUD:CheckBuff("messiah_charge")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_fugitive_bloodthirst_melee_enabled = function(self,item)
 		NobleHUD.buff_settings.bloodthirst_melee = item:value() == "on"
+		NobleHUD:CheckBuff("bloodthirst_melee")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_fugitive_bloodthirst_reload_enabled = function(self,item)
 		NobleHUD.buff_settings.bloodthirst_reload = item:value() == "on"
+		NobleHUD:CheckBuff("bloodthirst_reload")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_fugitive_berserker_enabled = function(self,item)
 		NobleHUD.buff_settings.berserker_damage_multiplier = item:value() == "on"
+		NobleHUD:CheckBuff("berserker_damage_multiplier")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.noblehud_buffs_fugitive_options_close = function(self)

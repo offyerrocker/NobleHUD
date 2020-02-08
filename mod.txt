@@ -120,6 +120,26 @@
 		{
 			"hook_id" : "lib/units/vehicles/vehicledrivingext",
 			"script_path" : "lua/vehicledrivingext.lua"
+		},
+		{
+			"hook_id" : "lib/units/beings/player/states/playertased",
+			"script_path" : "buff/playertased.lua"
+		},
+		{
+			"hook_id" : "lib/units/beings/player/playermovement",
+			"script_path" : "buff/playermovement.lua"
+		},
+		{
+			"hook_id" : "lib/units/beings/player/playerdamage",
+			"script_path" : "buff/playerdamage.lua"
+		},
+		{
+			"hook_id" : "core/lib/managers/coreenvironmentcontrollermanager",
+			"script_path" : "buff/coreenvironmentcontrollermanager.lua"
+		},
+		{
+			"hook_id" : "lib/units/beings/player/states/playerstandard",
+			"script_path": "buff/playerstandard.lua"
 		}
 	]
 }

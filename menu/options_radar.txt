@@ -3,7 +3,7 @@
 	"parent_menu_id" : "noblehud_options",
 	"title" : "noblehud_radar_options_title",
 	"description" : "noblehud_radar_options_desc",
-	"back_callback" : "noblehud_radar_options_close",
+	"back_callback" : "callback_noblehud_radar_options_close",
 	"items" : [
 		{
 			"type" : "toggle",

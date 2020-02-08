@@ -589,6 +589,7 @@
 	"noblehud_buff_trigger_happy_label" : "Trigger Happy $TIMER",
 	"noblehud_buff_desperado_menu" : "Desperado Pistol Accuracy Bonus",
 	"noblehud_buff_desperado_label" : "Desperado $TIMER",
+	"noblehud_buff_combat_medic_label" : "Combat Medic $TIMER",
 	"noblehud_buff_partners_in_crime_menu" : "Partners In Crime Move Speed Bonus",
 	"noblehud_buff_partners_in_crime_label" : "Partners In Crime",
 	"noblehud_buff_partners_in_crime_aced_menu" : "Partners In Crime Aced Health Boost",
