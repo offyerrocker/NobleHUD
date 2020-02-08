@@ -18,11 +18,14 @@ Hooks:PostHook(PlayerDamage,"_update_armor_grinding","noblehud_buff_anarchist",f
 end)
 
 Hooks:PreHook(PlayerDamage,"_check_bleed_out","noblehud_buff_uppers_aced_cooldown",function(self,can_activate_berserker,ignore_movement_state,...)
-	if not self._block_medkit_auto_revive and self._uppers_elapsed + self._UPPERS_COOLDOWN < Application:time() then
-		local auto_recovery_kit = FirstAidKitBase.GetFirstAidKit(self._unit:position())
+	if self:get_real_health() == 0 and not self._check_berserker_done then
 
-		if auto_recovery_kit then
-			NobleHUD:AddBuff("uppers_aced_cooldown",{duration = self._UPPERS_COOLDOWN})			
+		if not self._block_medkit_auto_revive and self._uppers_elapsed + self._UPPERS_COOLDOWN < Application:time() then
+			local auto_recovery_kit = FirstAidKitBase.GetFirstAidKit(self._unit:position())
+
+			if auto_recovery_kit then
+				NobleHUD:AddBuff("uppers_aced_cooldown",{duration = self._UPPERS_COOLDOWN})
+			end
 		end
 	end
 end)

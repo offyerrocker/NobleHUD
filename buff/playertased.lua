@@ -7,9 +7,15 @@ Hooks:PostHook(PlayerTased,"enter","noblehud_buff_tased",function(self,state_dat
 		buff_name = "tased"
 		duration = managers.modifiers:modify_value("PlayerTased:TasedTime", tweak_data.player.damage.TASED_TIME)
 	end
-	--todo change color from managers.player:upgrade_value("player", "taser_malfunction"); .interval, .chance_to_trigger
-	--or for managers.player:has_category_upgrade("player", "escape_taser"), priority
-	NobleHUD:AddBuff(buff_name,{end_t = Application:time() + duration})
+	--or for , priority
+	local color
+	if managers.player:has_category_upgrade("player", "escape_taser") then 
+		color = NobleHUD.color_data.solar
+	elseif managers.player:has_category_upgrade("player", "taser_malfunction") then
+		--todo get info from managers.player:upgrade_value("player", "taser_malfunction"); .interval, .chance_to_trigger
+		color = NobleHUD.color_data.strange
+	end
+	NobleHUD:AddBuff(buff_name,{end_t = Application:time() + duration,text_color = color})
 end)
 
 

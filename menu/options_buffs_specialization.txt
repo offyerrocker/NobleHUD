@@ -39,6 +39,22 @@
 		},
 		{
 			"type" : "toggle",
+			"id" : "noblehud_set_buffs_specialization_gambler_medical_supplies_enabled",
+			"title" : "noblehud_set_buffs_specialization_gambler_medical_supplies_enabled_title",
+			"description" : "noblehud_set_buffs_specialization_gambler_medical_supplies_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_specialization_gambler_medical_supplies_enabled",
+			"value" : "gambler_2"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_specialization_gambler_ammo_give_out_enabled",
+			"title" : "noblehud_set_buffs_specialization_gambler_ammo_give_out_enabled_title",
+			"description" : "noblehud_set_buffs_specialization_gambler_ammo_give_out_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_specialization_gambler_ammo_give_out_enabled",
+			"value" : "gambler_1"
+		},
+		{
+			"type" : "toggle",
 			"id" : "noblehud_set_buffs_specialization_biker_enabled",
 			"title" : "noblehud_set_buffs_specialization_biker_enabled_title",
 			"description" : "noblehud_set_buffs_specialization_biker_enabled_desc",

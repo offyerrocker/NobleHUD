@@ -9,8 +9,8 @@
 	
 	
 -test has font with managers.dyn_resource:has_resource(Idstring("scene"), Idstring("core/environments/skies/" .. sky .. "/" .. sky), managers.dyn_resource.DYN_RESOURCES_PACKAGE)
-* "Speaking" icon for teammates and self
-		* Reduce the size of the teammate nameplate now that length is capped
+		* "Speaking" icon for teammates and self
+		* [ASSET] Reduce the size of the teammate nameplate now that length is capped
 		* Reduce Shield sound volume
 			* Add shield sounds slider
 		* Sync data:
@@ -36,36 +36,24 @@
 		* Replace X/Y/W/H/rows/columns with v/h bounds
 		* Reorganize buffs tweak table
 		* Add default setting for each buff
+		* Add threshold procs for Resist/crit/dodge, and option to always show
 		
-		* Aggregated DMG Resist
-		* Aggregated Crit Chance
-		* Aggregated Dodge Chance
-		* Aggregated HP Regen
+		
+		
+		
+		* Aggregated DMG Resist (mostly done)
+		* Aggregated Crit Chance (mostly done) 
+		* Aggregated Dodge Chance (mostly done)
+		
 		* Inspire Cooldown
 		* Inspire Movement Boost Received
-		* Flashbanged
-		* Tased
-		* Downed
-		* Electrocuted
-		* Swan Song
+		* Downed (check playerbleedout.lua state)
+		* Electrocuted (test)
 		* Messiah
 		* BIKER PERK DECK (redo all of that shit)
-		* Grinder
-		* Uppers Aced Cooldown
-		* Uppers Aced Ready
-		* Anarchist armor regen
-		* Armor break invulnerability
-		* Chico Injector
-		* Pocket ECM Jammer
-		* Pocket ECM Dodge On Kill
-		* Absorption Stacks
-		* Berserker Damage Mult
-		* Berserker Melee Damage Mult
-		* Bullet Storm
 		* Bloodthirst Melee Stacks
 		* Bloodthirst Reload Bonus
 		* Second Wind (from teammate)
-		* Sixth Sense
 		* Up You Go
 		* Combat Medic
 		* Running From Death
@@ -74,10 +62,17 @@
 		* Desperado
 		* Partners In Crime
 		* Partners In Crime Aced
-		* Aggressive Reload
 		* Lock N Load
 		* Stockholm Syndrome Aced Charge
 		
+		* Gambler health ammo (test)
+		* Gambler team ammo (test)
+		* Anarchist Lust for Life (active regen)
+		* Armor break invulnerability (test)
+		* Chico Injector
+		* Pocket ECM Jammer
+		* Pocket ECM Dodge On Kill
+		* Absorption Stacks (test)
 		
 			
 	&&& HIGH PRIORITY: &&&
@@ -95,7 +90,7 @@
 		* BAI sync data compatibility?
 
 		%% BUGS:
-		
+			- Shield noises (low/depleted) may persist during loading
 			- Assault phase localization when not host
 			- Vanilla HUD is visible in drop-in spectate mode
 			- Floating ammo panel is visible in casing/civilian mode
@@ -396,7 +391,7 @@ NobleHUD.color_data = {
 	hud_buff_status = Color("FFD700"), -- yellow
 	hud_buff_negative = Color("FF2E2E"),
 	hud_buff_neutral = Color.white,
-	hud_buff_positive = Color.blue,
+	hud_buff_positive = Color("2B8EFF"), --blue, i hope
 	hud_latency_low = Color(0,1,0),
 	hud_latency_medium = Color(1,1,0),
 	hud_latency_high = Color(1,0,0),
@@ -787,17 +782,33 @@ NobleHUD._buff_data = {
 		duration = 10,
 		value_type = "timer" --melee hit regens 20% hp, once per 10s from infiltrator 9/9 Life Drain
 	},
-	["gambler_medical_supplies"] = {
-		disabled = true,
+	["loose_ammo_restore_health"] = { --gambler medical supplies
 		source = "perk",
 		duration = 3,
-		value_type = "timer" --n health on ammo pickup, once per 3s from Gambler 1/9 Medical Supplies
+		value_type = "timer", --n health on ammo pickup, once per 3s from Gambler 1/9 Medical Supplies
+		icon = 10,
+		icon_tier = 1,
+		tier_floors = {1,7,9},
+		icon_rect = {1,7},
+		label = "noblehud_buff_gambler_medical_supplies_label",
+		text_color = NobleHUD.color_data.hud_buff_negative,
+		value_type = "timer",
+		source = "perk",
+		flash = false
+		
 	},
-	["gambler_ammo_give_out"] = {
-		disabled = true,
+	["loose_ammo_give_team"] = { --gambler ammo give out
 		source = "perk",
 		duration = 5,
-		value_type = "timer" -- half normal ammo pickup to all team members once every 5 seconds from Gambler 3/9
+		value_type = "timer", -- half normal ammo pickup to all team members once every 5 seconds from Gambler 3
+		icon = 10,
+		icon_tier = 3,
+		icon_rect = {3,5},
+		label = "noblehud_buff_gambler_ammo_give_out_label",
+		text_color = NobleHUD.color_data.hud_buff_negative,
+		value_type = "timer",
+		source = "perk",
+		flash = false
 	},
 	["grinder"] = {
 		icon = 11,
@@ -816,12 +827,17 @@ NobleHUD._buff_data = {
 	},
 	["expresident"] = {
 		disabled = true,
+		icon_tier = 1,
+		icon_rect = {1,7},
+		label = "noblehud_buff_expresident_label",
 		source = "perk",
-		value_type = "value" --stored health
+		value_type = "value", --stored health
+		flash = false
 	},
 	["hysteria"] = {
 		icon = 14,
 		icon_rect = {1,7},
+		tier_floors = {1,9},
 		icon_tier = 1,
 		label = "noblehud_buff_maniac_label",
 		value_type = "value",
@@ -834,6 +850,16 @@ NobleHUD._buff_data = {
 		icon_rect = {1,7},
 		label = "noblehud_buff_anarchist_label",
 		persistent_timer = true,
+		text_color = NobleHUD.color_data.hud_buff_status,
+		value_type = "timer",
+		source = "perk",
+		flash = false
+	},
+	["anarchist_lust_for_life"] = {
+		icon = 15,
+		icon_tier = 9,
+		icon_rect = {1,7},
+		label = "noblehud_buff_anarchist_label",
 		text_color = NobleHUD.color_data.hud_buff_status,
 		value_type = "timer",
 		source = "perk",
@@ -947,10 +973,10 @@ NobleHUD._buff_data = {
 		icon_rect = {1,7},
 		duration = 3, --6 aced
 		label = "noblehud_buff_swan_song_label",
-		text_color = NobleHUD.color_data.hud_buff_negative,
+		text_color = NobleHUD.color_data.strange,
 		value_type = "timer",
 		source = "skill",
-		flash = false
+		flash = true
 	},
 	["messiah_charge"] = {
 		icon = "messiah",
@@ -973,7 +999,7 @@ NobleHUD._buff_data = {
 	["uppers_aced_cooldown"] = {
 		icon = "tea_cookies",
 		icon_rect = {1,7},
-		label = "noblehud_buff_uppers_label",
+		label = "noblehud_buff_uppers_cooldown_label",
 		text_color = NobleHUD.color_data.hud_buff_negative,
 		value_type = "timer",
 		source = "skill",
@@ -982,14 +1008,13 @@ NobleHUD._buff_data = {
 	["uppers_ready"] = {
 		icon = "tea_cookies",
 		icon_rect = {1,7},
-		label = "noblehud_buff_uppers_label",
+		label = "noblehud_buff_uppers_ready_label",
 		text_color = NobleHUD.color_data.hud_buff_status,
 		value_type = "status",
 		source = "skill",
 		flash = false
 	},
 	["berserker_damage_multiplier"] = {
-	
 		icon = "wolverine",
 		icon_rect = {1,7},
 		label = "noblehud_buff_berserker_label",
@@ -1068,11 +1093,12 @@ NobleHUD._buff_data = {
 		flash = false
 	},
 	["sixth_sense"] = {
-		disabled = false,
 		icon = "chameleon",
 		icon_rect = {1,7},
 		label = "noblehud_buff_sixth_sense_label",
 		value_type = "timer",
+		persistent_timer = true,
+		timer_source = "heist",
 		source = "skill",
 		flash = false
 	},
@@ -5355,6 +5381,13 @@ function NobleHUD:UpdateHUD(t,dt)
 		
 -- ************** BUFFS ************** 
 		if self:IsBuffTrackerEnabled() then	
+			if FirstAidKitBase.GetFirstAidKit(player:position()) and (player_damage._uppers_elapsed + player_damage._UPPERS_COOLDOWN < t) then 
+				self:AddBuff("uppers_ready")
+			else
+				self:RemoveBuff("uppers_ready")
+			end
+		
+		
 			local buffs_panel_master = self._buffs_panel
 
 			
@@ -5403,25 +5436,30 @@ function NobleHUD:UpdateHUD(t,dt)
 							self:log("Buff data has no end_t! Removing...",{color=Color.red})
 							remove_buff()
 						else
-							if buff_tweak_data.use_heist_timer then  --nothing uses this yet
-							--some buffs, such as grenade abilities, are calculated by a timer other than the application's. great stuff.
-							--honestly i should probably just always be using heist_timer for things related to in-game time.
+							if buff_tweak_data.timer_source == "heist" then
 								_t = managers.game_play_central:get_heist_timer()
+							elseif buff_tweak_data.timer_source == "game" then
+							--some buffs, such as grenade abilities, are calculated by a timer other than Application:time()
+								_t = TimerManager:game():time()
+							elseif buff_tweak_data.timer_source == "player" then 
+								_t = managers.player:player_timer():time()
 							end
-							local time_left = buff_data.end_t - _t
-							if buff_data.end_t < _t and not buff_tweak_data.persistent_timer then 
+							if (buff_data.end_t < _t) and not buff_tweak_data.persistent_timer then 
 								self:log("Buff " .. buff_id .. " expired! Removing...",{color=Color.red})
 								remove_buff()
 							else
+								local time_left = math.max(0,buff_data.end_t - _t)
 								buff_time = self.format_seconds(1 + time_left)
-								if buff_id == "armor_break_invulnerable" then 
+								if buff_id == "armor_break_invulnerable" then
+									local invuln_timer = player_damage._can_take_dmg_timer
 									if invuln_timer and invuln_timer > 0 then 
 										buff_label:set_text(string.gsub(buff_text,"$TIMER",format_seconds(math.ceil(invuln_timer))))
-										buff_label:set_color(Color("2B8EFF"))
+										buff_label:set_color(self.color_data.hud_buff_positive)
 										buff_label:set_alpha(1 + (math.sin(_t * 800) * 0.5))
 									else
 										buff_label:set_text(string.gsub(managers.localization:text("noblehud_buff_armor_break_invulnerable_cooldown_label"),"$TIMER",buff_time))
 										buff_label:set_color(buff_tweak_data.text_color)
+										buff_icon:set_color(self.color_data.hud_buff_negative)
 										buff_label:set_alpha(1)
 									end
 								elseif buff_id == "hp_regen" then 
@@ -5454,9 +5492,10 @@ function NobleHUD:UpdateHUD(t,dt)
 						end
 					elseif buff_type == "value" then 
 						if buff_id == "berserker_damage_multiplier" then 
+							
 							local health_ratio = managers.player:get_damage_health_ratio(player_damage:health_ratio(),"damage")
 							buff_icon:set_color(Color(1,1 - health_ratio,1 - health_ratio))
-							buff_label:set_text(string.gsub(buff_text,"$VALUE",tostring(buff_data.value or 0)))
+							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%d",health_ratio * 100)))
 							if buff_tweak_data.flash then
 								if health_ratio > 0.7 then 
 									buff_icon:set_alpha(1 + (math.sin(_t * 800) * 0.5)) --todo increasing flash severity
@@ -5468,11 +5507,11 @@ function NobleHUD:UpdateHUD(t,dt)
 								end
 							end
 						elseif buff_id == "dmg_resist_total" then
-							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%i",100 * (1 - managers.player:damage_reduction_skill_multiplier("bullet")))))
+							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%d",100 * (1 - managers.player:damage_reduction_skill_multiplier("bullet")))))
 						elseif buff_id == "dodge_chance_total" then
-							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%i",100 * managers.player:skill_dodge_chance(player:movement():running(),player:movement():crouching(),is_zipline) + managers.player:body_armor_value("dodge"))))
+							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%d",100 * managers.player:skill_dodge_chance(player:movement():running(),player:movement():crouching(),is_zipline) + managers.player:body_armor_value("dodge"))))
 						elseif buff_id == "crit_chance_total" then
-							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%i",100 * managers.player:critical_hit_chance())))
+							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%d",100 * managers.player:critical_hit_chance())))
 						elseif buff_id == "grinder" then 
 							buff_label:set_text(string.gsub(buff_text,"$VALUE",tostring(buff_data.value or 0)))
 							if buff_data.value <= 0 then 
@@ -5571,7 +5610,7 @@ function NobleHUD:UpdateHUD(t,dt)
 						buff_y = buffs_panel_master:h() - (buff_y + 64)
 					end
 					if self:GetBuffPanelAlign() == "right" then 
-						buff_x = buffs_master_panel:w() - (buff_x + buff_w)
+						buff_x = buffs_panel_master:w() - (buff_x + buff_w)
 					end
 					local d_x = buff_x - buff_panel:x()
 					local d_y = buff_y - buff_panel:y()
@@ -11847,7 +11886,9 @@ function NobleHUD:LayoutBuffPanel()
 end
 
 function NobleHUD:AddBuff(id,params)
-
+	if not self:IsBuffTrackerEnabled() then 
+		return
+	end
 	params = params or {}
 	--if tweak_data says heist timer blah blah blah
 
@@ -11909,8 +11950,8 @@ function NobleHUD:CreateBuff(id,params)
 	local icon_tier = buff_data.icon_tier --for perk decks
 	local tier_floors = buff_data.tier_floors --max_tier but with a whitelist/fallback
 	
-	local text_color = buff_data.text_color or Color.white
-	local icon_color = buff_data.icon_color or Color.white
+	local text_color = params.text_color or buff_data.text_color or Color.white
+	local icon_color = params.icon_color or buff_data.icon_color or Color.white
 	local label = buff_data.label
 	local blend_mode = buff_data.blend_mode or "add" --not specified for the vast majority of buffs
 	
@@ -12001,14 +12042,18 @@ function NobleHUD:CreateBuff(id,params)
 end
 
 function NobleHUD:RemoveBuff(id)
-	if self._active_buffs[id] then 
-		local panel = self._active_buffs[id].panel
+	if self._active_buffs[id] then
+		local panel = self._active_buffs[id].panel or self._buffs_panel:child(id)
 		if panel and alive(panel) then 
 			--todo animate fadeout
 			panel:parent():remove(panel)
 		end
 		self._active_buffs[id] = nil
 	end
+end
+
+function NobleHUD:UpdateBuffs() --not used
+	local t = TimerManager:game():time()
 end
 
 function NobleHUD:ClearBuffs()
@@ -12987,7 +13032,11 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 
 	--ALL
 	MenuCallbackHandler.callback_noblehud_set_buffs_master_enabled = function(self,item)
-		NobleHUD.settings.buffs_master_enabled = item:value() == "on"
+		local state = item:value() == "on"
+		NobleHUD.settings.buffs_master_enabled = state
+		if not state then 
+			NobleHUD:ClearBuffs()
+		end
 	end
 	MenuCallbackHandler.callback_noblehud_set_buff_align_center = function(self,item)
 		NobleHUD.settings.buff_align_center = item:value() == "on"
@@ -13118,6 +13167,16 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	MenuCallbackHandler.callback_noblehud_set_buffs_specialization_infiltrator_life_drain_enabled = function(self,item)
 		NobleHUD.buff_settings.life_drain = item:value() == "on"
 		NobleHUD:CheckBuff("life_drain")
+		NobleHUD:SaveBuffSettings()
+	end
+	MenuCallbackHandler.callback_noblehud_set_buffs_specialization_gambler_medical_supplies_enabled = function(self,item)
+		NobleHUD.buff_settings.loose_ammo_restore_health = item:value() == "on"
+		NobleHUD:CheckBuff("loose_ammo_restore_health")
+		NobleHUD:SaveBuffSettings()
+	end	
+	MenuCallbackHandler.callback_noblehud_set_buffs_specialization_gambler_ammo_give_out_enabled = function(self,item)
+		NobleHUD.buff_settings.loose_ammo_give_team = item:value() == "on"
+		NobleHUD:CheckBuff("loose_ammo_give_team")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_specialization_biker_enabled = function(self,item)
