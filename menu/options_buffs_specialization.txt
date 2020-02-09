@@ -43,7 +43,7 @@
 			"title" : "noblehud_set_buffs_specialization_gambler_medical_supplies_enabled_title",
 			"description" : "noblehud_set_buffs_specialization_gambler_medical_supplies_enabled_desc",
 			"callback" : "callback_noblehud_set_buffs_specialization_gambler_medical_supplies_enabled",
-			"value" : "gambler_2"
+			"value" : "loose_ammo_restore_health"
 		},
 		{
 			"type" : "toggle",
@@ -51,7 +51,7 @@
 			"title" : "noblehud_set_buffs_specialization_gambler_ammo_give_out_enabled_title",
 			"description" : "noblehud_set_buffs_specialization_gambler_ammo_give_out_enabled_desc",
 			"callback" : "callback_noblehud_set_buffs_specialization_gambler_ammo_give_out_enabled",
-			"value" : "gambler_1"
+			"value" : "loose_ammo_give_team"
 		},
 		{
 			"type" : "toggle",

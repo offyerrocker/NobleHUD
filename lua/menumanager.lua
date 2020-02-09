@@ -5464,8 +5464,6 @@ function NobleHUD:UpdateHUD(t,dt)
 			local num_buffs = 0
 			for buff_index,buff_data in ipairs(self._active_buffs) do 
 				local buff_id = tostring(buff_data.id)
---				self:log(buff_id,{color=self.color_data.haunted})
---				Console:SetTrackerValue("trackerb",buff_id)
 				local removed_buff = false
 				local _t = t
 				local buff_tweak_data = self._buff_data[buff_id] 
@@ -7403,11 +7401,12 @@ function NobleHUD:create_special_crosshair(type,panel,w,h)
 				})
 			end
 		end
-		self._altimeter = altimeter_frame
+--		self._altimeter = altimeter_frame
 	end
 end
 
 function NobleHUD:_set_crosshair_altimeter(angle)
+--[[
 	local a = self._altimeter
 	if alive(a) then 
 		if alive(a:child("altimeter_slide")) then
@@ -7423,22 +7422,22 @@ function NobleHUD:_set_crosshair_altimeter(angle)
 --			- (360 * 1.5)
 			--((angle + 90)/90) * (self._ws:panel():h()/2) --((angle+90)/180) * (self._ws:panel():h()/2) --
 			a:child("altimeter_slide"):set_y(b)
---			Console:SetTrackerValue("trackerb",tostring(b))
---			Console:SetTrackerValue("trackerc",tostring(angle))
 		end
 	end
-if true then return end
-
+	--]]
+	
 	local modepanel = self:get_current_crosshair()
 	if modepanel and alive(modepanel) then 
 		local frame = modepanel:child("altimeter_frame")
 		if frame and alive(frame) then
 			local altimeter = frame and frame:child("altimeter_slide")
 			if alive(altimeter) then 
-				altimeter:set_y((angle + 90) * 360)  --todo get angle_span from settings
+				altimeter:set_y(((angle / 90) * 160	)+ (-3 * (160 / 2) ))
 			end
 		end
 	end
+--[[
+	--]]
 end
 
 function NobleHUD:is_weapon_crosshair_override_present(id) --not used
@@ -11599,7 +11598,6 @@ end
 function NobleHUD:animate_interact_done(o,t,dt,start_t,duration,start_w)
 --	local floating_panel = o:child("floating_panel")
 	local ratio = (t - start_t) / duration
---	Console:SetTrackerValue("trackera",ratio)
 	if ratio >= 1 then 
 		o:set_w(start_w)
 		o:child("floating_panel"):child("interact_progress"):set_text("")
