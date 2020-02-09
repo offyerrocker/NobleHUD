@@ -34,15 +34,7 @@
 		* Add default setting for each buff
 		* Add threshold procs for Resist/crit/dodge, and option to always show
 		
-		* Inspire Cooldown
-		* Inspire Movement Boost Received
-		* Downed (check playerbleedout.lua state)
-		* Electrocuted (test)
-		* Messiah
-		* BIKER PERK DECK (redo all of that shit)
-		* Bloodthirst Melee Stacks
-		* Bloodthirst Reload Bonus
-		* Second Wind (from teammate)
+			Singleplayer
 		* Up You Go
 		* Combat Medic
 		* Running From Death
@@ -51,15 +43,31 @@
 		* Desperado
 		* Partners In Crime
 		* Partners In Crime Aced
-		* Lock N Load
+		* Lock N Load (Test)
 		* Stockholm Syndrome Aced Charge
-		
+		* Fully Loaded
+			Perk Decks
 		* Anarchist Lust for Life (active regen)
-		* Armor break invulnerability (test)
 		* Chico Injector
 		* Pocket ECM Jammer
 		* Pocket ECM Dodge On Kill
+		
 		* Absorption Stacks (test)
+		
+			Multiplayer/Bots
+		* Inspire Cooldown
+		
+			Multiplayer
+		* Inspire Movement Boost Received
+		* Second Wind (from teammate)
+		
+		
+		* Downed (check playerbleedout.lua state)
+		* Electrocuted (test)
+		* Messiah
+		* BIKER PERK DECK (redo all of that shit)
+		
+		
 		
 			
 	&&& HIGH PRIORITY: &&&
@@ -919,9 +927,16 @@ NobleHUD._buff_data = {
 		flash = true
 	},
 	["sicario"] = {
-		disabled = true,
+		source = "perk",
 		priority = 3,
-		value_type = "timer" -- is in smoke bomb; smoke bomb lifetime
+		icon = 18,
+		tier_floors = {1,9},
+		icon_tier = 1,
+		icon_rect = {1,7},
+		label = "noblehud_buff_sicario_label",
+		text_color = NobleHUD.color_data.hud_buff_status,
+		value_type = "timer",
+		flash = true
 	},
 	["delayed_damage"] = {
 		disabled = true,
@@ -1282,7 +1297,7 @@ NobleHUD._buff_data = {
 		flash = false
 	},
 	--]]
-	["lock_n_load"] = {
+	["shock_and_awe_reload_multiplier"] = {
 		source = "skill",
 		priority = 5,
 		icon = "shock_and_awe",
@@ -5437,23 +5452,45 @@ function NobleHUD:UpdateHUD(t,dt)
 			end
 			if self:IsBuffEnabled("sicario") then 
 				local is_in_smoke = false
-				for _, smoke_screen in ipairs(self._smoke_screen_effects or {}) do
+				local smoke_timer
+				for _, smoke_screen in ipairs(managers.player._smoke_screen_effects or {}) do
 					if smoke_screen:is_in_smoke(player) then
 						is_in_smoke = true
+						smoke_timer = smoke_screen._timer
 						break
 					end				
 				end
 				if is_in_smoke then
-					self:AddBuff("sicario")
+					self:AddBuff("sicario",{duration = smoke_timer})
 				else
 					self:RemoveBuff("sicario")
 				end
 			end
-		
-		
+			
+			if self:IsBuffEnabled("hysteria") then 
+				local damage_absorption = managers.player:damage_absorption()
+				if damage_absorption > 0 then 
+					self:AddBuff("hysteria",{value=damage_absorption * 100})
+				else
+					self:RemoveBuff("hysteria")
+				end
+			end
+--	return unpack(managers.player:local_player():character_damage()._damage_to_armor), Application:time()
+
+--[[
+			if self:IsBuffEnabled("anarchist_lust_for_life") then 
+				local damage_to_armor = player_damage._damage_to_armor or {}
+				Console:SetTrackerValue("trackera",tostring(damage_to_armor.target_tick))
+				Console:SetTrackerValue("trackerb",tostring(damage_to_armor.elapsed))
+				if damage_to_armor and damage_to_armor.elapsed then 
+--					self:AddBuff("anarchist_lust_for_life",{duration = damage_to_armor.elapsed})
+				else
+					self:RemoveBuff("anarchist_lust_for_life")
+				end
+			end
+--]]
 			local buffs_panel_master = self._buffs_panel
 
-			
 			local buff_h = self._BUFF_ITEM_H
 			local buff_w = self._BUFF_ITEM_W
 			
@@ -5512,7 +5549,7 @@ function NobleHUD:UpdateHUD(t,dt)
 								if buff_id == "armor_break_invulnerable" then
 									local invuln_timer = player_damage._can_take_dmg_timer
 									if invuln_timer and invuln_timer > 0 then 
-										buff_label:set_text(string.gsub(buff_text,"$TIMER",format_seconds(math.ceil(invuln_timer))))
+										buff_label:set_text(string.gsub(buff_text,"$TIMER",self.format_seconds(math.ceil(invuln_timer))))
 										buff_label:set_color(self.color_data.hud_buff_positive)
 										buff_label:set_alpha(1 + (math.sin(_t * 800) * 0.5))
 									else
@@ -5575,13 +5612,11 @@ function NobleHUD:UpdateHUD(t,dt)
 --								self:log("Grinder stacks ended! Removing...",{color=Color.red})
 								remove_buff()
 							end
-						elseif buff_id == "lock_n_load" then 
-							buff_label:set_text(buff_text)
 						elseif buff_id == "hysteria" then 
-							buff_label:set_text(string.gsub(buff_text,"$VALUE",tostring(buff_data.value or 1)))
-							local max_stacks = tweak_data.upgrades.max_total_cocaine_stacks
-							
-							if buff_tweak_data.flash and buff_data.value >= max_stacks then 
+							local hysteria_stacks = (buff_data.value or 0) * 100
+							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%d",hysteria_stacks)))
+
+							if buff_tweak_data.flash and buff_data.value >= tweak_data.upgrades.max_total_cocaine_stacks then 
 								local min_alpha = 0.5 --desired minimum alpha; trough
 								local b = 1 - (2 / min_alpha) --denominator
 								local frequency = 10 --wavelength; lower is more often
@@ -5590,6 +5625,8 @@ function NobleHUD:UpdateHUD(t,dt)
 							elseif buff_icon:alpha() < 1 then 
 								buff_label:set_alpha(1)
 							end
+						elseif buff_id == "shock_and_awe_reload_multiplier" then 
+							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%.2f",buff_data.value)))
 						elseif buff_id == "wild_kill_counter" then
 						--[[ --temp disabled til i reverse engineer it again
 							local wild_kill_counter = managers.player:get_wild_kill_counter()
@@ -5625,6 +5662,13 @@ function NobleHUD:UpdateHUD(t,dt)
 						end
 					elseif buff_type == "status" then 
 						--display text as long as status is present
+						if buff_tweak_data.flash then 
+							local flash_time = 800
+							if type(buff_tweak_data.flash) == "number" then 
+								flash_time = buff_tweak_data.flash
+							end
+							buff_label:set_alpha(1 + (math.sin(_t * flash_time) * 0.5))
+						end
 						buff_label:set_text(buff_text)
 					else
 						self:log("UpdateHUD(): Unknown buff value type " .. tostring(buff_type) .. " for id " .. tostring(buff_id),{color=Color.red})
@@ -11975,9 +12019,7 @@ function NobleHUD:AddBuff(id,params)
 --		buff,index = self:GetBuff(id)
 		local _,index = self:GetBuff(id)
 		if index and self._active_buffs[index] then 
---		self._active_buffs[index] = buff
---		panel = buff.panel
-			self:log("Updating existing buff " .. tostring(id) .. ", index " .. tostring(index),{color=Color.red})
+--			self:log("Updating existing buff " .. tostring(id) .. ", index " .. tostring(index),{color=Color.red})
 			for k,v in pairs(params) do 
 				self._active_buffs[index][k] = v
 			end
@@ -13275,6 +13317,11 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		NobleHUD.buff_settings.hitman = item:value() == "on"
 		NobleHUD:CheckBuff("hitman")
 		NobleHUD:SaveBuffSettings()
+	end
+	MenuCallbackHandler.callback_noblehud_set_buffs_specialization_anarchist_lust_for_life_enabled = function(self,item)
+		NobleHUD.buff_settings.anarchist_lust_for_life = item:value() == "on"
+		NobleHUD:CheckBuff("anarchist_lust_for_life")
+		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_specialization_infiltrator_overdog_enabled = function(self,item)
 		NobleHUD.buff_settings.overdog = item:value() == "on"
@@ -13423,8 +13470,8 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 
 	--TECHNICIAN
 	MenuCallbackHandler.callback_noblehud_set_buffs_technician_lock_n_load_enabled = function(self,item)
-		NobleHUD.buff_settings.lock_n_load = item:value() == "on"
-		NobleHUD:CheckBuff("lock_n_load")
+		NobleHUD.buff_settings.shock_and_awe_reload_multiplier = item:value() == "on"
+		NobleHUD:CheckBuff("shock_and_awe_reload_multiplier")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.noblehud_buffs_technician_options_close = function(self)

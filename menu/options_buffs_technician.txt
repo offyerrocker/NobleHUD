@@ -11,7 +11,7 @@
 			"title" : "noblehud_set_buffs_technician_lock_n_load_enabled_title",
 			"description" : "noblehud_set_buffs_technician_lock_n_load_enabled_desc",
 			"callback" : "callback_noblehud_set_buffs_technician_lock_n_load_enabled",
-			"value" : "lock_n_load"
+			"value" : "shock_and_awe_reload_multiplier"
 		}
 	]
 }
