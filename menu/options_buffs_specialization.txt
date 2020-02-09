@@ -71,6 +71,14 @@
 		},
 		{
 			"type" : "toggle",
+			"id" : "noblehud_set_buffs_specialization_yakuza_enabled",
+			"title" : "noblehud_set_buffs_specialization_yakuza_enabled_title",
+			"description" : "noblehud_set_buffs_specialization_yakuza_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_specialization_yakuza_enabled",
+			"value" : "yakuza"
+		},
+		{
+			"type" : "toggle",
 			"id" : "noblehud_set_buffs_specialization_sicario_enabled",
 			"title" : "noblehud_set_buffs_specialization_sicario_enabled_title",
 			"description" : "noblehud_set_buffs_specialization_sicario_enabled_desc",

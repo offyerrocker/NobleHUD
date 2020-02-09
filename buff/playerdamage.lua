@@ -31,9 +31,23 @@ Hooks:PreHook(PlayerDamage,"_check_bleed_out","noblehud_buff_uppers_aced_cooldow
 end)
 
 Hooks:PostHook(PlayerDamage,"set_health","noblehud_buff_berserker",function(self,health) 
-	if managers.player:is_damage_health_ratio_active(self:health_ratio()) then
-		NobleHUD:AddBuff("berserker_damage_multiplier")
-		--no need to check for remove buff; this is re-evaluated every frame while the buff is applied
+	if managers.player:has_category_upgrade("player", "damage_health_ratio_multiplier") then
+		local ratio = managers.player:get_damage_health_ratio(self:health_ratio(), "melee")
+		if ratio > 0 then 
+			NobleHUD:AddBuff("berserker_damage_multiplier",{value=ratio})			
+		end
+	end
+	if managers.player:has_category_upgrade("player", "melee_damage_health_ratio_multiplier") then
+		local ratio = managers.player:get_damage_health_ratio(self:health_ratio(), "damage")
+		if ratio > 0 then 
+			NobleHUD:AddBuff("berserker_melee_damage_multiplier",{value=ratio})			
+		end
+	end
+	if managers.player:has_category_upgrade("player", "movement_speed_damage_health_ratio_multiplier") then
+		local ratio = managers.player:get_damage_health_ratio(self:health_ratio(), "movement_speed")
+		if ratio > 0 then 
+			NobleHUD:AddBuff("yakuza",{value=ratio})
+		end
 	end
 end)
 

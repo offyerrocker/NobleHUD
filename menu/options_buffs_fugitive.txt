@@ -75,6 +75,14 @@
 			"title" : "noblehud_set_buffs_fugitive_berserker_enabled_title",
 			"description" : "noblehud_set_buffs_fugitive_berserker_enabled_desc",
 			"callback" : "callback_noblehud_set_buffs_fugitive_berserker_enabled",
+			"value" : "berserker_melee_damage_multiplier"
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_fugitive_berserker_aced_enabled",
+			"title" : "noblehud_set_buffs_fugitive_berserker_aced_enabled_title",
+			"description" : "noblehud_set_buffs_fugitive_berserker_aced_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_fugitive_berserker_aced_enabled",
 			"value" : "berserker_damage_multiplier"
 		}
 	]
