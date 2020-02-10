@@ -350,14 +350,6 @@ Hooks:PostHook(HUDTeammate,"set_absorb_active","noblehud_set_absorb",function(se
 		absorption_fill:set_w(512 * ratio)
 		absorption_fill:set_x((1 - ratio) * 256)
 	end
---[[
-		--add to buff instead?
-	if absorb_amount > 0 then
-		NobleHUD:add_buff("hysteria",{value = math.floor(absorb_amount * 100)})
-	else 
-		NobleHUD:remove_buff("hysteria")
-	end
-	--]]
 end)
 
 Hooks:PostHook(HUDTeammate,"set_deployable_equipment","noblehud_set_deployable_equipment",function(self,data)

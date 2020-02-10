@@ -28,6 +28,7 @@
 		* Users cannot select an alternative crosshair for rocket launchers since they are technically grenade launchers
 		
 	%%% Buffs:
+		
 			
 		* Replace X/Y/W/H/rows/columns with v/h bounds
 		* Reorganize buffs tweak table
@@ -35,6 +36,7 @@
 		* Add threshold procs for Resist/crit/dodge, and option to always show
 		
 			Singleplayer
+		* Armor/Health buff
 		* Up You Go
 		* Combat Medic
 		* Running From Death
@@ -46,6 +48,7 @@
 		* Lock N Load (Test)
 		* Stockholm Syndrome Aced Charge
 		* Fully Loaded
+		
 			Perk Decks
 		* Anarchist Lust for Life (active regen)
 		* Chico Injector
@@ -5092,7 +5095,7 @@ function NobleHUD:UpdateHUD(t,dt)
 		
 		local player_pos = player:position()
 		local state = player:movement():current_state()
-		
+		local player_state_name = player:movement():current_state_name()
 
 			
 	--cartographer stuff
@@ -5155,7 +5158,7 @@ function NobleHUD:UpdateHUD(t,dt)
 				for _,unit in pairs(all_persons) do 
 					if unit and alive(unit) then --dead people are already filtered out of World:find_units_quick()
 						if unit == player then 
-							if state._moving or player:movement():current_state_name() == "driving" then 
+							if state._moving or player_state_name == "driving" then 
 --							if unit:movement():current_state():get_movement_state() ~= "crouching" then 
 								self:create_radar_blip(unit)
 							end
@@ -5281,7 +5284,7 @@ function NobleHUD:UpdateHUD(t,dt)
 						if ((data.variant == "person") or (data.variant == "sentry")) then
 							blip_pos = blip_unit:position()
 							if blip_unit == player then
-								if player:movement():current_state_name() == "driving" then  
+								if player_state_name == "driving" then  
 									--NOTHING' 
 								elseif state:get_movement_state() == "moving_crouching" then
 									if NobleHUD.even(math.floor(t)) or (math.random() > 0.5) then
@@ -5466,7 +5469,7 @@ function NobleHUD:UpdateHUD(t,dt)
 					self:RemoveBuff("sicario")
 				end
 			end
-			
+			--[[
 			if self:IsBuffEnabled("hysteria") then 
 				local damage_absorption = managers.player:damage_absorption()
 				if damage_absorption > 0 then 
@@ -5475,6 +5478,8 @@ function NobleHUD:UpdateHUD(t,dt)
 					self:RemoveBuff("hysteria")
 				end
 			end
+			--]]
+			
 --	return unpack(managers.player:local_player():character_damage()._damage_to_armor), Application:time()
 
 --[[
@@ -5807,13 +5812,26 @@ function NobleHUD:UpdateHUD(t,dt)
 		
 		--experimental mag count hud
 		if self:IsFloatingAmmoPanelEnabled() then
-			local floating_ammo_panel = self._floating_ammo_panel	
-			local wpn_unit = inventory:equipped_unit()
-			local wpn_unit_pos = wpn_unit and wpn_unit:position()
-			local wpn_unit_screen_pos = wpn_unit_pos and self._ws:world_to_screen(viewport_cam,wpn_unit_pos + ( player:camera():rotation():y() * 100)) --
-			if wpn_unit_screen_pos then 
-				floating_ammo_panel:set_x(wpn_unit_screen_pos.x)
-				floating_ammo_panel:set_y(wpn_unit_screen_pos.y)
+			local floating_ammo_panel = self._floating_ammo_panel
+			
+			local floating_ammo_blacklisted_states = {
+				clean = true,
+				civilian = true,
+				jerry1 = true,
+				jerry2 = true,
+				arrested = true,
+				incapacitated = true,
+				driving = true
+			}
+			if floating_ammo_blacklisted_states[player_state_name] then
+				floating_ammo_panel:set_position(-1000,-1000)
+			else
+				local wpn_unit = inventory:equipped_unit()
+				local wpn_unit_pos = wpn_unit and wpn_unit:position()
+				local wpn_unit_screen_pos = wpn_unit_pos and self._ws:world_to_screen(viewport_cam,wpn_unit_pos + ( player:camera():rotation():y() * 100)) --
+				if wpn_unit_screen_pos then 
+					floating_ammo_panel:set_position(wpn_unit_screen_pos.x,wpn_unit_screen_pos.y)
+				end
 			end
 		end
 		
