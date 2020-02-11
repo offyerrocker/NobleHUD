@@ -47,6 +47,14 @@
 		},
 		{
 			"type" : "toggle",
+			"id" : "noblehud_set_buffs_specialization_maniac_hysteria_enabled",
+			"title" : "noblehud_set_buffs_specialization_maniac_hysteria_enabled_title",
+			"description" : "noblehud_set_buffs_specialization_maniac_hysteria_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_specialization_maniac_hysteria_enabled",
+			"value" : "hysteria"
+		},
+		{
+			"type" : "toggle",
 			"id" : "noblehud_set_buffs_specialization_gambler_ammo_give_out_enabled",
 			"title" : "noblehud_set_buffs_specialization_gambler_ammo_give_out_enabled_title",
 			"description" : "noblehud_set_buffs_specialization_gambler_ammo_give_out_enabled_desc",

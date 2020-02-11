@@ -67,7 +67,7 @@
 			"title" : "noblehud_set_buffs_fugitive_bloodthirst_reload_enabled_title",
 			"description" : "noblehud_set_buffs_fugitive_bloodthirst_reload_enabled_desc",
 			"callback" : "callback_noblehud_set_buffs_fugitive_bloodthirst_reload_enabled",
-			"value" : "bloodthirst_reload"
+			"value" : "bloodthirst_reload_speed"
 		},
 		{
 			"type" : "toggle",

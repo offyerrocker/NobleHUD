@@ -682,7 +682,6 @@ Hooks:PostHook(HUDTeammate,"activate_ability_radial","noblehud_activate_ability_
 		return
 	end
 
-
 	if time_total then 
 		NobleHUD:_activate_ability_radial(time_left or time_total,time_total)
 	elseif time_left then 

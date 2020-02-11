@@ -5,9 +5,6 @@
 	Notes:
 	
 	
-	
-	
-	
 -test has font with managers.dyn_resource:has_resource(Idstring("scene"), Idstring("core/environments/skies/" .. sky .. "/" .. sky), managers.dyn_resource.DYN_RESOURCES_PACKAGE)
 		* "Speaking" icon for teammates and self
 		* [ASSET] Reduce the size of the teammate nameplate now that length is capped
@@ -36,26 +33,15 @@
 		* Add threshold procs for Resist/crit/dodge, and option to always show
 		
 			Singleplayer
-		* Armor/Health buff
-		* Up You Go
-		* Combat Medic
-		* Running From Death
-		* Running From Death Aced
-		* Trigger Happy
-		* Desperado
+		* Armor/Health tracker
 		* Partners In Crime
 		* Partners In Crime Aced
-		* Lock N Load (Test)
 		* Stockholm Syndrome Aced Charge
 		* Fully Loaded
 		
 			Perk Decks
 		* Anarchist Lust for Life (active regen)
-		* Chico Injector
-		* Pocket ECM Jammer
-		* Pocket ECM Dodge On Kill
-		
-		* Absorption Stacks (test)
+		* Tag Team Duration (doublecheck)
 		
 			Multiplayer/Bots
 		* Inspire Cooldown
@@ -63,7 +49,6 @@
 			Multiplayer
 		* Inspire Movement Boost Received
 		* Second Wind (from teammate)
-		
 		
 		* Downed (check playerbleedout.lua state)
 		* Electrocuted (test)
@@ -88,10 +73,11 @@
 		* BAI sync data compatibility?
 
 		%% BUGS:
+			- Floating ammo panel has incorrect width after switching weapons
+			- Multiple concurrent Pocket ECM Jammer buffs may interfere with each other
 			- Shield noises (low/depleted) may persist during loading
 			- Assault phase localization when not host
 			- Vanilla HUD is visible in drop-in spectate mode
-			- Floating ammo panel is visible in casing/civilian mode
 			- ADS should maintain mostly still reticle, unusable otherwise
 			- Down Counter Standalone will fight NobleHUD for dominance when it comes to setting downs in the tabscreen
 				* This is because I tried to add compatibility between the two via network syncing, but didn't save whether or not peers had DCS in NobleHUD
@@ -106,6 +92,7 @@
 				* Placement and Scaling
 		
 	&& LOW PRIORITY FEATURES: &&
+		* Damage numbers popups
 		* Show other things, such as equipment, on radar? check slotmask 
 		* Adjust overshield color to be more green (check MCC screenshots)
 		* Flash mission name at mission start? (See mission/submission name in MCC screenshots)
@@ -708,6 +695,36 @@ NobleHUD.weapon_data = {
 --super short term: 7
 
 NobleHUD._buff_data = {
+	["ecm_normal"] = { --not implemented
+		source = "skill",
+		priority = 0,
+		icon = "ecm_2x",
+		icon_rect = {3,4},
+		label = "noblehud_buff_ecm_normal_label",
+		value_type = "timer",
+		duration = tweak_data.upgrades.ecm_jammer_base_battery_life or 20,
+		flash = false
+	},
+	["ecm_strong"] = { --not implemented
+		source = "skill",
+		priority = 0,
+		icon = "ecm_booster",
+		icon_rect = {6,3},
+		label = "noblehud_buff_ecm_normal_label",
+		value_type = "timer",
+		duration = (tweak_data.upgrades.ecm_jammer_base_battery_life * 1.5) or 30,
+		flash = false
+	},
+	["ecm_feedback"] = { --not implemented
+		source = "skill",
+		priority = 0,
+		icon = "ecm_feedback",
+		icon_rect = {1,2},
+		label = "noblehud_buff_ecm_normal_label",
+		value_type = "timer",
+		duration = tweak_data.upgrades.ecm_feedback_min_duration or 15,
+		flash = false
+	},
 	["dmg_resist_total"] = { --aggregated
 		source = "skill",
 		priority = 1,
@@ -769,7 +786,7 @@ NobleHUD._buff_data = {
 		duration = 4,
 		flash = false
 	},
-	["fully_loaded"] = { --throwable pickup chance
+	["fully_loaded"] = { --throwable pickup chance; not implemented
 		disabled = true,
 		priority = 2
 	},
@@ -780,7 +797,7 @@ NobleHUD._buff_data = {
 		value_type = "timer"
 	},
 	["hitman"] = {
-		disabled = true, --guaranteed regen from Hitman 9/9 Tooth and Claw
+		disabled = true, --guaranteed regen from Hitman 9/9 Tooth and Claw; not implemented
 		priority = 3,
 		source = "perk",
 		value_type = "timer"
@@ -790,14 +807,14 @@ NobleHUD._buff_data = {
 		priority = 7,
 		source = "perk",
 		duration = 1,
-		value_type = "timer" --10x melee damage within 1s from infiltrator 1/9 Overdog
+		value_type = "timer" --10x melee damage within 1s from infiltrator 1/9 Overdog; not implemented
 	},
 	["life_drain"] = {
 		disabled = true,
 		priority = 3,
 		source = "perk",
 		duration = 10,
-		value_type = "timer" --melee hit regens 20% hp, once per 10s from infiltrator 9/9 Life Drain
+		value_type = "timer" --melee hit regens 20% hp, once per 10s from infiltrator 9/9 Life Drain; not implemented
 	},
 	["loose_ammo_restore_health"] = { --gambler medical supplies
 		source = "perk",
@@ -901,7 +918,7 @@ NobleHUD._buff_data = {
 		icon = 15,
 		icon_tier = 1,
 		icon_rect = {1,7},
-		label = "noblehud_buff_armor_break_invulnerable_label",
+		label = "noblehud_buff_armor_break_invulnerable_active_label",
 		text_color = NobleHUD.color_data.hud_buff_negative,--red for 15s cooldown; blue for 2s invuln period
 		value_type = "timer",
 		flash = false
@@ -954,21 +971,33 @@ NobleHUD._buff_data = {
 	},
 	["pocket_ecm_jammer"] = {
 		source = "perk",
-		priority = 3,
+		priority = 5,
 		icon = 21,--"pocket_ecm_jammer",
 		icon_tier = 1,
 		icon_rect = {1,7},
-		label = "noblehud_buff_hacker_label",
+		label = "noblehud_buff_hacker_ecm_label",
+		icon_color = NobleHUD.color_data.hud_buff_status,
+		value_type = "timer",
+		flash = true
+	},
+	["pocket_ecm_jammer_feedback"] = {
+		source = "perk",
+		priority = 5,
+		icon = 21,--"pocket_ecm_jammer",
+		icon_tier = 1,
+		icon_rect = {1,7},
+		label = "noblehud_buff_hacker_feedback_label",
+		icon_color = NobleHUD.color_data.hud_buff_status,
 		value_type = "timer",
 		flash = true
 	},
 	["pocket_ecm_kill_dodge"] = {
 		source = "perk",
-		priority = 5,
+		priority = 3,
 		icon = 21,--"pocket_ecm_jammer",
 		icon_tier = 7,
 		icon_rect = {1,7},
-		label = "noblehud_buff_hacker_label",
+		label = "noblehud_buff_hacker_kluge_label",
 		value_type = "timer",
 		flash = false
 	},
@@ -1165,46 +1194,15 @@ NobleHUD._buff_data = {
 		timer_source = "heist",
 		flash = false
 	},
-	["up_you_go"] = { --dmg resist after revive
+	["revive_damage_reduction"] = { --combat medic
 		source = "skill",
 		priority = 5,
-		duration = 10, --debug purposes only, as t is passed
-		icon = "up_you_go",
-		icon_rect = {1,7},
-		label = "noblehud_buff_up_you_go_label",
-		value_type = "timer",
-		flash = false
-	},
-	["revive_damage_reduction"] = { 
-		source = "skill",
-		priority = 5,
-		icon = "up_you_go",
-		disabled = false,
-		icon_rect = {1,7},
+		icon = "combat_medic",
+		icon_rect = {5,7},
 		label = "noblehud_buff_combat_medic_label",
 		value_type = "timer",
 		duration = 5,
 		flash = false
-	},
-	["running_from_death"] = {
-		source = "skill",
-		priority = 5,
-		icon = "running_from_death",
-		icon_rect = {1,7},
-		label = "noblehud_buff_running_from_death_label",
-		value_type = "timer", --reload + swap faster after revive
-		duration = 10,
-		flash = false	
-	},
-	["running_from_death_aced"] = {
-		source = "skill",
-		priority = 5,
-		icon = "running_from_death",
-		icon_rect = {1,7},
-		label = "noblehud_buff_running_from_death_label",
-		value_type = "timer", --run faster after revive
-		duration = 10,
-		flash = true	
 	},
 	["trigger_happy"] = {
 		source = "skill",
@@ -1254,52 +1252,7 @@ NobleHUD._buff_data = {
 		value_type = "timer",
 		duration = 4,
 		flash = false
-	},--[[
-	["reload_weapon_faster"] = { --revenant skill tree thing
-		disabled = false,
-		icon = "speedy_reload",
-		icon_rect = {1,7},
-		label = "reload_weapon_faster",
-		value_type = "timer",
-		duration = 4,
-		source = "skill",
-		priority = 1,
-		flash = false
 	},
-	["swap_weapon_faster"] = { --revenant skill tree thing
-		disabled = false,
-		icon = "speedy_reload",
-		icon_rect = {1,7},
-		label = "swap_weapon_faster",
-		value_type = "timer",
-		duration = 4,
-		source = "skill",
-		priority = 1,
-		flash = false
-	},
-	["revived_damage_resist"] = { --revenant skill tree thing
-		disabled = false,
---		icon = "speedy_reload",
-		icon_rect = {1,7},
-		label = "swap_weapon_faster",
-		value_type = "timer",
-		duration = 4,
-		source = "skill",
-		priority = 1,
-		flash = false
-	},
-	["increased_movement_speed"] = { --revenant skill tree thing
-		disabled = false,
-		icon = "running_from_death",
-		icon_rect = {1,7},
-		label = "running_from_death_2",
-		value_type = "timer",
-		duration = 4,
-		source = "skill",
-		priority = 1,
-		flash = false
-	},
-	--]]
 	["shock_and_awe_reload_multiplier"] = {
 		source = "skill",
 		priority = 5,
@@ -1348,10 +1301,6 @@ NobleHUD._buff_data = {
 		value_type = "timer",
 		flash = false
 	},
-	["combat_medic"] = {
-		priority = 5,
-		disabled = true
-	},
 	["combat_medic_damage_multiplier"] = {
 		priority = 5,
 		disabled = true
@@ -1369,16 +1318,52 @@ NobleHUD._buff_data = {
 		source = "skill",
 		priority = 3,
 		icon = "tea_time",
-		icon_rect = { 1,11 },
+		icon_rect = {1,11},
 		label = "noblehud_buff_quick_fix_label",
 		value_type = "timer",
 		flash = false
 	},
-	["reload_weapon_faster"] = {
-		disabled = true
+	["reload_weapon_faster"] = { --running from death basic, part 1
+		source = "skill",
+		priority = 3,
+		icon = "running_from_death", --or speedy_reload
+		icon_rect = {1,7},
+		label = "noblehud_buff_running_from_death_reload_label",
+		value_type = "timer", --reload + swap faster after revive
+		duration = 10,
+		flash = true	
 	},
-	["swap_weapon_faster"] = {
-		disabled = true
+	["swap_weapon_faster"] = { --running from death basic, part 2; disabled due to identical proc conditions + duration
+		disabled = true,
+		source = "skill",
+		priority = 3,
+		icon = "speedy_reload",
+		icon_rect = {1,7},
+		label = "noblehud_buff_running_from_death_swap_label",
+		value_type = "timer",
+		duration = 10,
+		flash = true
+	},
+	["increased_movement_speed"] = { --running from death aced; disabled due to identical proc conditions + duration
+		disabled = true,
+		source = "skill",
+		priority = 3,
+		icon = "running_from_death",
+		icon_rect = {1,7},
+		label = "noblehud_buff_running_from_death_aced_label",
+		value_type = "timer",
+		duration = 10,
+		flash = true
+	},
+	["revived_damage_resist"] = { --up you go basic
+		source = "skill",
+		priority = 3,
+		icon = "up_you_go",
+		icon_rect = {11,4},
+		label = "noblehud_buff_up_you_go_label",
+		value_type = "timer",
+		duration = 10,
+		flash = true
 	}
 }
 
@@ -4839,7 +4824,6 @@ function NobleHUD:SetTeammateDowns(id,downs,panel_id,increment)
 	if panel_id == true then 
 		panel_id = self:GetPanelIdFromPeerId(id)
 	end
-	self:log(panel_id)
 	if panel_id then 
 		local player_box = self._tabscreen:child("scoreboard"):child("player_box_" .. tostring(panel_id))
 		if alive(player_box) then 
@@ -5469,18 +5453,6 @@ function NobleHUD:UpdateHUD(t,dt)
 					self:RemoveBuff("sicario")
 				end
 			end
-			--[[
-			if self:IsBuffEnabled("hysteria") then 
-				local damage_absorption = managers.player:damage_absorption()
-				if damage_absorption > 0 then 
-					self:AddBuff("hysteria",{value=damage_absorption * 100})
-				else
-					self:RemoveBuff("hysteria")
-				end
-			end
-			--]]
-			
---	return unpack(managers.player:local_player():character_damage()._damage_to_armor), Application:time()
 
 --[[
 			if self:IsBuffEnabled("anarchist_lust_for_life") then 
@@ -5621,8 +5593,8 @@ function NobleHUD:UpdateHUD(t,dt)
 							local hysteria_stacks = (buff_data.value or 0) * 100
 							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%d",hysteria_stacks)))
 
-							if buff_tweak_data.flash and buff_data.value >= tweak_data.upgrades.max_total_cocaine_stacks then 
-								local min_alpha = 0.5 --desired minimum alpha; trough
+							if buff_tweak_data.flash and hysteria_stacks >= tweak_data.upgrades.max_cocaine_stacks_per_tick then --or tweak_data.upgrades.max_total_cocaine_stacks
+								local min_alpha = 0.33 --desired minimum alpha; trough
 								local b = 1 - (2 / min_alpha) --denominator
 								local frequency = 10 --wavelength; lower is more often
 								local label_alpha = (0.5 - (1 / b)) + ((math.cos(100 * frequency * _t) / math.pi) / b)
@@ -5631,7 +5603,7 @@ function NobleHUD:UpdateHUD(t,dt)
 								buff_label:set_alpha(1)
 							end
 						elseif buff_id == "shock_and_awe_reload_multiplier" then 
-							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%.2f",buff_data.value)))
+							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%.1f",buff_data.value)))
 						elseif buff_id == "wild_kill_counter" then
 						--[[ --temp disabled til i reverse engineer it again
 							local wild_kill_counter = managers.player:get_wild_kill_counter()
@@ -5815,6 +5787,7 @@ function NobleHUD:UpdateHUD(t,dt)
 			local floating_ammo_panel = self._floating_ammo_panel
 			
 			local floating_ammo_blacklisted_states = {
+				mask_off = true,
 				clean = true,
 				civilian = true,
 				jerry1 = true,
@@ -6022,16 +5995,27 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 		--no +1 kills for you, you murderer >:(
 	else
 		if self:IsSkullActive("birthday") and headshot and unit and alive(unit) and unit:base() then 
-			local function spawn_money_confetti()
-				World:effect_manager():spawn({
-					effect = Idstring("effects/payday2/particles/impacts/money_impact_pd2"),
+			local function spawn_money_confetti(effect_name)
+				local result = World:effect_manager():spawn({
+					effect = Idstring(effect_name or "effects/payday2/particles/impacts/money_impact_pd2"),
 					position = movement and movement:m_head_pos() or unit:position() or Vector3()
 				})
+				if result ~= -1 then 
+					return result
+				else
+					World:effect_manager():spawn({
+						effect = Idstring("effects/payday2/particles/impacts/money_impact_pd2"),
+						position = movement and movement:m_head_pos() or unit:position() or Vector3()
+					})
+				end
 			end
-			--a measley 4 money particles per spawn, so 12 total here 
-			spawn_money_confetti()
-			spawn_money_confetti()
-			spawn_money_confetti()
+			spawn_money_confetti("effects/payday2/particles/explosions/balloon_pop_red")
+			spawn_money_confetti("effects/payday2/particles/explosions/balloon_pop_orange")
+			spawn_money_confetti("effects/payday2/particles/explosions/balloon_pop_green")
+			spawn_money_confetti("effects/payday2/particles/explosions/balloon_pop_blue")
+			spawn_money_confetti("effects/payday2/particles/explosions/balloon_pop_purple")
+			spawn_money_confetti("effects/payday2/particles/explosions/balloon_pop_white")
+			
 			XAudio.UnitSource:new(unit,XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg"))
 		end
 		if player_weapon_id == primary_id then
@@ -7815,7 +7799,7 @@ function NobleHUD:animate_wait(o,t,dt,start_t,duration)
 end
 
 function NobleHUD:_activate_ability_radial(time_left,time_total)
---	self:log("activate_ability_radial(" .. self.table_concat({time_left = time_left,time_total = time_total},",","|") .. ")")
+	self:log("activate_ability_radial(" .. self.table_concat({time_left = time_left,time_total = time_total},",","=") .. ")")
 end
 
 function NobleHUD:_set_ability_radial(time_left,time_total)
@@ -10897,7 +10881,7 @@ function NobleHUD:LayoutRadar()
 	local bg = self._radar_panel:child("radar_bg")
 	
 	panel:set_size(panel_size,panel_size)
-	panel:set_position(0,panel:parent():h() - panel_size)
+	panel:set_position(0,panel:parent():h() - (panel_size + 32))
 		
 	bg:set_size(bg_size,bg_size)
 	bg:set_position((panel:w() - bg_size) / 2,panel:h() - bg_size)
@@ -12011,23 +11995,34 @@ function NobleHUD:AddBuff(id,params)
 	params = params or {}
 
 	
-	if not self._buff_data[id] then 
+	local buff_tweak_data = self._buff_data[id]
+	if not buff_tweak_data then 
 		self:log("AddBuff(" .. tostring(id) .. "): Bad buff!",{color=Color.red})
 		return
-	elseif self._buff_data[id].disabled then 
+	elseif buff_tweak_data.disabled then 
 		self:log("AddBuff(" .. tostring(id) .. "): Buff is disabled!",{color=Color.red})
 		return
 	elseif not self:IsBuffEnabled(id) then 
 		self:log("AddBuff(" .. tostring(id) .. "): Buff is disabled due to user pref!",{color=Color.red})
 		return
 	end
-	
-	if self._buff_data[id].value_type == "timer" then
+	if buff_tweak_data.value_type == "timer" then
 		if not (params.end_t or params.duration) then 
 			self:log("AddBuff(" .. tostring(id) .. ") Buff data has no end_t or duration! Removing...",{color=Color.red})
 			return
 		end
-		params.end_t = params.end_t or (Application:time() + params.duration)
+		local t = Application:time()
+		local timer_source = buff_tweak_data.timer_source
+		if timer_source then 
+			if timer_source == "heist" then 
+				t = managers.game_play_central:get_heist_timer()
+			elseif timer_source == "game" then 
+				t = TimerManager:game():time()
+			elseif timer_source == "player" then 
+				t = managers.player:player_timer():time()
+			end
+		end
+		params.end_t = params.end_t or (t + params.duration)
 	end
 	
 	local buffs_panel = self._buffs_panel
@@ -12055,7 +12050,7 @@ function NobleHUD:AddBuff(id,params)
 		params.id = id
 		local index
 		if #self._active_buffs > 0 then 
-			local priority = self._buff_data[id].priority
+			local priority = buff_tweak_data.priority
 			for i,v in ipairs(self._active_buffs) do 
 				local buff_data = self._buff_data[tostring(v.id)] 
 				if buff_data.priority and buff_data.priority <= priority then 
@@ -13361,6 +13356,11 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		NobleHUD:CheckBuff("loose_ammo_give_team")
 		NobleHUD:SaveBuffSettings()
 	end	
+	MenuCallbackHandler.callback_noblehud_set_buffs_specialization_maniac_hysteria_enabled = function(self,item)
+		NobleHUD.buff_settings.hysteria = item:value() == "on"
+		NobleHUD:CheckBuff("hysteria")
+		NobleHUD:SaveBuffSettings()
+	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_specialization_biker_enabled = function(self,item)
 		NobleHUD.buff_settings.wild_kill_counter = item:value() == "on"
 		NobleHUD:CheckBuff("wild_kill_counter")
@@ -13531,13 +13531,13 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_fugitive_running_from_death_enabled = function(self,item)
-		NobleHUD.buff_settings.running_from_death = item:value() == "on"
-		NobleHUD:CheckBuff("running_from_death")
+		NobleHUD.buff_settings.reload_weapon_faster = item:value() == "on"
+		NobleHUD:CheckBuff("reload_weapon_faster")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_fugitive_up_you_go_enabled = function(self,item)
-		NobleHUD.buff_settings.up_you_go = item:value() == "on"
-		NobleHUD:CheckBuff("up_you_go")
+		NobleHUD.buff_settings.revived_damage_resist = item:value() == "on"
+		NobleHUD:CheckBuff("revived_damage_resist")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_fugitive_swan_song_enabled = function(self,item)
@@ -13557,7 +13557,7 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_fugitive_bloodthirst_reload_enabled = function(self,item)
 		NobleHUD.buff_settings.bloodthirst_reload = item:value() == "on"
-		NobleHUD:CheckBuff("bloodthirst_reload")
+		NobleHUD:CheckBuff("bloodthirst_reload_speed")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_fugitive_berserker_enabled = function(self,item)

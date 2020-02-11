@@ -13,7 +13,7 @@ Hooks:PostHook(ECMJammerBase,"update","noblehud_ecm_update_decoys",function(self
 end)
 
 
-Hooks:PostHook(ECMJammerBase,"set_active","khud_activate_ecm",function(self,active)
+Hooks:PostHook(ECMJammerBase,"set_active","noblehud_activate_ecm",function(self,active)
 --[[
 	if false and self._owner_id == 1 then
 		jam_cameras = managers.player:has_category_upgrade("ecm_jammer", "affects_cameras")
@@ -43,14 +43,23 @@ Hooks:PostHook(ECMJammerBase,"set_active","khud_activate_ecm",function(self,acti
 	--]]
 end)
 
-Hooks:PostHook(ECMJammerBase,"sync_net_event","khud_sync_net_event_ecm",function(self,event_id)
+Hooks:PostHook(ECMJammerBase,"sync_net_event","noblehud_sync_net_event_ecm",function(self,event_id)
+--[[
+	local buff_name
+	if self._feedback_active then 
+		buff_name = "ecm_feedback"
+	elseif self._ecm_upgrade_lvl >= 3 then 
+		buff_name = "ecm_strong"
+	else
+		buff_name = "ecm_normal"
+	end	
+--	NobleHUD:AddBuff(buff_name,{end_t = Application:time() + (self._battery_life or 0),value = self._unit})
+	--]]
 --[[
 	local ecm_upgrade_lvl = tonumber(self._ecm_upgrade_lvl or 1)
 	if not Network:is_server() then
 		local jams_cameras = not not ecm_upgrade_lvl --true and not not not false or not not true
 		local jams_pagers = ecm_upgrade_lvl >= 3
-		local battery_life = self._battery_life
-		local expire_t = Application:time() + battery_life
 		if event_id == self._NET_EVENTS.jammer_active then 
 			managers.player:add_tracked_ecm(self._unit:key(),{
 				unit = self._unit,
