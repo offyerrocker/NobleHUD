@@ -18,6 +18,18 @@
 			"size" : 4
 		},
 		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_compact_mode_enabled",
+			"title" : "noblehud_set_buffs_compact_mode_enabled_title",
+			"description" : "noblehud_set_buffs_compact_mode_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_compact_mode_enabled",
+			"value" : "buffs_compact_mode_enabled"
+		},
+		{
+			"type" : "divider",
+			"size" : 4
+		},
+		{
 			"type" : "slider",
 			"id" : "id_noblehud_set_buffs_panel_x",
 			"title" : "noblehud_set_buffs_panel_x_title",

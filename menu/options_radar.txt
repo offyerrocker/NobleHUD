@@ -38,6 +38,14 @@
 			"step" : 0.01
 		},
 		{
+			"type" : "toggle",
+			"id" : "id_noblehud_set_teammate_align_to_radar_enabled",
+			"title" : "noblehud_set_teammate_align_to_radar_title",
+			"description" : "noblehud_set_teammate_align_to_radar_enabled_desc",
+			"callback" : "callback_noblehud_set_teammate_align_to_radar_enabled",
+			"value" : "teammate_align_to_radar"
+		},
+		{
 			"type" : "slider",
 			"id" : "id_noblehud_set_radar_distance",
 			"title" : "noblehud_set_radar_distance_title",

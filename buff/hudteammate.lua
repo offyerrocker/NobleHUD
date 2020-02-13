@@ -8,6 +8,16 @@ Hooks:PostHook(HUDTeammate,"set_absorb_active","noblehud_buff_hysteria",function
 		end
 	end
 end)
+
+
+Hooks:PostHook(HUDTeammate,"set_stored_health","noblehud_buff_expresident",function(self,stored_health)
+	if stored_health > 0 then 
+		NobleHUD:AddBuff("expresident",{value = stored_health})
+	else
+		NobleHUD:RemoveBuff("expresident")
+	end
+end)
+
 --[[
 Hooks:PostHook(HUDTeammate,"activate_ability_radial","noblehud_buff_throwables",function(self,time_left,time_total)
 	NobleHUD:log("doing buff activate_ability_radial(" .. tostring(time_left) .. "," .. tostring(time_total)..")")
