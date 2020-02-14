@@ -38,6 +38,56 @@
 			"step" : 0.01
 		},
 		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_radar_x",
+			"title" : "noblehud_set_radar_x_title",
+			"description" : "noblehud_set_radar_x_desc",
+			"callback" : "callback_noblehud_set_radar_x",
+			"value" : "radar_x",
+			"default_value" : 1,
+			"min" : -1280,
+			"max" : 1280,
+			"step" : 1
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_radar_y",
+			"title" : "noblehud_set_radar_y_title",
+			"description" : "noblehud_set_radar_y_desc",
+			"callback" : "callback_noblehud_set_radar_y",
+			"value" : "radar_y",
+			"default_value" : 1,
+			"min" : -720,
+			"max" : 720,
+			"step" : 1
+		},
+		{
+			"type" : "multiple_choice",
+			"id" : "id_noblehud_set_radar_align_horizontal",
+			"title" : "noblehud_set_radar_align_horizontal_title",
+			"description" : "noblehud_set_radar_align_horizontal_desc",
+			"callback" : "callback_noblehud_set_radar_align_horizontal",
+			"items" : [
+				"noblehud_left",
+				"noblehud_center",
+				"noblehud_right"
+			],
+			"value" : "radar_align_horizontal"
+		},
+		{
+			"type" : "multiple_choice",
+			"id" : "id_noblehud_set_radar_align_vertical",
+			"title" : "noblehud_set_radar_align_vertical_title",
+			"description" : "noblehud_set_radar_align_vertical_desc",
+			"callback" : "callback_noblehud_set_radar_align_vertical",
+			"items" : [
+				"noblehud_top",
+				"noblehud_center",
+				"noblehud_bottom"
+			],
+			"value" : "radar_align_vertical"
+		},
+		{
 			"type" : "toggle",
 			"id" : "id_noblehud_set_teammate_align_to_radar_enabled",
 			"title" : "noblehud_set_teammate_align_to_radar_title",

@@ -35,7 +35,7 @@
 			"title" : "noblehud_set_buffs_specialization_infiltrator_life_drain_enabled_title",
 			"description" : "noblehud_set_buffs_specialization_infiltrator_life_drain_enabled_desc",
 			"callback" : "callback_noblehud_set_buffs_specialization_infiltrator_life_drain_enabled",
-			"value" : "life_drain"
+			"value" : "melee_life_leech"
 		},
 		{
 			"type" : "toggle",

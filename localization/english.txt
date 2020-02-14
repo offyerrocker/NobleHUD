@@ -122,6 +122,18 @@
 	"noblehud_player_options_desc" : "Change Player Panel options",
 	"noblehud_set_stamina_enabled_title" : "Enable Stamina Display",
 	"noblehud_set_stamina_enabled_desc" : "Shows a circular stamina indicator next to your motion tracker.",
+	"noblehud_set_stamina_panel_x_title" : "Set Stamina Panel X",
+	"noblehud_set_stamina_panel_x_desc" : "Set Stamina horizontal position",
+	"noblehud_set_stamina_panel_y_title" : "Set Stamina Panel Y",
+	"noblehud_set_stamina_panel_y_desc" : "Set Stamina vertical position",
+	"noblehud_set_ability_align_to_radar_title" : "Align Deployables to Radar",
+	"noblehud_set_ability_align_to_radar_desc" : "Aligns Deployable Panel next to Motion Tracker",
+	"noblehud_set_ability_panel_x_title" : "Set Deployable Panel X",
+	"noblehud_set_ability_panel_x_desc" : "Set Deployable horizontal position",
+	"noblehud_set_ability_panel_y_title" : "Set Deployable Panel Y",
+	"noblehud_set_ability_panel_y_desc" : "Set Deployable vertical position",
+	
+	
 	"noblehud_set_master_hud_alpha_title" : "Set HUD Alpha",
 	"noblehud_set_master_hud_alpha_desc" : "Change the opacity of all NobleHUD elements (Requires restart)",
 	"noblehud_set_shield_charge_sound_enabled_title" : "Enable Shield Charge SFX",
@@ -137,6 +149,15 @@
 	"noblehud_radar_options_desc" : "Change Motion Tracker options",
 	"noblehud_set_radar_enabled_title" : "Enable Motion Tracker",
 	"noblehud_set_radar_enabled_desc" : "If false, Motion Tracker is hidden.",
+	"noblehud_set_radar_x_title" : "Set Motion Tracker X",
+	"noblehud_set_radar_x_desc" : "Set horizontal position",
+	"noblehud_set_radar_y_title" : "Set Motion Tracker Y",
+	"noblehud_set_radar_y_desc" : "Set vertical position",
+	"noblehud_set_radar_align_horizontal_title" : "Horizontal Alignment",
+	"noblehud_set_radar_align_horizontal_desc" : "Set panel horizontal alignment",
+	"noblehud_set_radar_align_vertical_title" : "Vertical Alignment",
+	"noblehud_set_radar_align_vertical_desc" : "Set panel vertical alignment",	
+	
 	"noblehud_set_radar_style_title" : "Motion Tracker Style",
 	"noblehud_set_radar_style_desc" : "Choose the way that the Motion Tracker appears",
 	"noblehud_radar_style_perfect" : "Perfect",
@@ -145,6 +166,17 @@
 	"noblehud_set_radar_scale_desc" : "Change the size of the Motion Tracker.",
 	"noblehud_set_radar_distance_title" : "Effective Distance",
 	"noblehud_set_radar_distance_desc" : "Distance at which motion tracker functions",
+	
+	"noblehud_set_teammate_align_to_radar_title" : "Align Teammates To Radar",
+	"noblehud_set_teammate_align_to_radar_enabled_desc" : "Aligns Teammmate Panel next to Radar Panel",
+	
+	"noblehud_team_options_title" : "Teammates Panel...",
+	"noblehud_team_options_desc" : "Change Teammates Panel options",
+	"noblehud_set_teammate_panel_x_title" : "Set Teammates X",
+	"noblehud_set_teammate_panel_x_desc" : "(Will be overridden by Motion Tracker alignment)",
+	"noblehud_set_teammate_panel_y_title" : "Set Teammates Y",
+	"noblehud_set_teammate_panel_y_desc" : "(Will be overridden by Motion Tracker alignment)",
+	
 	
 	"noblehud_score_options_title" : "Score Options...",
 	"noblehud_score_options_desc" : "Scoring and Popup Options",
@@ -376,10 +408,6 @@
 	"noblehud_unitname_taser_titan" : "Titan Taser",
 	"noblehud_unitname_autumn" : "Captain Autumn",
 	
-	"noblehud_set_teammate_align_to_radar_title" : "Align To Radar",
-	"noblehud_set_teammate_align_to_radar_enabled_desc" : "Aligns Teammmate Panel Next To Radar Panel",
-	
-	
 	"noblehud_buffs_all_options_title" : "Buff Tracker...",
 	"noblehud_buffs_all_options_desc" : "Change Buff Tracker Options",
 	"noblehud_set_buffs_compact_mode_enabled_title" : "Compact Buff Display",
@@ -574,6 +602,7 @@
 	"noblehud_buff_flashbang_label" : "Blind $TIMER",
 	"noblehud_buff_gambler_medical_supplies_label" : "Medical Supplies $TIMER",
 	"noblehud_buff_gambler_ammo_give_out_label" : "Ammo Give Out $TIMER",
+	"noblehud_buff_infiltrator_life_drain" : "Life Leech $TIMER",
 	"noblehud_buff_expresident_label" : "Point Break $VALUE%",
 	"noblehud_buff_hacker_ecm_label" : "Pocket ECM Jammer $TIMER",
 	"noblehud_buff_hacker_kluge_label" : "Kluge $TIMER",

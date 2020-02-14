@@ -87,7 +87,7 @@ Hooks:PreHook(PlayerManager,"_on_enemy_killed_bloodthirst","noblehud_buff_bloodt
 	if variant == "melee" then
 		local data = self:upgrade_value("player", "melee_kill_increase_reload_speed", 0)
 		if data ~= 0 then 
-			NobleHUD:log("bloodthirst [1] = " .. tostring(data[1]) .. ",[2] = " .. tostring(data[2]))
+--			NobleHUD:log("bloodthirst [1] = " .. tostring(data[1]) .. ",[2] = " .. tostring(data[2]))
 			NobleHUD:AddBuff("bloodthirst_reload_speed",{duration=data[2]})
 		end
 	end	
@@ -174,7 +174,7 @@ Hooks:PreHook(PlayerManager,"_on_messiah_event","noblehud_buff_messiah_event",fu
 	end
 end)
 
-Hooks:PostHook(PlayerManager,"use_messiah_charge","noblehud_buff_messiah_ready_remove",function(self)
+Hooks:PostHook(PlayerManager,"use_messiah_charge","noblehud_buff_messiah_remove",function(self)
 	NobleHUD:RemoveBuff("messiah_ready")
 	local count = self._messiah_charges
 	if count > 0 then 

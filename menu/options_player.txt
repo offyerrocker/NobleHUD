@@ -18,12 +18,80 @@
 			"step" : 0.1
 		},
 		{
+			"type" : "divider",
+			"size" : 16
+		},
+		{
 			"type" : "toggle",
 			"id" : "id_noblehud_set_stamina_enabled",
 			"title" : "noblehud_set_stamina_enabled_title",
 			"description" : "noblehud_set_stamina_enabled_desc",
 			"callback" : "callback_noblehud_set_stamina_enabled",
 			"value" : "stamina_enabled"
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_stamina_panel_x",
+			"title" : "noblehud_set_stamina_panel_x_title",
+			"description" : "noblehud_set_stamina_panel_x_desc",
+			"callback" : "callback_noblehud_set_stamina_panel_x",
+			"value" : "stamina_x",
+			"default_value" : 0,
+			"min" : 0,
+			"max" : 1280,
+			"step" : 1
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_stamina_panel_y",
+			"title" : "noblehud_set_stamina_panel_y_title",
+			"description" : "noblehud_set_stamina_panel_y_desc",
+			"callback" : "callback_noblehud_set_stamina_panel_y",
+			"value" : "stamina_y",
+			"default_value" : 0,
+			"min" : 0,
+			"max" : 720,
+			"step" : 1
+		},
+		{
+			"type" : "divider",
+			"size" : 16
+		},
+		{
+			"type" : "toggle",
+			"id" : "id_noblehud_set_ability_align_to_radar",
+			"title" : "noblehud_set_ability_align_to_radar_title",
+			"description" : "noblehud_set_ability_align_to_radar_desc",
+			"callback" : "callback_noblehud_set_ability_panel_align_to_radar",
+			"value" : "ability_align_to_radar"
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_ability_panel_x",
+			"title" : "noblehud_set_ability_panel_x_title",
+			"description" : "noblehud_set_ability_panel_x_desc",
+			"callback" : "callback_noblehud_set_ability_panel_x",
+			"value" : "ability_x",
+			"default_value" : 0,
+			"min" : 0,
+			"max" : 1280,
+			"step" : 1
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_ability_panel_y",
+			"title" : "noblehud_set_ability_panel_y_title",
+			"description" : "noblehud_set_ability_panel_y_desc",
+			"callback" : "callback_noblehud_set_ability_panel_y",
+			"value" : "ability_y",
+			"default_value" : 0,
+			"min" : 0,
+			"max" : 720,
+			"step" : 1
+		},
+		{
+			"type" : "divider",
+			"size" : 16
 		},
 		{
 			"type" : "toggle",

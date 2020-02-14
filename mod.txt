@@ -122,6 +122,10 @@
 			"script_path" : "lua/vehicledrivingext.lua"
 		},
 		{
+			"hook_id" : "lib/managers/chatmanager",
+			"script_path" : "lua/chatmanager.lua"
+		},
+		{
 			"hook_id" : "lib/managers/playermanager",
 			"script_path" : "buff/playermanager.lua"
 		},

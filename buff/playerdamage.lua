@@ -4,6 +4,11 @@ Hooks:PostHook(PlayerDamage,"_on_enter_swansong_event","noblehud_buff_swansong",
 	--duration = value[2]
 end)
 
+Hooks:PostHook(PlayerDamage,"_on_revive_event","noblehud_buff_messiah_ready_remove",function(self)
+	NobleHUD:RemoveBuff("messiah_ready")
+	NobleHUD:RemoveBuff("swan_song")
+end)
+
 Hooks:PostHook(PlayerDamage,"_on_exit_swansong_event","noblehud_buff_swansong_remove",function(self)
 	NobleHUD:RemoveBuff("swan_song")
 end)
