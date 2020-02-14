@@ -4,11 +4,11 @@
 ***** TODO: *****
 	Notes:
 	
-	* Ex president stores health as a ratio of max health
-	* eg. 322 health with suit, 210 can be stored, and at max storage, game stores as a percentage (~0.65) of max health (322) --> 322 * 0.65 = 210
-	* Also the value rounds down when filling health ticks. when above 0, it should at least show the first tick
+	* Test Winters
 	
--test has font with managers.dyn_resource:has_resource(Idstring("scene"), Idstring("core/environments/skies/" .. sky .. "/" .. sky), managers.dyn_resource.DYN_RESOURCES_PACKAGE)
+	* Background for buffs so that they're visible against a white background
+	* revive_damage_reduction is created in playermanager:set_property but only name and value are passed, not timer
+	
 		* "Speaking" icon for teammates and self
 		* [ASSET] Reduce the size of the teammate nameplate now that length is capped
 		* Reduce Shield sound volume
@@ -149,7 +149,8 @@
 
 		&& DECISIONS &&
 			* Should graze kills give sniper medals? currently, they don't
-			* Should ECM Jammers only show their radar decoys when a player is within range of the ECM jammer? This would match Halo 3's Radar Jammer behaviour,
+			* Should ECM Jammers only show their radar decoys when a player is within range of the ECM jammer? 
+				This would match Halo 3's Radar Jammer behaviour,
 				where decoys would appear in the radius 
 			
 	&& BEAUTIFY EXISTING: &&
@@ -159,7 +160,7 @@
 		* PONR label goes where "BONUS ROUND" was in reach
 			* Flash as countdown enabled
 		* Callsign generator
-			* remove clantag
+			* remove clantags
 			* remove doubled letters
 		* Carry indicator is kind of hard to see
 		* Grenade/Ability
@@ -224,7 +225,6 @@ CODE:
 	* mutator multipliers
 
 --ability/deployable/grenade
-	* animate grenade movement (i can't remember what this meant when I wrote it)
 	* grenade vs deployable layout
 		* grenade selection indicator
 		* secondary grenade panel
@@ -316,7 +316,7 @@ NobleHUD.settings = {
 	buff_align_center = true, --doesn't do anything 
 	buff_align_vertical = false, --doesn't do anything
 	teammate_align_to_radar = true,
-	buffs_compact_mode_enabled = true
+	buffs_compact_mode_enabled = false
 }
 
 
@@ -5700,7 +5700,7 @@ function NobleHUD:UpdateHUD(t,dt)
 						elseif buff_id == "expresident" then
 							local stored_hp_ratio = buff_data.value / (NobleHUD._cache._max_stored_hp or 1)
 							if buff_tweak_data.flash and stored_hp_ratio >= 0.9 then 
-								local min_alpha = 0.33
+								local min_alpha = 0.6
 								local b = 1 - (2 / min_alpha)
 								local frequency = 10 
 								local label_alpha = (0.5 - (1 / b)) + ((math.cos(100 * frequency * _t) / math.pi) / b)
@@ -6086,17 +6086,30 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 	local is_cop = CopDamage.is_cop(unit_type)
 	local unit_anim = unit and unit.anim_data and unit:anim_data()
 	local ext_anim = unit and unit:movement() and unit:movement()._ext_anim or {}
-
+	
+	local is_friendly_fire = false
+	
+	local brain = unit and unit:brain()
+	
+	local friendly_teams = {
+		converted_enemy = true,
+		neutral1 = true,
+		criminal1 = true,
+		hacked_turret = false -- meh, i don't care too much about friendly fire on hacked turrets lol
+	}
+	local unit_team = (brain and brain._logic_data and brain._logic_data.team and brain._logic_data.team.id) or ""
+	if friendly_teams[unit_team] or (unit and (CopDamage.is_civilian(unit:base()._tweak_table) or managers.enemy:is_civilian(unit))) then 
+		self:log("Killed enemy with team " .. tostring(brain._logic_data.team.id),{color=Color.green})
+		is_friendly_fire = true
+	end
+	
 	local player_guns = player:inventory():available_selections()
 	local primary_id = player_guns[1].unit:base():get_name_id()
 	local secondary_id = player_guns[2].unit:base():get_name_id()
 
-	
-
-
 	local medal_multiplier = 1
 
-	if unit and (CopDamage.is_civilian(unit:base()._tweak_table) or managers.enemy:is_civilian(unit)) then
+	if is_friendly_fire then
 		self:ClearKillsCache()
 		self:PlayAnnouncerSound("betrayal")
 		--no +1 kills for you, you murderer >:(
@@ -6245,7 +6258,7 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 		self:KillsCache("last_kill_t",t,true)
 	end
 	attack_data.name = attack_data.name or unit_type
-	self:TallyScore(attack_data,unit,medal_multiplier)
+	self:TallyScore(attack_data,unit,medal_multiplier,is_friendly_fire)
 end
 
 function NobleHUD:KillsCache(category,amount,set)
@@ -9222,7 +9235,7 @@ function NobleHUD:SetRevives(text)
 	end
 end
 
-function NobleHUD:TallyScore(data,unit,medal_multiplier)
+function NobleHUD:TallyScore(data,unit,medal_multiplier,is_friendly_fire)
 	local name = tostring(data.name)
 	local score = self:GetRawScoreFromUnitName(name)
 	local localized_unitname = managers.localization:text("noblehud_unitname_" .. name)
@@ -9235,6 +9248,9 @@ function NobleHUD:TallyScore(data,unit,medal_multiplier)
 			score = score * medal_multiplier
 		end
 		score = score * total_multiplier
+		if is_friendly_fire then 
+			score = -math.abs(score)
+		end
 		if self:IsScorePopupsEnabled() then 
 			self:CreateScorePopup(localized_unitname,score,unit)
 		end
