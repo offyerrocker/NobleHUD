@@ -39,6 +39,18 @@
 		},
 		{
 			"type" : "divider",
+			"size" : 4
+		},
+		{
+			"type" : "toggle",
+			"id" : "noblehud_set_buffs_misc_phalanx_enabled",
+			"title" : "noblehud_set_buffs_misc_phalanx_enabled_title",
+			"description" : "noblehud_set_buffs_misc_phalanx_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_misc_phalanx_enabled",
+			"value" : "phalanx"
+		},
+		{
+			"type" : "divider",
 			"size" : 16
 		},
 		{

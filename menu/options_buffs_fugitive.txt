@@ -55,6 +55,14 @@
 		},
 		{
 			"type" : "toggle",
+			"id" : "noblehud_set_buffs_fugitive_messiah_ready_enabled",
+			"title" : "noblehud_set_buffs_fugitive_messiah_ready_enabled_title",
+			"description" : "noblehud_set_buffs_fugitive_messiah_ready_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_fugitive_messiah_ready_enabled",
+			"value" : "messiah_ready"
+		},
+		{
+			"type" : "toggle",
 			"id" : "noblehud_set_buffs_fugitive_bloodthirst_melee_enabled",
 			"title" : "noblehud_set_buffs_fugitive_bloodthirst_melee_enabled_title",
 			"description" : "noblehud_set_buffs_fugitive_bloodthirst_melee_enabled_desc",

@@ -1,7 +1,7 @@
 
 Hooks:PostHook(PlayerManager,"remove_property","noblehud_remove_property",function(self,name)
 	NobleHUD:RemoveBuff(name)
-	NobleHUD:log("PlayerManager:remove_property(" .. tostring(name) .. ")",{color=Color.yellow})
+--	NobleHUD:log("PlayerManager:remove_property(" .. tostring(name) .. ")",{color=Color.yellow})
 end)
 
 Hooks:PostHook(PlayerManager,"set_property","noblehud_set_property",function(self,name,value)
@@ -157,4 +157,29 @@ Hooks:PreHook(PlayerManager,"_on_enter_shock_and_awe_event","noblehud_buff_lock_
 		end
 	end
 	
+end)
+
+Hooks:PostHook(PlayerManager,"_on_messiah_recharge_event","noblehud_buff_messiah",function(self)
+	local count = self._messiah_charges
+	if count > 0 then 
+		NobleHUD:AddBuff("messiah_charge",{value = count})
+	else
+		NobleHUD:RemoveBuff("messiah_charge")
+	end
+end)
+
+Hooks:PreHook(PlayerManager,"_on_messiah_event","noblehud_buff_messiah_event",function(self)
+	if self._messiah_charges > 0 and self._current_state == "bleed_out" and not self._coroutine_mgr:is_running("get_up_messiah") then
+		NobleHUD:AddBuff("messiah_ready")
+	end
+end)
+
+Hooks:PostHook(PlayerManager,"use_messiah_charge","noblehud_buff_messiah_ready_remove",function(self)
+	NobleHUD:RemoveBuff("messiah_ready")
+	local count = self._messiah_charges
+	if count > 0 then 
+		NobleHUD:AddBuff("messiah_charge",{value = count})
+	else
+		NobleHUD:RemoveBuff("messiah_charge")
+	end
 end)

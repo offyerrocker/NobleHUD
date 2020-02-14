@@ -152,6 +152,10 @@
 		{
 			"hook_id" : "lib/units/beings/player/states/playerstandard",
 			"script_path": "buff/playerstandard.lua"
+		},
+		{
+			"hook_id" : "lib/managers/hud/hudassaultcorner",
+			"script_path" : "buff/hudassaultcorner.lua"
 		}
 	]
 }

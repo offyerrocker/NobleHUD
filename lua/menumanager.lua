@@ -704,6 +704,16 @@ NobleHUD.weapon_data = {
 --super short term: 7
 
 NobleHUD._buff_data = {
+	["phalanx"] = {
+		source = "manual",
+		priority = 1,
+		icon = "guis/textures/skull_phalanx",
+		text_color = NobleHUD.color_data.hud_buff_negative,
+		label = "noblehud_hud_assault_phase_phalanx",
+		label_compact = "",
+		value_type = "status",
+		flash = true
+	},
 	["ecm_normal"] = { --not implemented
 		source = "skill",
 		priority = 0,
@@ -741,7 +751,6 @@ NobleHUD._buff_data = {
 		source = "skill",
 		priority = 1,
 		icon = "juggernaut", --naut too sure about this icon. --drop_soap?
-		icon_rect = {1,7},
 		label = "noblehud_buff_dmg_aggregated_label",
 		value_type = "value",
 		label_compact = "$VALUE%",
@@ -751,7 +760,6 @@ NobleHUD._buff_data = {
 		source = "skill",
 		priority = 1,
 		icon = "backstab",
-		icon_rect = {1,7},
 		label = "noblehud_buff_crit_aggregated_label",
 		label_compact = "$VALUE%",
 		value_type = "value",
@@ -761,7 +769,6 @@ NobleHUD._buff_data = {
 		source = "skill",
 		priority = 1,
 		icon = "jail_diet", --'dance_instructor' is pistol mag bonus
-		icon_rect = {1,7},
 		label = "noblehud_buff_dodge_aggregated_label",
 		label_compact = "$VALUE%",
 		value_type = "value",
@@ -772,7 +779,6 @@ NobleHUD._buff_data = {
 		priority = 1,
 		icon = 17, --chico perk deck
 		icon_tier = 3, --heart with hollow +  
-		icon_rect = {1,1},
 		persistent_timer = true,
 		label = "noblehud_buff_regen_aggregated_label",
 		label_compact = "x$VALUE $TIMER",
@@ -820,7 +826,6 @@ NobleHUD._buff_data = {
 		icon = 4, --hitman perk deck
 		icon_tier = 7,
 --		disabled = true, --guaranteed regen from Hitman 9/9 Tooth and Claw; not implemented
-		icon_rect = {1,1},
 		label = "noblehud_buff_hitman_label",
 		label_compact = "$TIMER",
 		persistent_timer = true,
@@ -851,7 +856,6 @@ NobleHUD._buff_data = {
 		icon = 64,
 		icon_tier = 1,
 		tier_floors = {1,7,9},
-		icon_rect = {1,7},
 		label = "noblehud_buff_gambler_medical_supplies_label",
 		label_compact = "$TIMER",
 		text_color = NobleHUD.color_data.hud_buff_negative,
@@ -893,7 +897,6 @@ NobleHUD._buff_data = {
 		disabled = false,
 		icon = 12,
 		icon_tier = 3,
-		icon_rect = {1,7},
 		label = "noblehud_buff_yakuza_label",
 		label_compact = "x$VALUE",
 		value_type = "value", --armor recovery rate, like berserker
@@ -905,11 +908,11 @@ NobleHUD._buff_data = {
 		disabled = false,
 		icon = 13, --ex-president perk deck
 		icon_tier = 1,
-		icon_rect = {1,1},
+		text_color = NobleHUD.color_data.hud_buff_positive,
 		label = "noblehud_buff_expresident_label",
-		label_compact = "x$VALUE",
+		label_compact = "$VALUE%",
 		value_type = "value", --stored health
-		flash = false
+		flash = true
 	},
 	["hysteria"] = {
 		source = "perk",
@@ -928,7 +931,6 @@ NobleHUD._buff_data = {
 		priority = 1,
 		icon = 15,
 		icon_tier = 1,
-		icon_rect = {1,7},
 		label = "noblehud_buff_anarchist_label",
 		label_compact = "$TIMER",
 		persistent_timer = true,
@@ -941,7 +943,6 @@ NobleHUD._buff_data = {
 		priority = 3,
 		icon = 15,
 		icon_tier = 9,
-		icon_rect = {1,7},
 		label = "noblehud_buff_anarchist_label",
 		label_compact = "$TIMER",
 		text_color = NobleHUD.color_data.hud_buff_status,
@@ -953,7 +954,6 @@ NobleHUD._buff_data = {
 		priority = 3,
 		icon = 15,
 		icon_tier = 1,
-		icon_rect = {1,7},
 		label = "noblehud_buff_armor_break_invulnerable_active_label",
 		label_compact = "$TIMER",
 		text_color = NobleHUD.color_data.hud_buff_negative,--red for 15s cooldown; blue for 2s invuln period
@@ -965,7 +965,6 @@ NobleHUD._buff_data = {
 		priority = 1,
 		icon = 16,
 		icon_tier = 1,
-		icon_rect = {1,7},
 		label = "noblehud_buff_biker_label",
 		label_compact = "$TIMER",
 		value_type = "value",
@@ -978,7 +977,6 @@ NobleHUD._buff_data = {
 		priority = 3,
 		icon = 17,--"chico_injector",
 		icon_tier = 1,
-		icon_rect = {1,7},
 		label = "noblehud_buff_kingpin_label",
 		label_compact = "$TIMER",
 		icon_color = NobleHUD.color_data.hud_buff_status,
@@ -991,7 +989,6 @@ NobleHUD._buff_data = {
 		icon = 18,
 		tier_floors = {1,9},
 		icon_tier = 1,
-		icon_rect = {1,7},
 		label = "noblehud_buff_sicario_label",
 		label_compact = "",
 		text_color = NobleHUD.color_data.hud_buff_status,
@@ -1016,7 +1013,6 @@ NobleHUD._buff_data = {
 		priority = 5,
 		icon = 21,--"pocket_ecm_jammer",
 		icon_tier = 1,
-		icon_rect = {1,7},
 		label = "noblehud_buff_hacker_ecm_label",
 		label_compact = "$TIMER",
 		icon_color = NobleHUD.color_data.hud_buff_status,
@@ -1028,7 +1024,6 @@ NobleHUD._buff_data = {
 		priority = 5,
 		icon = 21,--"pocket_ecm_jammer",
 		icon_tier = 1,
-		icon_rect = {1,7},
 		label = "noblehud_buff_hacker_feedback_label",
 		label_compact = "$TIMER",
 		icon_color = NobleHUD.color_data.hud_buff_status,
@@ -1040,7 +1035,6 @@ NobleHUD._buff_data = {
 		priority = 3,
 		icon = 21,--"pocket_ecm_jammer",
 		icon_tier = 7,
-		icon_rect = {1,7},
 		label = "noblehud_buff_hacker_kluge_label",
 		label_compact = "$TIMER",
 		value_type = "timer",
@@ -1050,7 +1044,7 @@ NobleHUD._buff_data = {
 		source = "icon", --where to get icon (not directly related to where ingame buff came from)
 		priority = 7,
 		icon = "concussion_grenade", --if no source is specified, use this icon tweak data
-		icon_rect = {1,7}, --if source is "manual" then use "icon" as path and "icon_rect" to find bitmap
+--		icon_rect = {1,7}, --if source is "manual" then use "icon" as path and "icon_rect" to find bitmap
 		label = "noblehud_buff_flashbang_label", --display name
 		label_compact = "$TIMER",
 		text_color = Color.black:with_alpha(0.3),
@@ -1075,7 +1069,6 @@ NobleHUD._buff_data = {
 		source = "icon",
 		priority = 3,
 		icon = "mugshot_electrified",--skill icon "insulation",
-		icon_rect = {1,7},
 		label = "noblehud_buff_tased_label",
 		label_compact = "$TIMER",
 		icon_color = Color.white,
@@ -1087,7 +1080,6 @@ NobleHUD._buff_data = {
 		source = "icon",
 		priority = 3,
 		icon = "mugshot_electrified",
-		icon_rect = {1,7},
 		label = "noblehud_buff_electrocuted_label",
 		label_compact = "$TIMER",
 		icon_color = Color.yellow,
@@ -1099,7 +1091,6 @@ NobleHUD._buff_data = {
 		source = "skill",
 		priority = 3,
 		icon = "perseverance",
-		icon_rect = {1,7},
 		duration = 3, --6 aced
 		label = "noblehud_buff_swan_song_label",
 		label_compact = "$TIMER",
@@ -1111,11 +1102,22 @@ NobleHUD._buff_data = {
 		source = "skill",
 		priority = 2,
 		icon = "messiah",
-		icon_rect = {1,7},
+		text_color = NobleHUD.color_data.hud_buff_status,
 		label = "noblehud_buff_messiah_charge_label",
 		label_compact = "x$VALUE",
 		value_type = "value", --just in case multiple messiah charges is ever implemented, or modded in
 		flash = false
+	},
+	["messiah_ready"] = {
+		source = "skill",
+		priority = 1,
+		icon = "messiah",
+		icon_color = NobleHUD.color_data.hud_buff_positive,
+		text_color = NobleHUD.color_data.hud_buff_positive,
+		label = "noblehud_buff_messiah_ready_label",
+		label_compact = "noblehud_buff_generic_status_ready",
+		value_type = "status",
+		flash = true
 	},
 	["bullseye"] = { --DONE
 		source = "skill",
@@ -1133,7 +1135,6 @@ NobleHUD._buff_data = {
 		source = "skill",
 		priority = 2,
 		icon = "tea_cookies",
-		icon_rect = {1,7},
 		label = "noblehud_buff_uppers_cooldown_label",
 		label_compact = "$TIMER",
 		text_color = NobleHUD.color_data.hud_buff_negative,
@@ -1144,9 +1145,8 @@ NobleHUD._buff_data = {
 		source = "skill",
 		priority = 2,
 		icon = "tea_cookies",
-		icon_rect = {1,7},
 		label = "noblehud_buff_uppers_ready_label",
-		label_compact = "",
+		label_compact = "noblehud_buff_generic_status_ready",
 		text_color = NobleHUD.color_data.hud_buff_status,
 		value_type = "status",
 		flash = false
@@ -1155,7 +1155,6 @@ NobleHUD._buff_data = {
 		source = "skill",
 		priority = 2,
 		icon = "wolverine",
-		icon_rect = {1,7},
 		label = "noblehud_buff_berserker_aced_label",
 		label_compact = "$VALUE%",
 		value_type = "value",
@@ -1165,7 +1164,6 @@ NobleHUD._buff_data = {
 		source = "skill",
 		priority = 2,
 		icon = "wolverine",
-		icon_rect = {1,7},
 		label = "noblehud_buff_berserker_label",
 		label_compact = "$VALUE%",
 		value_type = "value",
@@ -1185,7 +1183,6 @@ NobleHUD._buff_data = {
 		source = "skill",
 		priority = 3,
 		icon = "unseen_strike",
-		icon_rect = {1,7},
 		label = "noblehud_buff_unseen_strike_label",
 		label_compact = "$TIMER",
 		duration = 18, --debug purposes only; t is passed
@@ -1196,7 +1193,6 @@ NobleHUD._buff_data = {
 		source = "skill",
 		priority = 3,
 		icon = "overkill",
-		icon_rect = {1,7},
 		label = "noblehud_buff_overkill_label",
 		label_compact = "$TIMER",
 		value_type = "timer",
@@ -1207,7 +1203,6 @@ NobleHUD._buff_data = {
 		priority = 3,
 		disabled = false,
 		icon = "bloodthirst", --assassin?
-		icon_rect = {1,7},
 		label = "noblehud_buff_bloodthirst_melee_label",
 		label_compact = "x$VALUE",
 		value_type = "value", --not sure
@@ -1250,7 +1245,6 @@ NobleHUD._buff_data = {
 		source = "skill",
 		priority = 7,
 		icon = "chameleon",
-		icon_rect = {1,7},
 		label = "noblehud_buff_sixth_sense_label",
 		label_compact = "$TIMER",
 		value_type = "timer",
@@ -1273,7 +1267,6 @@ NobleHUD._buff_data = {
 		source = "skill",
 		priority = 3,
 		icon = "trigger_happy",
-		icon_rect = {1,7},
 		label = "noblehud_buff_trigger_happy_label",
 		label_compact = "$TIMER",
 		value_type = "timer",
@@ -1284,7 +1277,6 @@ NobleHUD._buff_data = {
 		source = "skill",
 		priority = 3,
 		icon = "expert_handling",
-		icon_rect = {1,7},
 		label = "noblehud_buff_desperado_label",
 		label_compact = "$TIMER",
 		value_type = "timer",
@@ -1295,7 +1287,6 @@ NobleHUD._buff_data = {
 		source = "skill",
 		priority = 3,
 		icon = "control_freak",
-		icon_rect = {1,7},
 		label = "noblehud_buff_partners_in_crime_label",
 		label_compact = "",
 		value_type = "status", --move speed from hostage
@@ -1306,7 +1297,6 @@ NobleHUD._buff_data = {
 		priority = 3,
 		disabled = true, --same proc conditions as basic
 		icon = "control_freak",
-		icon_rect = {1,7},
 		label = "noblehud_buff_partners_in_crime_aced_label",
 		label_compact = "",
 		value_type = "status", --hp boost from hostage
@@ -1316,7 +1306,6 @@ NobleHUD._buff_data = {
 		source = "skill",
 		priority = 5,
 		icon = "speedy_reload",
-		icon_rect = {1,7},
 		label = "noblehud_buff_aggressive_reload_label",
 		label_compact = "$TIMER",
 		value_type = "timer",
@@ -1327,7 +1316,6 @@ NobleHUD._buff_data = {
 		source = "skill",
 		priority = 5,
 		icon = "shock_and_awe",
-		icon_rect = {1,7},
 		label = "noblehud_buff_lock_n_load_label",
 		label_compact = "x$VALUE",
 		value_type = "value", --auto multikills reload speed from skilltree "lock n load"
@@ -1337,7 +1325,6 @@ NobleHUD._buff_data = {
 		source = "skill",
 		priority = 7,
 		icon = "underdog",
-		icon_rect = {1,7},
 		label = "noblehud_buff_underdog_label",
 		label_compact = "$TIMER",
 		value_type = "timer",
@@ -1348,7 +1335,6 @@ NobleHUD._buff_data = {
 		priority = 7,
 		disabled = true,
 		icon = "underdog",
-		icon_rect = {1,7},
 		label = "noblehud_buff_underdog_aced_label",
 		label_compact = "$TIMER",
 		value_type = "timer",
@@ -1359,7 +1345,6 @@ NobleHUD._buff_data = {
 		priority = 7,
 		disabled = true,
 		icon = "underdog",
-		icon_rect = {1,7},
 		label = "dmg_dampener_close_contact",
 		label_compact = "$TIMER",
 		value_type = "timer",
@@ -1370,7 +1355,6 @@ NobleHUD._buff_data = {
 		priority = 7,
 		disabled = true,
 		icon = "underdog",
-		icon_rect = {1,7},
 		label = "dmg_dampener_outnumbered_strong",
 		label_compact = "$TIMER",
 		value_type = "timer",
@@ -1403,7 +1387,6 @@ NobleHUD._buff_data = {
 		source = "skill",
 		priority = 3,
 		icon = "running_from_death", --or speedy_reload
-		icon_rect = {1,7},
 		label = "noblehud_buff_running_from_death_reload_label",
 		value_type = "timer", --reload + swap faster after revive
 		label_compact = "$TIMER",
@@ -1415,7 +1398,6 @@ NobleHUD._buff_data = {
 		source = "skill",
 		priority = 3,
 		icon = "speedy_reload",
-		icon_rect = {1,7},
 		label = "noblehud_buff_running_from_death_swap_label",
 		value_type = "timer",
 		label_compact = "$TIMER",
@@ -1427,7 +1409,6 @@ NobleHUD._buff_data = {
 		source = "skill",
 		priority = 3,
 		icon = "running_from_death",
-		icon_rect = {1,7},
 		label = "noblehud_buff_running_from_death_aced_label",
 		value_type = "timer",
 		label_compact = "$TIMER",
@@ -5717,7 +5698,8 @@ function NobleHUD:UpdateHUD(t,dt)
 								buff_label:set_alpha(1)
 							end
 						elseif buff_id == "expresident" then
-							if buff_tweak_data.flash and buff_data.value > (NobleHUD._cache._max_stored_hp or 1) then 
+							local stored_hp_ratio = buff_data.value / (NobleHUD._cache._max_stored_hp or 1)
+							if buff_tweak_data.flash and stored_hp_ratio >= 0.9 then 
 								local min_alpha = 0.33
 								local b = 1 - (2 / min_alpha)
 								local frequency = 10 
@@ -5726,7 +5708,7 @@ function NobleHUD:UpdateHUD(t,dt)
 							elseif buff_label:alpha() ~= 1 then 
 								buff_label:set_alpha(1)
 							end
-							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%d",buff_data.value * 100)))
+							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%d",stored_hp_ratio * 100)))
 						elseif buff_id == "shock_and_awe_reload_multiplier" then 
 							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%.1f",buff_data.value)))
 						elseif buff_id == "wild_kill_counter" then
@@ -12258,6 +12240,9 @@ function NobleHUD:CreateBuff(id,params)
 		texture,texture_rect = self.get_specialization_icon_data_with_fallback(tonumber(icon),nil,icon_tier,tier_floors)
 	elseif source == "icon" then 
 		texture,texture_rect = tweak_data.hud_icons:get_icon_data(icon)
+	elseif source == "manual" then
+		texture = icon
+		texture_rect = icon_rect
 	else
 		texture = "guis/textures/ability_circle_fill"
 		texture_rect = nil
@@ -13356,6 +13341,11 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	MenuCallbackHandler.callback_noblehud_set_buffs_compact_mode_enabled = function(self,item)
 		local state = item:value() == "on"
 		NobleHUD.settings.buffs_compact_mode_enabled = state
+		for i,buff in pairs(NobleHUD._active_buffs or {}) do 
+			if buff.panel then 
+				buff.panel:set_size(NobleHUD:GetBuffItemSize())
+			end
+		end
 		--TODO update all buffs
 	end
 	MenuCallbackHandler.callback_noblehud_set_buff_align_center = function(self,item)
@@ -13440,6 +13430,11 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		local state = item:value() == "on"
 		NobleHUD.buff_settings.dmg_resist_total = state
 		NobleHUD:ToggleBuff(state,"dmg_resist_total")
+		NobleHUD:SaveBuffSettings()
+	end	
+	MenuCallbackHandler.callback_noblehud_set_buffs_misc_phalanx_enabled = function(self,item)
+		NobleHUD.buff_settings.phalanx = item:value() == "on"
+		NobleHUD:CheckBuff("phalanx")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_misc_flashbang_enabled = function(self,item)
@@ -13701,6 +13696,11 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	MenuCallbackHandler.callback_noblehud_set_buffs_fugitive_messiah_enabled = function(self,item)
 		NobleHUD.buff_settings.messiah_charge = item:value() == "on"
 		NobleHUD:CheckBuff("messiah_charge")
+		NobleHUD:SaveBuffSettings()
+	end
+	MenuCallbackHandler.callback_noblehud_set_buffs_fugitive_messiah_ready_enabled = function(self,item)
+		NobleHUD.buff_settings.messiah_ready = item:value() == "on"
+		NobleHUD:CheckBuff("messiah_ready")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_fugitive_bloodthirst_melee_enabled = function(self,item)

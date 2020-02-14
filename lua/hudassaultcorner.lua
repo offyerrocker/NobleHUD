@@ -128,11 +128,6 @@ function HUDAssaultCorner:_hide_hostages()
 	self._hud_panel:child("hostages_panel"):hide()
 end
 
-function HUDAssaultCorner:set_buff_enabled(buff_name, enabled) --winters dmg resist buff for cops; other captains in resmod
-	NobleHUD:log("ASSAULTCORNER: Buff enabled [" .. tostring(buff_name) .. "]: " .. tostring(enabled))
---	self:AddBuff("phalanx") --todo; this will display an icon 
-end
-
 function HUDAssaultCorner:sync_set_assault_mode(mode) --from host
 	if self._assault_mode == mode then 
 		return 
