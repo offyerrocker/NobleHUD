@@ -98,7 +98,6 @@
 				- center vertically to subpanel
 				- ammo?
 			* Mod options
-				* Placement and Scaling
 		
 	&& LOW PRIORITY FEATURES: &&
 		* Damage numbers popups
@@ -109,6 +108,10 @@
 		* Mod options
 			* Slider setting for popup_fadeout_time
 			* Keybinds for Safety etc
+			* Placement and Scaling
+				* weapons? 
+				* deployable scaling?
+				* score panel?
 		* HIGH SCORES
 			- Convert scores to credits after each run; add "purchaseable" items for credits
 			- Unusual effects? On-death SFX (grunt birthday party?)
@@ -522,6 +525,10 @@ NobleHUD._VITALS_W = 512
 NobleHUD._VITALS_H = 64
 NobleHUD._VITALS_TICK_W = 24
 NobleHUD._VITALS_TICK_H = 20
+NobleHUD._VITALS_FONT_SIZE = 16
+NobleHUD._VITALS_TICK_W_CENTER = 36
+NobleHUD._VITALS_TICK_SCALE = 0.85
+NobleHUD._VITALS_WARNING_Y = 12
 
 NobleHUD._HUD_HEALTH_TICKS = 8
 NobleHUD._RADAR_REFRESH_INTERVAL = 0.5
@@ -11437,18 +11444,19 @@ function NobleHUD:_create_vitals(hud)
 		text = managers.localization:text("noblehud_hud_shield_empty"),
 		layer = 6,
 		align = "center",
-		y = 12,
+		halign = "center",
+		y = self._VITALS_WARNING_Y,
 		alpha = 0,
 		color = Color.white,
 		font = tweak_data.hud.medium_font,
-		font_size = 16
+		font_size = self._VITALS_FONT_SIZE
 	})
-	local TICK_SCALE = 0.85
-	local TICK_W = 24 * TICK_SCALE
-	local TICK_H = 20 * TICK_SCALE
+	local TICK_SCALE = self._VITALS_TICK_SCALE
+	local TICK_W = self._VITALS_TICK_W * TICK_SCALE
+	local TICK_H = self._VITALS_TICK_H * TICK_SCALE
 	local TICK_Y = vitals_panel:h() + -8 + - TICK_H 
-	local CENTER_W = 36 * TICK_SCALE
-	local FREE_SPACE = 170 - (CENTER_W / 2)
+	local CENTER_W = self._VITALS_TICK_W_CENTER * TICK_SCALE
+	local FREE_SPACE = (self._VITALS_W / 3) - (CENTER_W / 2)
 	local HEALTH_TICKS = NobleHUD._HUD_HEALTH_TICKS --does not include center tick
 	local MARGIN = (FREE_SPACE / HEALTH_TICKS)
 	for i = 1, HEALTH_TICKS do 
@@ -11576,8 +11584,93 @@ function NobleHUD:_create_vitals(hud)
 end
 
 function NobleHUD:LayoutVitals()
+	if false then return end
+
 	local scale = self:GetVitalsScale()
---	vitals_panel:set_size(scale * self._VITALS_W,scale * self._VITALS_H)
+	local vitals_panel = self._vitals_panel
+	local VITALS_W = scale * self._VITALS_W
+	local VITALS_H = scale * self._VITALS_H
+	
+	vitals_panel:set_size(VITALS_W,VITALS_H)
+	vitals_panel:set_x((vitals_panel:parent():w() - VITALS_W) / 2)
+	vitals_panel:child("shield_outline"):set_size(VITALS_W,VITALS_H)
+	vitals_panel:child("shield_fill"):set_h(VITALS_H)
+--	vitals_panel:child("shield_fill"):set_size(VITALS_W,VITALS_H)
+	vitals_panel:child("delayed_damage_shield_fill"):set_h(VITALS_H)
+--	vitals_panel:child("delayed_damage_shield_fill"):set_size(VITALS_W,VITALS_H)
+	vitals_panel:child("absorption_fill"):set_h(VITALS_H)
+--	vitals_panel:child("absorption_fill"):set_size(VITALS_W,VITALS_H)
+	vitals_panel:child("shield_glow"):set_size(VITALS_W,VITALS_H)
+	vitals_panel:child("shield_warning"):set_font_size(self._VITALS_FONT_SIZE * scale)
+	vitals_panel:child("shield_warning"):set_y(self._VITALS_WARNING_Y * scale)
+	
+	local TICK_SCALE = self._VITALS_TICK_SCALE
+	local TICK_W = self._VITALS_TICK_W * TICK_SCALE * scale
+	local TICK_H = self._VITALS_TICK_H * TICK_SCALE * scale
+	local TICK_Y = vitals_panel:h() + - TICK_H + - (VITALS_W / 64)
+	local CENTER_W = self._VITALS_TICK_W_CENTER * scale
+	local FREE_SPACE = (VITALS_W / 3) - (CENTER_W / 2)
+	local MARGIN = FREE_SPACE / self._HUD_HEALTH_TICKS
+	for i = 1, self._HUD_HEALTH_TICKS do 
+		local left_x = ((vitals_panel:w() - CENTER_W)/ 2) + - (i * MARGIN)
+		local right_x = ((vitals_panel:w() + CENTER_W)/ 2) + (i * MARGIN) - TICK_W
+	
+	
+		local tick_left_fill = vitals_panel:child("health_tick_left_fill_" .. i)
+		if alive(tick_left_fill) then 
+			tick_left_fill:set_position(left_x,TICK_Y)
+			tick_left_fill:set_size(TICK_W,TICK_H)
+		end
+		
+		local tick_right_fill = vitals_panel:child("health_tick_right_fill_" .. i)
+		if alive(tick_right_fill) then 
+			tick_right_fill:set_position(right_x,TICK_Y)
+			tick_right_fill:set_size(TICK_W,TICK_H)
+		end
+		
+		local tick_left_outline = vitals_panel:child("health_tick_left_outline_" .. i)
+		if alive(tick_left_outline) then 
+			tick_left_outline:set_position(left_x,TICK_Y)
+			tick_left_outline:set_size(TICK_W,TICK_H)
+		end
+		
+		local tick_right_outline = vitals_panel:child("health_tick_right_outline_" .. i)
+		if alive(tick_right_outline) then 
+			tick_right_outline:set_position(right_x,TICK_Y)
+			tick_right_outline:set_size(TICK_W,TICK_H)
+		end
+		
+		local stored_tick_left_outline = vitals_panel:child("stored_health_tick_left_outline_" .. i)
+		if alive(stored_tick_left_outline) then 
+			stored_tick_left_outline:set_position(left_x,TICK_Y)
+			stored_tick_left_outline:set_size(TICK_W,TICK_H)
+		end
+		
+		local stored_tick_right_outline = vitals_panel:child("stored_health_tick_right_outline_" .. i)
+		if alive(stored_tick_right_outline) then 
+			stored_tick_right_outline:set_position(right_x,TICK_Y)
+			stored_tick_right_outline:set_size(TICK_W,TICK_H)
+		end
+	end
+	
+	local tick_center_fill = vitals_panel:child("health_tick_center_fill")
+	if alive(tick_center_fill) then 
+		tick_center_fill:set_position((vitals_panel:w() - CENTER_W) / 2,TICK_Y)
+		tick_center_fill:set_size(CENTER_W,TICK_H)
+	end
+	
+	local tick_center_outline = vitals_panel:child("health_tick_center_outline")
+	if alive(tick_center_outline) then 
+		tick_center_outline:set_position((vitals_panel:w() - CENTER_W) / 2,TICK_Y)
+		tick_center_outline:set_size(CENTER_W,TICK_H)
+	end
+	
+	local stored_tick_center_outline = vitals_panel:child("stored_health_tick_center_outline")
+	if alive(stored_tick_center_outline) then 
+		stored_tick_center_outline:set_position((vitals_panel:w() - CENTER_W) / 2,TICK_Y)
+		stored_tick_center_outline:set_size(CENTER_W,TICK_H)
+	end
+	
 end
 
 

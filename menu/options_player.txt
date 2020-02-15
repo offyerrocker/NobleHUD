@@ -22,14 +22,6 @@
 			"size" : 16
 		},
 		{
-			"type" : "toggle",
-			"id" : "id_noblehud_set_stamina_enabled",
-			"title" : "noblehud_set_stamina_enabled_title",
-			"description" : "noblehud_set_stamina_enabled_desc",
-			"callback" : "callback_noblehud_set_stamina_enabled",
-			"value" : "stamina_enabled"
-		},
-		{
 			"type" : "slider",
 			"id" : "id_noblehud_set_vitals_panel_scale",
 			"title" : "noblehud_set_vitals_panel_scale_title",
@@ -40,6 +32,18 @@
 			"min" : 0.01,
 			"max" : 2,
 			"step" : 0.01
+		},
+		{
+			"type" : "divider",
+			"size" : 16
+		},
+		{
+			"type" : "toggle",
+			"id" : "id_noblehud_set_stamina_enabled",
+			"title" : "noblehud_set_stamina_enabled_title",
+			"description" : "noblehud_set_stamina_enabled_desc",
+			"callback" : "callback_noblehud_set_stamina_enabled",
+			"value" : "stamina_enabled"
 		},
 		{
 			"type" : "slider",
