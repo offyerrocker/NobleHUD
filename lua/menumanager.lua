@@ -12136,10 +12136,13 @@ function NobleHUD:animate_interact_bar_pulse(o,t,dt,start_t,duration)
 	local end_time = start_t + duration
 	local time_left = end_time - t
 	local progress = time_left / duration
-	local t_adjusted = (t - start_t) * 60
+	local t_adjusted = (t - start_t)
 	local rotations = 5
 	--y = sin(mod(4x,pi/2))
-	local here = math.cos(math.deg(t_adjusted % math.deg(math.pi))/2) * progress * rotations
+	
+	local here = (0.5 + (math.cos((t_adjusted * 180) % 180) / 2)) * progress
+--	local here = 0.5 + (math.cos((progress * math.deg(math.pi)) % math.deg(math.pi)) / 2)
+--	local here = math.cos(math.deg(t_adjusted % math.deg(math.pi))/2) * progress * rotations
 	--local here = 1 - (math.sin((60 * now) % 60) * (1 - progress))
 	Console:SetTrackerValue("trackera",here)
 	Console:SetTrackerValue("trackerb",progress)
