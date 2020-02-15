@@ -357,6 +357,7 @@
 	"noblehud_unitname_hector_boss_no_armor" : "Hector (surprised pikachu)",
 	"noblehud_unitname_bolivian" : "Bolivian Gangster",
 	"noblehud_unitname_bolivian_indoors" : "Bolivian Security",
+	"noblehud_unitname_bolivian_indoors_mex" : "Border Gangster",
 	"noblehud_unitname_drug_lord_boss" : "Ernesto Sosa",
 	"noblehud_unitname_drug_lord_boss_stealth" : "Sosa (surprised pikachu)",
 	

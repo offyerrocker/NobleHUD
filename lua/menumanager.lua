@@ -3141,6 +3141,7 @@ NobleHUD.score_unit_points = {
 	hector_boss_no_armor = 100,
 	bolivian = 1,
 	bolivian_indoors = 1,
+	bolivian_indoors_mex = 1,
 	drug_lord_boss = 100, --sosa
 	drug_lord_boss_stealth = 100, --also sosa
 	
@@ -12028,6 +12029,38 @@ function NobleHUD:_create_interact(hud)
 		color = self.color_data.hud_bluefill
 	})
 	
+	--todo menu option for this bad boy
+	local interact_bar = floating_panel:gradient({
+		name = "interact_bar",
+		valign = "grow",
+--		rotation = 180,
+--		x = 100,
+--		y = 100,
+--		texture = "guis/textures/ar_crosshair_2",
+		w = 100,
+		h = 16,
+		layer = 3,
+--		alpha = 1,
+		blend_mode = "add",
+--		color = self.color_data.hud_bluefill,
+		gradient_points = {
+			0,
+			Color(1,1,0,0), --argb
+			0.5,
+			Color(1,0,1,0),
+			1,
+			Color(1,0,0,1)
+		},
+		visible = true
+	})
+
+	local interact_bg = floating_panel:rect({
+		name = "interact_bg",
+		color = Color.black,
+		w = 100,
+		h = 16
+	})
+	
 	local interact_name = floating_panel:text({
 		name = "interact_name",
 		text = "Enter Warthog",
@@ -12097,12 +12130,42 @@ function NobleHUD:HideInteract(cancelled)
 	interact_panel:child("trace_horizontal"):set_w(0)
 end
 
+	
+function NobleHUD:animate_interact_bar_pulse(o,t,dt,start_t,duration)
+--todo pulse n times, where n is derived from duration
+	local end_time = start_t + duration
+	local time_left = end_time - t
+	local progress = time_left / duration
+	local t_adjusted = (t - start_t) * 60
+	local rotations = 5
+	--y = sin(mod(4x,pi/2))
+	local here = math.cos(math.deg(t_adjusted % math.deg(math.pi))/2) * progress * rotations
+	--local here = 1 - (math.sin((60 * now) % 60) * (1 - progress))
+	Console:SetTrackerValue("trackera",here)
+	Console:SetTrackerValue("trackerb",progress)
+	o:set_gradient_points({
+		0,
+		Color.black,-- self.color_data.hud_bluefill,
+		math.clamp(here,0,1),
+		self.color_data.hud_blueoutline,
+		progress + 0.01,
+		Color.white,
+		progress,
+		Color.black,
+		1,
+		Color.black
+	})
+end
 
 
 function NobleHUD:SetInteractProgress(current,total)
 	local interact_panel = self._interact_panel
 	local floating_panel = interact_panel:child("floating_panel")
 	local interact_progress = floating_panel:child("interact_progress")
+	self:animate_interact_bar_pulse(floating_panel:child("interact_bar"),Application:time(),0.01,Application:time() - (total - current),total)
+--	NobleHUD:animate(floating_panel:child("interact_bar"),"animate_interact_bar_pulse",nil,total)
+	
+--	floating_panel:child("interact_bar"):set_w()
 	interact_progress:set_text(string.format("%0.01fs",math.abs(total - current) or -99.99))
 --	local _,_,w,_ = interact_progress:text_rect()
 --	floating_panel:set_w(w)

@@ -32,12 +32,9 @@ Hooks:PostHook(PlayerStandard,"_do_melee_damage","noblehud_buff_overdog",functio
 			NobleHUD:RemoveBuff("overdog")
 		end
 		
---		local state_data = self._state_data
---		local dmg_mul = state_data and state_data.stacking_dmg_mul
---		local melee = dmg_mul and dmg_mul.melee
-		Console:SetTrackerValue("trackera","overdog: " .. tostring(dmg_multiplier) .. " " .. NobleHUD.random_character())
-		Console:SetTrackerValue("trackerb","stack1: " .. tostring(stack[1]) .. " " .. NobleHUD.random_character())
-		Console:SetTrackerValue("trackerc","stack2: " .. tostring(stack[2]) .. " " .. NobleHUD.random_character())
+--		Console:SetTrackerValue("trackera","overdog: " .. tostring(dmg_multiplier) .. " " .. NobleHUD.random_character())
+--		Console:SetTrackerValue("trackerb","stack1: " .. tostring(stack[1]) .. " " .. NobleHUD.random_character())
+--		Console:SetTrackerValue("trackerc","stack2: " .. tostring(stack[2]) .. " " .. NobleHUD.random_character())
 	end
 
 
