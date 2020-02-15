@@ -132,7 +132,8 @@
 	"noblehud_set_ability_panel_x_desc" : "Set Deployable horizontal position",
 	"noblehud_set_ability_panel_y_title" : "Set Deployable Panel Y",
 	"noblehud_set_ability_panel_y_desc" : "Set Deployable vertical position",
-	
+	"noblehud_set_vitals_panel_scale_title" : "Set HP/Armor Panel Scale",
+	"noblehud_set_vitals_panel_scale_desc" : "Sets the size of the vitals panel.",
 	
 	"noblehud_set_master_hud_alpha_title" : "Set HUD Alpha",
 	"noblehud_set_master_hud_alpha_desc" : "Change the opacity of all NobleHUD elements (Requires restart)",
@@ -177,7 +178,6 @@
 	"noblehud_set_teammate_panel_y_title" : "Set Teammates Y",
 	"noblehud_set_teammate_panel_y_desc" : "(Will be overridden by Motion Tracker alignment)",
 	
-	
 	"noblehud_score_options_title" : "Score Options...",
 	"noblehud_score_options_desc" : "Scoring and Popup Options",
 	"noblehud_set_popups_enabled_title" : "Enable Score Popups",
@@ -199,7 +199,6 @@
 	"noblehud_score_display_mode_points" : "Kills Score",
 	"noblehud_set_score_display_mode_title" : "Score Display",
 	"noblehud_set_score_display_mode_desc" : "Choose what shows in the score display (bottom right).",
-		
 		
 	"noblehud_hud_objective_activate" : "Current Objective:",
 	"noblehud_hud_objective_reminder" : "Objective Reminder:",
@@ -502,6 +501,8 @@
 	
 	"noblehud_buffs_mastermind_options_title" : "Mastermind...",
 	"noblehud_buffs_mastermind_options_desc" : "Select Mastermind Skilltree Buffs",
+	"noblehud_set_buffs_mastermind_combat_medic_enabled_title" : "Combat Medic",
+	"noblehud_set_buffs_mastermind_combat_medic_enabled_desc" : "Damage Resist Timer",
 	"noblehud_set_buffs_mastermind_inspire_basic_enabled_title" : "Inspire Basic",
 	"noblehud_set_buffs_mastermind_inspire_basic_enabled_desc" : "Movement Speed Boost Duration",
 	"noblehud_set_buffs_mastermind_inspire_aced_enabled_title" : "Inspire Aced",
@@ -583,17 +584,19 @@
 	"noblehud_buff_long_dis_revive_label" : "Inspire Cooldown $TIMER",
 	"noblehud_buff_morale_boost_label" : "Inspire Basic $TIMER",
 	"noblehud_buff_bullseye_label" : "Bullseye $TIMER",
-	"noblehud_buff_biker_label" : "Prospect x$VALUE",
+	"noblehud_buff_biker_label" : "Prospect x$VALUE $TIMER",
 	"noblehud_buff_grinder_label" : "Grinder x$VALUE",
 	"noblehud_buff_uppers_ready_label" : "Uppers First Aid Nearby",
 	"noblehud_buff_uppers_cooldown_label" : "Uppers Cooldown $TIMER",
+	"noblehud_buff_overdog" : "OVERDOG x$VALUE $TIMER",
 	"noblehud_buff_anarchist_label" : "Blitzkrieg Bop $TIMER",
+	"noblehud_buff_anarchist_lust_for_life_label" : "Lust For Life $TIMER",
 	"noblehud_buff_armor_break_invulnerable_active_label" : "Invulnerable $TIMER",
 	"noblehud_buff_armor_break_invulnerable_cooldown_label" : "Invuln Cooldown $TIMER",
 	"noblehud_buff_kingpin_label" : "Kingpin Injector $TIMER",
 	"noblehud_buff_sicario_label" : "Sicario $TIMER",
 	"noblehud_buff_yakuza_label" : "Hebi Irezumi x$VALUE",
-	"noblehud_buff_delayed_damage_label" : "Delayed Damage x$VALUE $TIMER",
+	"noblehud_buff_delayed_damage_label" : "Delayed Damage x$VALUE",
 	"noblehud_buff_messiah_charge_label" : "Messiah x$VALUE",
 	"noblehud_buff_messiah_ready_label" : "Messiah Ready",
 	"noblehud_buff_swan_song_label" : "Swan Song $TIMER",
@@ -605,6 +608,7 @@
 	"noblehud_buff_infiltrator_life_drain" : "Life Leech $TIMER",
 	"noblehud_buff_expresident_label" : "Point Break $VALUE%",
 	"noblehud_buff_hacker_ecm_label" : "Pocket ECM Jammer $TIMER",
+	"noblehud_buff_tag_team_label" : "Tag Team $TIMER",
 	"noblehud_buff_hacker_kluge_label" : "Kluge $TIMER",
 	"noblehud_buff_hacker_feedback_label" : "Pocket ECM Feedback $TIMER",
 	"noblehud_buff_maniac_label" : "Absorption x$VALUE",
@@ -613,6 +617,7 @@
 	"noblehud_buff_bulletstorm_label" : "Bulletstorm $TIMER",
 	"noblehud_buff_unseen_strike_label" : "Unseen Strike $TIMER",
 	"noblehud_buff_overkill_label" : "Overkill $TIMER",
+	"noblehud_buff_dire_need" : "Dire Need $TIMER",
 	"noblehud_buff_bloodthirst_melee_label" : "Bloodthirst x$VALUE",
 	"noblehud_buff_bloodthirst_reload_label" : "Bloodthirst Reload $TIMER",
 	"noblehud_buff_second_wind_label" : "Second Wind $TIMER",

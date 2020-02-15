@@ -152,7 +152,7 @@ Hooks:PreHook(PlayerManager,"_on_enter_shock_and_awe_event","noblehud_buff_lock_
 				end
 			end
 			
-			NobleHUD:AddBuff("shock_and_awe_reload_multiplier",{value = reload_multiplier})
+			NobleHUD:AddBuff("shock_and_awe_reload_multiplier",{value =string.format("%.1f",reload_multiplier)})
 
 		end
 	end
@@ -181,5 +181,27 @@ Hooks:PostHook(PlayerManager,"use_messiah_charge","noblehud_buff_messiah_remove"
 		NobleHUD:AddBuff("messiah_charge",{value = count})
 	else
 		NobleHUD:RemoveBuff("messiah_charge")
+	end
+end)
+
+Hooks:PostHook(PlayerManager,"chk_wild_kill_counter","noblehud_buff_biker",function(self,killed_unit,variant)
+	local player = self:local_player()
+	if not player then 
+		return
+	end
+	if not (self:has_category_upgrade("player", "wild_health_amount") or self:has_category_upgrade("player", "wild_armor_amount")) then
+		return
+	end
+	
+--	local max_trigger_time
+	local wild_kill_triggers = self._wild_kill_triggers or {}
+	local triggers_count = #wild_kill_triggers
+	local triggers_left = tweak_data.upgrades.wild_max_triggers_per_time - triggers_count
+	if triggers_left > 0 then 
+		for i,trigger_time in pairs(wild_kill_triggers) do 
+			NobleHUD:log("Triggered wild kill counter: " .. tostring(i) .. ": " .. tostring(trigger_time),{color=Color.green})
+--			max_trigger_time = 
+		end
+		NobleHUD:AddBuff("wild_kill_counter",{value=triggers_left,start_t = Application:time(),end_t=wild_kill_triggers[#wild_kill_triggers]})
 	end
 end)

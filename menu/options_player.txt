@@ -31,6 +31,18 @@
 		},
 		{
 			"type" : "slider",
+			"id" : "id_noblehud_set_vitals_panel_scale",
+			"title" : "noblehud_set_vitals_panel_scale_title",
+			"description" : "noblehud_set_vitals_panel_scale_desc",
+			"callback" : "callback_noblehud_set_vitals_panel_scale",
+			"value" : "vitals_scale",
+			"default_value" : 1,
+			"min" : 0.01,
+			"max" : 2,
+			"step" : 0.01
+		},
+		{
+			"type" : "slider",
 			"id" : "id_noblehud_set_stamina_panel_x",
 			"title" : "noblehud_set_stamina_panel_x_title",
 			"description" : "noblehud_set_stamina_panel_x_desc",

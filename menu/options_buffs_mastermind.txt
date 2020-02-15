@@ -7,6 +7,14 @@
 	"items" : [
 		{
 			"type" : "toggle",
+			"id" : "noblehud_set_buffs_mastermind_combat_medic_enabled",
+			"title" : "noblehud_set_buffs_mastermind_combat_medic_enabled_title",
+			"description" : "noblehud_set_buffs_mastermind_combat_medic_enabled_desc",
+			"callback" : "callback_noblehud_set_buffs_mastermind_combat_medic_enabled",
+			"value" : "revive_damage_reduction"
+		},
+		{
+			"type" : "toggle",
 			"id" : "noblehud_set_buffs_mastermind_inspire_basic_enabled",
 			"title" : "noblehud_set_buffs_mastermind_inspire_basic_enabled_title",
 			"description" : "noblehud_set_buffs_mastermind_inspire_basic_enabled_desc",

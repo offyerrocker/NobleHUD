@@ -37,7 +37,6 @@
 		* Add threshold procs for Resist/crit/dodge, and option to always show
 		
 			Singleplayer
-		* Dire Need
 			
 		* Armor/Health tracker
 		* Partners In Crime
@@ -46,10 +45,8 @@
 		* Fully Loaded
 		
 			Perk Decks
+			
 		* Anarchist Lust for Life (active regen)
-		* Infiltrator Overdog
-		* Stoic delayed damage
-		* Tag Team Duration
 		
 			Multiplayer/Bots
 		* Inspire Cooldown
@@ -59,7 +56,6 @@
 		
 		* Downed (check playerbleedout.lua state)
 		* Messiah (test)
-		* BIKER PERK DECK (redo all of that shit)
 		
 		
 		
@@ -254,6 +250,7 @@ NobleHUD.settings = {
 	radar_enabled = true,
 	score_display_mode = 1,
 	medals_enabled = true,
+	vitals_scale = 1,
 	popup_style = 1,
 	popups_enabled = true,
 	popup_font_size = 16,
@@ -518,6 +515,13 @@ NobleHUD._killfeed_presets = {
 		color_2 = NobleHUD.color_data.hud_hint_lightorange
 	}
 }
+
+
+
+NobleHUD._VITALS_W = 512
+NobleHUD._VITALS_H = 64
+NobleHUD._VITALS_TICK_W = 24
+NobleHUD._VITALS_TICK_H = 20
 
 NobleHUD._HUD_HEALTH_TICKS = 8
 NobleHUD._RADAR_REFRESH_INTERVAL = 0.5
@@ -868,10 +872,14 @@ NobleHUD._buff_data = {
 		priority = 2
 	},
 	["dire_need"] = { --todo
-		disabled = true,
-		priority = 3,
 		source = "skill",
-		value_type = "timer"
+		priority = 1,
+		icon = "drop_soap",
+		label = "noblehud_buff_dire_need",
+		label_compact = "$TIMER",
+		duration = 10,
+		value_type = "timer",
+		flash = true
 	},
 	["hitman"] = {
 		source = "perk",
@@ -888,11 +896,16 @@ NobleHUD._buff_data = {
 		flash = false
 	},
 	["overdog"] = {
-		disabled = true,
-		priority = 7,
 		source = "perk",
+		priority = 4,
+		icon = 9,
+		icon_tier = 1,
+		label = "noblehud_buff_overdog",
+		label_compact = "x$VALUE $TIMER",
+		value_type = "timer", --10x melee damage within 1s from infiltrator 1/9 or Sociopath 1/9, Overdog; not implemented
 		duration = 1,
-		value_type = "timer" --10x melee damage within 1s from infiltrator 1/9 or Sociopath 1/9, Overdog; not implemented
+		text_color = NobleHUD.color_data.hud_buff_positive,
+		flash = true
 	},
 	["tension"] = { 
 		disabled = true,
@@ -1035,15 +1048,17 @@ NobleHUD._buff_data = {
 		flash = false
 	},
 	["anarchist_lust_for_life"] = {
+		disabled = true,
 		source = "perk",
-		priority = 3,
+		priority = 4,
 		icon = 15,
 		icon_tier = 9,
-		label = "noblehud_buff_anarchist_label",
+		duration = 1.5,
+		label = "noblehud_buff_anarchist_lust_for_life_label",
 		label_compact = "$TIMER",
-		text_color = NobleHUD.color_data.hud_buff_status,
+		text_color = NobleHUD.color_data.hud_buff_negative,
 		value_type = "timer",
-		flash = false
+		flash = true
 	},
 	["armor_break_invulnerable"] = {
 		source = "perk",
@@ -1063,9 +1078,11 @@ NobleHUD._buff_data = {
 		icon_tier = 1,
 		label = "noblehud_buff_biker_label",
 		label_compact = "$TIMER",
-		value_type = "value",
-		text_color = NobleHUD.color_data.hud_buff_neutral,
+		value_type = "timer",
+		text_color = NobleHUD.color_data.hud_buff_status,
 		icon_color = NobleHUD.color_data.hud_buff_neutral,
+		persistent_timer = true,
+--		render_template = "VertexColorTexturedRadialFlex",
 		flash = true
 	},
 	["chico_injector"] = {
@@ -1100,18 +1117,8 @@ NobleHUD._buff_data = {
 		label = "noblehud_buff_delayed_damage_label",
 		label_compact = "x$VALUE $TIMER",
 		value_type = "value",
-		flash = false
+		flash = true
 		--health counter
-	},
-	["tag_team"] = {
-		source = "perk",
-		priority = 3,
-		icon = 21,
-		icon_tier = 1,
-		label = "noblehud_buff_tag_team_label",
-		label_compact = "$TIMER",
-		value_type = "timer", --is being tagged; tag team duration
-		priority = 3
 	},
 	["pocket_ecm_jammer"] = {
 		source = "perk",
@@ -1145,6 +1152,16 @@ NobleHUD._buff_data = {
 		value_type = "timer",
 		flash = false
 	},
+	["tag_team"] = {
+		source = "perk",
+		priority = 3,
+		icon = 22,
+		icon_tier = 1,
+		label = "noblehud_buff_tag_team_label",
+		label_compact = "$TIMER",
+		value_type = "timer", --is being tagged; tag team duration
+		priority = 3
+	},
 	["flashbang"] = {
 		source = "icon", --where to get icon (not directly related to where ingame buff came from)
 		priority = 7,
@@ -1160,7 +1177,7 @@ NobleHUD._buff_data = {
 	["downed"] = { --i think people will probably figure out that they've been downed, actually. unless they're flashbanged.
 		source = "icon",
 		priority = 3,
-		disabled = false,
+		disabled = true,
 		icon = "mugshot_downed",
 		icon_rect = {240,464,48,48},
 		label = "downed",
@@ -4827,6 +4844,9 @@ function NobleHUD:GetAbilityPanelY()
 	return self.settings.ability_y
 end
 
+function NobleHUD:GetVitalsScale()
+	return self.settings.vitals_scale
+end
 
 
 		--SET SETTINGS
@@ -5101,6 +5121,7 @@ function NobleHUD:OnLoaded()
 	self:LayoutBuffPanel()
 	self:LayoutRadar()
 	self:LayoutStamina()
+	self:LayoutVitals()
 	
 	self:AddBuff("dmg_resist_total")
 	self:AddBuff("crit_chance_total")
@@ -5686,6 +5707,14 @@ function NobleHUD:UpdateHUD(t,dt)
 					self:RemoveBuff("sicario")
 				end
 			end
+--[[			
+			if self:IsBuffEnabled("wild_kill_counter") then 
+				local wild_kill_counter = managers.player:get_wild_kill_counter()
+				if tweak_data.upgrades.wild_max_triggers_per_time > #wild_kill_counter then
+					self:AddBuff("wild_kill_counter",{value=#wild_kill_counter})
+				end
+			end
+			--]]
 
 --[[
 			if self:IsBuffEnabled("anarchist_lust_for_life") then 
@@ -5772,7 +5801,7 @@ function NobleHUD:UpdateHUD(t,dt)
 								remove_buff()
 							else
 								local time_left = math.max(0,buff_data.end_t - _t)
-								buff_time = self.format_seconds(1 + time_left)
+								buff_time = self.format_seconds(0 + time_left)
 								if buff_id == "armor_break_invulnerable" then
 									local invuln_timer = player_damage._can_take_dmg_timer
 									if invuln_timer and invuln_timer > 0 then 
@@ -5794,6 +5823,34 @@ function NobleHUD:UpdateHUD(t,dt)
 									local armor_regen_amount = (buff_data.value) and (" +" .. tostring(buff_data.value) .. "%   ") or ""
 									buff_text = string.gsub(buff_text,"$VALUE",armor_regen_amount)
 									buff_text = string.gsub(buff_text,"$TIMER",buff_time)
+									buff_label:set_text(buff_text)
+								elseif buff_id == "wild_kill_counter" then
+									local wild_kill_triggers = managers.player._wild_kill_triggers or {}
+									local max_wild_t
+									for trigger,trigger_time in ipairs(wild_kill_triggers) do 
+										if trigger_time < _t then 
+											table.remove(wild_kill_triggers,trigger)
+										else
+											max_wild_t = max_wild_t or trigger_time
+										end
+									end
+									if max_wild_t then 
+										buff_data.end_t = max_wild_t
+									end
+									buff_data.value = tweak_data.upgrades.wild_max_triggers_per_time - #wild_kill_triggers
+									buff_text = string.gsub(buff_text,"$VALUE",buff_data.value)
+									if buff_data.end_t - _t > 0 then
+										buff_text = string.gsub(buff_text,"$TIMER",buff_time)
+									else
+										buff_text = string.gsub(buff_text,"$TIMER","")
+									end
+									if buff_data.value <= 0 then 
+										buff_icon:set_color(self.color_data.hud_buff_negative)
+										buff_label:set_color(self.color_data.hud_buff_negative)
+									else	
+										buff_icon:set_color(self.color_data.hud_buff_neutral)
+										buff_label:set_color(self.color_data.hud_buff_neutral)
+									end
 									buff_label:set_text(buff_text)
 								else
 									buff_text = string.gsub(buff_text,"$VALUE",buff_data.value or "")
@@ -5864,37 +5921,21 @@ function NobleHUD:UpdateHUD(t,dt)
 								buff_label:set_alpha(1)
 							end
 							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%d",stored_hp_ratio * 100)))
-						elseif buff_id == "shock_and_awe_reload_multiplier" then 
-							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%.1f",buff_data.value)))
-						elseif buff_id == "wild_kill_counter" then
-						--[[ --temp disabled til i reverse engineer it again
-							local wild_kill_counter = managers.player:get_wild_kill_counter()
-							local wild_kills_left = tweak_data.upgrades.wild_max_triggers_per_time - #wild_kill_counter
-							if wild_kill_counter[1] and wild_kill_counter[1] <= _t then 
-								table.remove(wild_kill_counter,1)
-								--turns out ovk doesn't update the biker kill counter until you get a kill. efficient, but bad for info huds.
-								--so... guess i'll be putting some biker stuff in here
+						elseif buff_id == "delayed_damage" then 
+							local current_hp = player_damage:get_real_health()
+							if buff_tweak_data.flash and (buff_data.value > current_hp) then 
+								local min_alpha = 0.6
+								local b = 1 - (2 / min_alpha)
+								local frequency = 10 
+								local label_alpha = (0.5 - (1 / b)) + ((math.cos(100 * frequency * _t) / math.pi) / b)
+								buff_label:set_alpha(label_alpha)
 							end
-							if wild_kill_counter[1] then 
-			--					buff_icon:set_h(((_t / wild_kill_counter[1]) - 1) / max_h)
-								local latest_wild_t = wild_kill_counter[#wild_kill_counter]
-								local max_wild_t = tweak_data.upgrades.wild_trigger_time
-								local ratio = 1 - ((latest_wild_t - _t) / max_wild_t)
-								buff_icon:set_color(Color(1,ratio,ratio))
+							if current_hp > 0 then 
+								buff_label:set_color(NobleHUD.interp_colors(Color.white,Color.red,math.min(buff_data.value / current_hp,1)))
 							else
-								buff_icon:set_color(buff_tweak_data.icon_color)
+								buff_label:set_color(Color.white)
 							end
-							buff_label:set_text(buff_text .. " x" .. tostring(wild_kills_left))
-							if buff_tweak_data.flash then 
-							
-								if wild_kills_left <= 0 then 
-									buff_label:set_alpha(1 + math.sin(_t * 800) * 0.4)				
-								else
-			--						buff_icon:set_color(interp_col(buff_icon:color(),buff_tweak_data.icon_color,10))
-									buff_label:set_alpha(1)
-								end
-							end
-							--]]
+							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%d",buff_data.value)))
 						else
 							buff_label:set_text(string.gsub(buff_text,"$VALUE",tostring(buff_data.value or 0)))
 			--				self:log("Unknown status for buff " .. buff_id)
@@ -8074,7 +8115,7 @@ function NobleHUD:animate_wait(o,t,dt,start_t,duration)
 end
 
 function NobleHUD:_activate_ability_radial(time_left,time_total)
-	self:log("activate_ability_radial(" .. self.table_concat({time_left = time_left,time_total = time_total},",","=") .. ")")
+--	self:log("activate_ability_radial(" .. self.table_concat({time_left = time_left,time_total = time_total},",","=") .. ")")
 end
 
 function NobleHUD:_set_ability_radial(time_left,time_total)
@@ -11330,9 +11371,9 @@ end
 function NobleHUD:_create_vitals(hud)
 	local vitals_panel = hud:panel({
 		name = "vitals_panel",
-		w = 512,
-		h = 64,
-		x = (hud:w() - 512)/ 2,
+		w = self._VITALS_W,
+		h = self._VITALS_H,
+		x = (hud:w() - self._VITALS_W)/ 2,
 		y = 50,
 		alpha = self:GetHUDAlpha()
 	})
@@ -11532,6 +11573,11 @@ function NobleHUD:_create_vitals(hud)
 		visible = false,
 		color = Color(1,0.5,0):with_alpha(0.1) --orange
 	})
+end
+
+function NobleHUD:LayoutVitals()
+	local scale = self:GetVitalsScale()
+--	vitals_panel:set_size(scale * self._VITALS_W,scale * self._VITALS_H)
 end
 
 
@@ -12469,6 +12515,8 @@ function NobleHUD:CreateBuff(id,params)
 	local icon_tier = buff_data.icon_tier --for perk decks
 	local tier_floors = buff_data.tier_floors --max_tier but with a whitelist/fallback
 	
+	local render_template = buff_data.render_template
+	
 	local text_color = params.text_color or buff_data.text_color or Color.white
 	local icon_color = params.icon_color or buff_data.icon_color or Color.white
 	local label = buff_data.label
@@ -12527,6 +12575,7 @@ function NobleHUD:CreateBuff(id,params)
 		h = icon_size,
 		texture = texture,
 		texture_rect = texture_rect,
+		render_template = render_template,
 		blend_mode = blend_mode,
 		color = icon_color
 	})
@@ -13385,6 +13434,14 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	MenuCallbackHandler.callback_noblehud_about_callsign_string = function(self,item)
 		NobleHUD:ShowMenu_AboutCallsign()
 	end
+	
+	MenuCallbackHandler.callback_noblehud_set_vitals_panel_scale = function(self,item)
+		local value = tonumber(item:value())
+		NobleHUD.settings.vitals_scale = value
+		NobleHUD:LayoutVitals()
+		NobleHUD:SaveSettings()
+	end
+	
 	MenuCallbackHandler.callback_noblehud_set_stamina_enabled = function(self,item)
 		local value = item:value() == "on"
 		NobleHUD.settings.stamina_enabled = value
@@ -13795,6 +13852,11 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	end
 	
 	--MASTERMIND
+	MenuCallbackHandler.callback_noblehud_set_buffs_mastermind_combat_medic_enabled = function(self,item)
+		NobleHUD.buff_settings.revive_damage_reduction = item:value() == "on"
+		NobleHUD:CheckBuff("revive_damage_reduction")
+		NobleHUD:SaveBuffSettings()
+	end
 	MenuCallbackHandler.callback_noblehud_set_buffs_mastermind_inspire_basic_enabled = function(self,item)
 		NobleHUD.buff_settings.morale_boost = item:value() == "on"
 		NobleHUD:CheckBuff("morale_boost")

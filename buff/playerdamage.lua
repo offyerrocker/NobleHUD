@@ -13,6 +13,12 @@ Hooks:PostHook(PlayerDamage,"_on_exit_swansong_event","noblehud_buff_swansong_re
 	NobleHUD:RemoveBuff("swan_song")
 end)
 
+--[[
+Hooks:PostHook(PlayerDamage,"_on_damage_armor_grinding","noblehud_buff_anarchist_lust_for_life",function(self)
+	NobleHUD:AddBuff("anarchist_lust_for_life")
+end)
+--]]
+
 Hooks:PostHook(PlayerDamage,"_update_armor_grinding","noblehud_buff_anarchist",function(self,t,dt)
 	if not (self._armor_grinding and self._armor_grinding.elapsed and self._armor_grinding.target_tick) then
 		return
@@ -39,19 +45,25 @@ Hooks:PostHook(PlayerDamage,"set_health","noblehud_buff_berserker",function(self
 	if managers.player:has_category_upgrade("player", "damage_health_ratio_multiplier") then
 		local ratio = managers.player:get_damage_health_ratio(self:health_ratio(), "melee")
 		if ratio > 0 then 
-			NobleHUD:AddBuff("berserker_damage_multiplier",{value=ratio})			
+			NobleHUD:AddBuff("berserker_damage_multiplier",{value=ratio})
+		else
+			NobleHUD:RemoveBuff("berserker_damage_multiplier")
 		end
 	end
 	if managers.player:has_category_upgrade("player", "melee_damage_health_ratio_multiplier") then
 		local ratio = managers.player:get_damage_health_ratio(self:health_ratio(), "damage")
 		if ratio > 0 then 
-			NobleHUD:AddBuff("berserker_melee_damage_multiplier",{value=ratio})			
+			NobleHUD:AddBuff("berserker_melee_damage_multiplier",{value=ratio})
+		else
+			NobleHUD:RemoveBuff("berserker_melee_damage_multiplier")
 		end
 	end
 	if managers.player:has_category_upgrade("player", "movement_speed_damage_health_ratio_multiplier") then
 		local ratio = managers.player:get_damage_health_ratio(self:health_ratio(), "movement_speed")
 		if ratio > 0 then 
 			NobleHUD:AddBuff("yakuza",{value=ratio})
+		else
+			NobleHUD:RemoveBuff("yakuza")
 		end
 	end
 end)
@@ -83,3 +95,21 @@ Hooks:PostHook(PlayerDamage,"_upd_health_regen","noblehud_buff_hp_regen",functio
 		NobleHUD:RemoveBuff("grinder")
 	end
 end)
+
+Hooks:PreHook(PlayerDamage,"_update_regenerate_timer","noblehud_buff_dire_need_remove",function(self,no_sound)
+	NobleHUD:RemoveBuff("dire_need")
+end)
+
+Hooks:PreHook(PlayerDamage,"set_armor","noblehud_buff_dire_need",function(self,armor)
+	armor = math.clamp(armor, 0, self:_max_armor())
+
+	if self._armor then
+		if self:get_real_armor() ~= 0 and armor == 0 and self._dire_need then
+			local duration = managers.player:upgrade_value("player", "armor_depleted_stagger_shot", 0)
+			if duration > 0 then 
+				NobleHUD:AddBuff("dire_need",{duration=duration})
+			end
+		end
+	end
+end)
+

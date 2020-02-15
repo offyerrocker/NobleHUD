@@ -62,7 +62,7 @@
 			"value" : "flashbang"
 		},
 		{
-			"type" : "toggle",
+			"type" : "DISABLED_toggle",
 			"id" : "noblehud_set_buffs_misc_downed_enabled",
 			"title" : "noblehud_set_buffs_misc_downed_enabled_title",
 			"description" : "noblehud_set_buffs_misc_downed_enabled_desc",

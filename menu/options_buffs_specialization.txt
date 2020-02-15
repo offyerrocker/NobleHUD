@@ -70,7 +70,7 @@
 			"value" : "loose_ammo_give_team"
 		},
 		{
-			"type" : "toggle",
+			"type" : "DISABLED_toggle",
 			"id" : "noblehud_set_buffs_specialization_anarchist_lust_for_life_enabled",
 			"title" : "noblehud_set_buffs_specialization_anarchist_lust_for_life_enabled_title",
 			"description" : "noblehud_set_buffs_specialization_anarchist_lust_for_life_enabled_desc",

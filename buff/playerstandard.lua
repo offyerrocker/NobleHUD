@@ -12,3 +12,33 @@ Hooks:PostHook(PlayerStandard,"_update_omniscience","noblehud_buff_sixth_sense",
 --		end
 	end
 end)
+
+Hooks:PostHook(PlayerStandard,"_do_melee_damage","noblehud_buff_overdog",function(self,t, bayonet_melee, melee_hit_ray, melee_entry, hand_id)
+	if managers.player:has_category_upgrade("melee", "stacking_hit_damage_multiplier") then
+		local state_data = self._state_data.stacking_dmg_mul or {}
+		local stack = self._state_data.stacking_dmg_mul.melee or {
+			nil,
+			0
+		}
+		local dmg_multiplier = 1
+		if stack[1] and t < stack[1] then
+			dmg_multiplier = dmg_multiplier * (1 + managers.player:upgrade_value("melee", "stacking_hit_damage_multiplier", 0) * stack[2])
+		else
+--			stack[2] = 0
+		end
+		if dmg_multiplier > 1 then 
+			NobleHUD:AddBuff("overdog",{value = dmg_multiplier,duration = stack[2] or managers.player:upgrade_value("melee", "stacking_hit_expire_t", 1)})
+		else
+			NobleHUD:RemoveBuff("overdog")
+		end
+		
+--		local state_data = self._state_data
+--		local dmg_mul = state_data and state_data.stacking_dmg_mul
+--		local melee = dmg_mul and dmg_mul.melee
+		Console:SetTrackerValue("trackera","overdog: " .. tostring(dmg_multiplier) .. " " .. NobleHUD.random_character())
+		Console:SetTrackerValue("trackerb","stack1: " .. tostring(stack[1]) .. " " .. NobleHUD.random_character())
+		Console:SetTrackerValue("trackerc","stack2: " .. tostring(stack[2]) .. " " .. NobleHUD.random_character())
+	end
+
+
+end)
