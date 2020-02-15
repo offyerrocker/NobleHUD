@@ -96,7 +96,7 @@
 			"value" : "teammate_align_to_radar"
 		},
 		{
-			"type" : "slider",
+			"type" : "DISABLED_slider",
 			"id" : "id_noblehud_set_radar_distance",
 			"title" : "noblehud_set_radar_distance_title",
 			"description" : "noblehud_set_radar_distance_desc",

@@ -1,13 +1,11 @@
 --[[ 
-better ability panel position scaling
-better teammate panel position scaling
-re-center radar blips
-scale range text
-Track buffs even if disabled (by user pref), but do not show panel if not extant?
+
 
 ***** TODO: *****
 	Notes:
 	
+	
+	* Track buffs even if disabled (by user pref), but do not show panel if not extant?
 	* Test Winters
 	
 	* Background for buffs so that they're visible against a white background
@@ -57,18 +55,19 @@ Track buffs even if disabled (by user pref), but do not show panel if not extant
 		* Inspire Cooldown
 		
 			Multiplayer
-		* Inspire Movement Boost Received
 		* Second Wind (from teammate)
 		
 		* Downed (check playerbleedout.lua state)
-		* Electrocuted (test)
-		* Messiah
+		* Messiah (test)
 		* BIKER PERK DECK (redo all of that shit)
 		
 		
 		
 			
 	&&& HIGH PRIORITY: &&&
+	
+		* Halo Objective bar for interact meter
+	
 		* HUDTeammate:set_custom_radial() (swansong and what have you for teammates)
 		* Add menu button to set teamname
 		* Add menu button to set teamcolor (through beardlib)
@@ -80,12 +79,19 @@ Track buffs even if disabled (by user pref), but do not show panel if not extant
 		* BAI sync data compatibility?
 
 		%% BUGS:
+			- Detect teammate dead through set condition mugshot_custody
+				* Set nickname color to red
+				* Set nickname text to "X"
 			- Floating ammo panel has incorrect width after switching weapons
 			- Multiple concurrent Pocket ECM Jammer buffs may interfere with each other
 			- Shield noises (low/depleted) may persist during loading
+			- Bot teammates in tabscreen occasionally override one another
+			- Trip Mines have their text cut off (14 | 6 is way too long in eurostile_ext)
+				* resize font size based on length? 
+				* change label position? 
+				* change font?
 			- Assault phase localization when not host
 			- Vanilla HUD is visible in drop-in spectate mode
-			- ADS should maintain mostly still reticle, unusable otherwise
 			- Down Counter Standalone will fight NobleHUD for dominance when it comes to setting downs in the tabscreen
 				* This is because I tried to add compatibility between the two via network syncing, but didn't save whether or not peers had DCS in NobleHUD
 
@@ -134,9 +140,7 @@ Track buffs even if disabled (by user pref), but do not show panel if not extant
 		* Crosshair stuff
 			* add crosshair data for everything lol
 			* melee crosshair
-			* based on weapon type
 			* manually selectable 
-			* customizable based on type
 			* customizable alpha (master)
 		* Assault timer? Nah Dom's got it covered in BAI
 		* Killfeed/JoyScore
@@ -180,7 +184,6 @@ Track buffs even if disabled (by user pref), but do not show panel if not extant
 				* Left arrow rotates with distance?
 				* Left arrow is not colored (frame, circle, and altimeter are already colored)
 		* Radar	
-			* radar_far blips should not clip outside the radar panel
 			* Motion-based tracking
 			* Radar pulse when update?
 			* Different motion tracker icon or color for Team AI versus players
@@ -255,8 +258,8 @@ NobleHUD.settings = {
 	popups_enabled = true,
 	popup_font_size = 16,
 	radar_distance = 25,
-	radar_x = 24,
-	radar_y = 24,
+	radar_x = 32,
+	radar_y = 32,
 	radar_align_horizontal = 1,
 	radar_align_vertical = 3,
 	radar_style = 2,
@@ -268,8 +271,8 @@ NobleHUD.settings = {
 	stamina_enabled = true,
 	stamina_x = 250,
 	stamina_y = 630,
-	ability_x = 32,
-	ability_y = 24,
+	ability_x = 0,
+	ability_y = 0,
 	ability_align_to_radar = true,
 	interact_style = 1,
 	weapon_ammo_tick_full_alpha = 0.8,
@@ -293,7 +296,7 @@ NobleHUD.settings = {
 	--callsign_string = "S117", --automatically randomly generated
 	team_name = "Red Team",
 --	team_color = Color(0.5,0.2,0.2),
-	unusual = 1,
+	unusual = 1, --more like unused-ual
 	crosshair_type_assaultrifle_single = 1,
 	crosshair_type_assaultrifle_auto = 1,
 	crosshair_type_pistol_single = 1,
@@ -453,6 +456,20 @@ NobleHUD._announcer_path = ModPath .. "assets/snd/announcer/"
 NobleHUD._announcer_sound_source = nil
 NobleHUD._shield_sound_source = nil
 
+NobleHUD._random_chars = {
+	letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+	numbers = "1234567890",
+	characters = "-=!@#%$^&*()_+{}:|<>?[];,/"
+}
+--[[
+for cat,s in pairs() do 
+	NobleHUD._random_chars[cat] = {}
+	for i = 1,string.len(s) do 
+		table.insert(NobleHUD._random_chars[cat],string.sub(s,i,i))
+	end
+end
+--]]
+
 NobleHUD.fonts = {
 	eurostile_ext = "fonts/font_eurostile_ext",
 	eurostile_normal = "fonts/font_eurostile_normal"
@@ -512,11 +529,15 @@ NobleHUD._radar_ghost_t = 0
 
 NobleHUD._RADAR_SIZE = 200
 NobleHUD._RADAR_BG_SIZE = 196
+NobleHUD._RADAR_TEXT_SIZE = 16
 
 NobleHUD._BUFF_ITEM_W = 175
 NobleHUD._BUFF_ITEM_W_COMPACT = 72
 NobleHUD._BUFF_ITEM_H = 32
 NobleHUD._BUFF_ITEM_H_COMPACT = 32
+
+NobleHUD._TEAMMATE_ITEM_W = 512
+NobleHUD._TEAMMATE_ITEM_H = 48
 
 local kills_cache_empty = {
 	multipliers = {
@@ -871,20 +892,57 @@ NobleHUD._buff_data = {
 		priority = 7,
 		source = "perk",
 		duration = 1,
-		value_type = "timer" --10x melee damage within 1s from infiltrator 1/9 Overdog; not implemented
+		value_type = "timer" --10x melee damage within 1s from infiltrator 1/9 or Sociopath 1/9, Overdog; not implemented
+	},
+	["tension"] = { 
+		disabled = true,
+		source = "perk",
+		priority = 7,
+		duration = 1,
+		icon = 9,
+		icon_tier = 3,
+		label = "noblehud_buff_tension",
+		label_compact = "$TIMER",
+		value_type = "timer", --sociopath armorgate on kill cooldown; 3/9; also blending in so idk
+		text_color = NobleHUD.color_data.hud_buff_negative,
+		flash = true
+	},
+	["clean_hit"] = { 
+		disabled = true,
+		source = "perk",
+		priority = 7,
+		duration = 1,
+		icon = 9,
+		icon_tier = 3,
+		label = "noblehud_buff_clean_hit",
+		label_compact = "$TIMER",
+		value_type = "timer", --sociopath health regen on melee kill cooldown; 5/9; also blending in so idk
+		text_color = NobleHUD.color_data.hud_buff_negative,
+		flash = true
+	},
+	["overdose"] = {
+		disabled = true,
+		source = "perk",
+		priority = 7,
+		duration = 1,
+		icon = 9,
+		icon_tier = 3,
+		label = "noblehud_buff_overdose",
+		label_compact = "$TIMER",
+		value_type = "timer", --sociopath armorgate on medium range kill cooldown; 7/9; also blending in so idk
+		text_color = NobleHUD.color_data.hud_buff_negative,
+		flash = true
 	},
 	["melee_life_leech"] = {
 		source = "perk",
 		priority = 3,
 		duration = 10,
-		value_type = "timer", --n health on ammo pickup, once per 3s from Gambler 1/9 Medical Supplies
 		icon = 8,
 		icon_tier = 9,
 		label = "noblehud_buff_infiltrator_life_drain",
 		label_compact = "$TIMER",
 		text_color = NobleHUD.color_data.hud_buff_negative,
 		value_type = "timer", --melee hit regens 20% hp, once per 10s from infiltrator 9/9 Life Drain; not implemented
-		source = "perk",
 		flash = false
 	},
 	["loose_ammo_restore_health"] = { --gambler medical supplies
@@ -1034,17 +1092,26 @@ NobleHUD._buff_data = {
 		flash = true
 	},
 	["delayed_damage"] = {
-		disabled = true,
+		source = "perk",
 		priority = 3,
+		icon = 20,
+		tier_floors = {1,9},
+		icon_tier = 1,
 		label = "noblehud_buff_delayed_damage_label",
 		label_compact = "x$VALUE $TIMER",
-		value_type = "value"
+		value_type = "value",
+		flash = false
 		--health counter
 	},
 	["tag_team"] = {
-		disabled = true,
+		source = "perk",
 		priority = 3,
-		value_type = "timer" --is being tagged; tag team duration
+		icon = 21,
+		icon_tier = 1,
+		label = "noblehud_buff_tag_team_label",
+		label_compact = "$TIMER",
+		value_type = "timer", --is being tagged; tag team duration
+		priority = 3
 	},
 	["pocket_ecm_jammer"] = {
 		source = "perk",
@@ -2723,19 +2790,6 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 NobleHUD._MAX_REVIVES = 3 --default init value; updated on load
 NobleHUD._radar_blips = {}
 
-NobleHUD._random_chars = {}
-
-for cat,s in pairs({
-	letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-	numbers = "1234567890",
-	characters = "-=!@#%$^&*()_+{}:|<>?[];,/"
-}) do 
-	NobleHUD._random_chars[cat] = {}
-	for i = 1,string.len(s) do 
-		table.insert(NobleHUD._random_chars[cat],string.sub(s,i,i))
-	end
-end
-
 NobleHUD._current_helper_pattern = "dot"
 NobleHUD._helper_patterns_even = { --should try to use non-even patterns
 	dot = {
@@ -3159,7 +3213,6 @@ NobleHUD.killfeed = { --queue format, similar to khud's active buffs panel or jo
 --]]
 }
 NobleHUD.killfeed_icons = {} --same format but only for icons
-
 
 --default hud starting values
 NobleHUD._killfeed_start_x = 100
@@ -4124,19 +4177,22 @@ function NobleHUD.choose(tbl)
 end
 
 function NobleHUD.random_character(l,n,c)
---i don't remember actually needing this, i guess i wrote it for fun. it's bad though
+--
 	if not (l or n or c) then 
-		local tbl = NobleHUD.choose(NobleHUD._random_chars)
-		return tbl[math.random(#tbl)]
+		l = 1
+		n = 1
+		c = 1
+--		local tbl = NobleHUD.choose(NobleHUD._random_chars)
+--		return tbl[math.random(#tbl)]
+	else
+		local function b(a)
+			return a and 1 or 0
+		end
+		
+		l = b(l)
+		n = b(n)
+		c = b(c)
 	end
-
-	local function b(a)
-		return a and 1 or 0
-	end
-	
-	l = b(l)
-	n = b(n)
-	c = b(c)
 	
 	local t = l + n + c
 	
@@ -4146,11 +4202,17 @@ function NobleHUD.random_character(l,n,c)
 	
 	local r = math.random()
 	if r < (l/t) then 
-		return NobleHUD._random_chars.letters[math.random(#NobleHUD._random_chars.letters)]
+		local i = math.random(1,string.len(NobleHUD._random_chars.letters))
+		return string.sub(NobleHUD._random_chars.letters,i,i)
+		--NobleHUD._random_chars.letters[math.random(#NobleHUD._random_chars.letters)]
 	elseif r < (n/t) then 
-		return NobleHUD._random_chars.numbers[math.random(#NobleHUD._random_chars.numbers)]
-	elseif r < (c/t) then 
-		return NobleHUD._random_chars.characters[math.random(#NobleHUD._random_chars.characters)]
+		local i = math.random(1,string.len(NobleHUD._random_chars.numbers))
+		return string.sub(NobleHUD._random_chars.numbers,i,i)
+		--NobleHUD._random_chars.numbers[math.random(#NobleHUD._random_chars.numbers)]
+	elseif r < (c/t) then
+		local i = math.random(1,string.len(NobleHUD._random_chars.characters))
+		return string.sub(NobleHUD._random_chars.characters,i,i)
+		--NobleHUD._random_chars.characters[math.random(#NobleHUD._random_chars.characters)]
 	end
 
 end
@@ -4406,7 +4468,7 @@ function NobleHUD:IsRadarEnabled()
 end
 
 function NobleHUD:GetRadarDistance()
-	return self.settings.radar_distance
+	return 25 or self.settings.radar_distance
 end
 
 function NobleHUD:GetRadarStyle()
@@ -4749,11 +4811,11 @@ function NobleHUD:IsBuffCompactMode()
 	return self.settings.buffs_compact_mode_enabled
 end
 
-function NobleHUD:GetTeammatePanelX()
+function NobleHUD:GetTeammatesPanelX()
 	return self.settings.teammate_x
 end
 
-function NobleHUD:GetTeammatePanelY()
+function NobleHUD:GetTeammatesPanelY()
 	return self.settings.teammate_y
 end
 
@@ -5288,7 +5350,7 @@ function NobleHUD:UpdateHUD(t,dt)
 
 -- ************** RADAR	**************
 		if self:IsRadarEnabled() then --if radar enabled
-			local RADAR_SIZE = self:GetRadarScale() * 190 --todo scaleable panel from settings
+			local RADAR_SIZE = self:GetRadarScale() * self._RADAR_BG_SIZE * 0.96 --todo scaleable panel from settings
 			local RADAR_PANEL_W = self._radar_panel:w()
 			local RADAR_PANEL_H = self._radar_panel:h()
 			local RADAR_DISTANCE_MID = self:GetRadarDistance() * 100
@@ -5304,7 +5366,7 @@ function NobleHUD:UpdateHUD(t,dt)
 				refresh_radar_ghosts = true
 			end
 
-			
+			local far_blip_dist_mul = 1.075
 			--refresh radar targets (add)
 			if (t > NobleHUD._radar_refresh_t + NobleHUD._RADAR_REFRESH_INTERVAL) then
 				NobleHUD._radar_refresh_t = t --reset radar refresh timer
@@ -5554,8 +5616,8 @@ function NobleHUD:UpdateHUD(t,dt)
 						blip_angle = -angle_to_person
 						
 						--on outskirts of range
-						blip_x = math.sin(angle_to_person) * RADAR_SIZE / 2
-						blip_y = math.cos(angle_to_person) * RADAR_SIZE / 2
+						blip_x = math.sin(angle_to_person) * far_blip_dist_mul * RADAR_SIZE / 2
+						blip_y = math.cos(angle_to_person) * far_blip_dist_mul * RADAR_SIZE / 2
 						blip_image = "guis/textures/radar_blip_far"
 						blip_alpha = 0.5
 						blip_w = 2 * RADAR_SIZE / 6
@@ -5577,8 +5639,8 @@ function NobleHUD:UpdateHUD(t,dt)
 	--							size_mult = 1,
 								blip_w = blip_w * blip_deviation,
 								blip_h = blip_h * blip_deviation,
-								center_x = blip_x + ((RADAR_PANEL_W) / 2), --centered
-								center_y = blip_y + (RADAR_SIZE / 2) + (RADAR_PANEL_H - RADAR_SIZE) --bottom
+								center_x = blip_x + (RADAR_PANEL_W / 2), --centered
+								center_y = blip_y + (RADAR_PANEL_H / 2) --bottom;  + (RADAR_PANEL_H - RADAR_SIZE)
 							})
 						end
 					elseif data.bitmap and alive(data.bitmap) then 
@@ -5586,7 +5648,7 @@ function NobleHUD:UpdateHUD(t,dt)
 						blip_bitmap:set_alpha(blip_alpha)
 						blip_bitmap:set_rotation(blip_angle)
 						blip_bitmap:set_image(blip_image)
-						blip_bitmap:set_center(blip_x + (RADAR_PANEL_W / 2),blip_y +(RADAR_SIZE / 2) + (RADAR_PANEL_H - RADAR_SIZE)) --(RADAR_PANEL_H / 2))
+						blip_bitmap:set_center(blip_x + (RADAR_PANEL_W / 2),blip_y + (RADAR_PANEL_H / 2)) -- + (RADAR_PANEL_H - RADAR_SIZE); (RADAR_PANEL_H / 2))
 						blip_bitmap:set_color(blip_color)
 						if blip_w then 
 							blip_bitmap:set_w(blip_w)
@@ -8131,7 +8193,14 @@ end
 function NobleHUD:LayoutAbility()
 	if self._ability_panel then 
 		if self:ShouldAlignAbilityToRadar() then 
-			self._ability_panel:set_position(self._radar_panel:x() + self:GetAbilityPanelX() - self._ability_panel:w(),self._radar_panel:y() + self:GetAbilityPanelY() - self._ability_panel:h())
+			local radar_panel = self._radar_panel
+			local diagonal = math.sqrt(math.pow(radar_panel:w(),2) + math.pow(radar_panel:h(),2))
+			local radar_gap = (diagonal - radar_panel:h()) / 2
+			self._ability_panel:set_x(radar_panel:x() + (radar_gap + self:GetAbilityPanelX()) - self._ability_panel:w())
+			self._ability_panel:set_y(radar_panel:y() + (radar_gap + self:GetAbilityPanelY()) - self._ability_panel:h())
+			
+--			self._abilty_panel:set_position(self._radar_panel:x() - (radar_gap + self:GetAbilityPanelX() + self._ability_panel:w()),self._radar_panel:y() + (radar_gap + self:GetAbilityPanelY()) - self._ability_panel:h())
+--			self._ability_panel:set_position(self._radar_panel:x() + self:GetAbilityPanelX() - self._ability_panel:w(),self._radar_panel:y() + self:GetAbilityPanelY() - self._ability_panel:h())
 		else
 			self._ability_panel:set_position(self:GetAbilityPanelX(),self:GetAbilityPanelY())
 		end
@@ -8375,7 +8444,7 @@ function NobleHUD:_create_teammates(hud)
 	local teammates_panel = hud:panel({
 		name = "teammates_panel",
 		w = 512,
-		h = 256, -- num_teammates * teammate_h,
+		h = num_teammates * self._TEAMMATE_ITEM_H,
 		x = 100,
 		y = 0,
 		alpha = self:GetHUDAlpha()
@@ -8385,6 +8454,8 @@ function NobleHUD:_create_teammates(hud)
 
 	local teammates_debug = teammates_panel:rect({
 		name = "teammates_debug",
+		w = 1280,
+		h = 720,
 		visible = false,
 		color = Color.blue,
 		alpha = 0.4
@@ -8406,8 +8477,8 @@ end
 function NobleHUD:_create_teammate_panel(teammates_panel,i)
 	local ammo_font = tweak_data.hud_players.ammo_font
 --	local name_font = tweak_data.hud_players.name_font
-	local teammate_w = 512
-	local teammate_h = 48
+	local teammate_w = self._TEAMMATE_ITEM_W
+	local teammate_h = self._TEAMMATE_ITEM_H
 	local subpanel_w = 24
 	local subpanel_h = 36
 	local icon_size = 16
@@ -8673,10 +8744,15 @@ function NobleHUD:_sort_teammates(num)
 	local teammates_panel = self._teammates_panel
 	if not teammates_panel then return end
 	if self:ShouldAlignTeammatesToRadar() then 
-		local radar = self._radar_panel
-		teammates_panel:set_x(radar:right() - 16)
-		teammates_panel:set_y(radar:y())
-		teammates_panel:set_h(radar:h())
+		local radar_panel = self._radar_panel
+
+		local diagonal = math.sqrt(math.pow(radar_panel:w(),2) + math.pow(radar_panel:h(),2))
+		local radar_gap = (diagonal - radar_panel:h()) / 2
+		teammates_panel:set_h(math.max(radar_panel:h(),self._TEAMMATE_ITEM_H * num))
+		teammates_panel:set_x((radar_panel:right() - radar_gap) + self:GetTeammatesPanelX()) 
+		teammates_panel:set_y((radar_panel:y() + ((radar_panel:h() - teammates_panel:h()) / 2)) + self:GetTeammatesPanelY())
+--		teammates_panel:set_x(radar_panel:right() - 16)
+--		teammates_panel:set_y(radar_panel:y())
 		for i=1,num do 
 			local ratio = (i - 1) / (num - 1)
 			local panel = teammates_panel:child("teammate_" .. i)
@@ -8685,18 +8761,27 @@ function NobleHUD:_sort_teammates(num)
 			end
 	--		panel:set_x(192 * (0.5 + math.cos((i/4) * math.pi * 2))) --todo get radar size
 	--		panel:set_x(192 * math.sin(math.deg(((i-1) / (num_teammates - 1))) / (math.pi))) --todo get radar size
-			panel:set_x(32 * math.sin(180 * ratio)) --todo get radar size
-			panel:set_y(radar:h() * ((i-1) / (num)))
+			panel:set_x(((radar_panel:w() / 8) * math.sin(180 * ratio)) + (self:GetRadarScale() * 32)) --todo get radar size
+			if self._TEAMMATE_ITEM_H * (num + 1) > radar_panel:h() then
+				panel:set_y(self._TEAMMATE_ITEM_H * (i - 1))
+			else
+				--radar scale is larger
+				panel:set_y((teammates_panel:h() * (i / (num + 1))) - (self._TEAMMATE_ITEM_H / 2))
+--				panel:set_y(radar_panel:h() * ((i / (num + 1)) + 0.5))
+			end
+--			panel:set_y((radar_panel:h() * ((i-1)/num)) - (self._TEAMMATE_ITEM_H / 2))
+--			panel:set_y(((i-1)/num))
 		end
 	else
-		teammates_panel:set_x(self:GetTeammatePanelX())
-		teammates_panel:set_y(self:GetTeammatePanelY())
+		teammates_panel:set_x(self:GetTeammatesPanelX())
+		teammates_panel:set_y(self:GetTeammatesPanelY())
 		for i=1,num do 
 			local panel = teammates_panel:child("teammate_" .. i)
 			if not alive(panel) then 
 				panel = self:_create_teammate_panel(teammates_panel,i)
 			end
-			panel:set_position(0,64 * i)
+			panel:set_position(0,self._TEAMMATE_ITEM_H * (i - 1))
+--			panel:set_position(0,64 * i)
 		end
 	end
 end
@@ -10919,7 +11004,7 @@ function NobleHUD:_create_radar(hud)
 		color = self.color_data.hud_vitalsoutline_blue,
 		layer = 2,
 		font = self.fonts.eurostile_ext,
-		font_size = 16,
+		font_size = self._RADAR_TEXT_SIZE,
 		align = "left",
 		valign = "bottom",
 --		y = -16, --equal to font size
@@ -10933,6 +11018,7 @@ function NobleHUD:_create_radar(hud)
 		name = "debug_radar",
 		w = 1280,
 		h = 720,
+		layer = -1,
 		color = Color.yellow,
 		visible = false,
 		alpha = 0.1
@@ -11149,12 +11235,12 @@ function NobleHUD:LayoutRadar(skip_sort_children)
 	elseif align_vertical == "bottom" then 
 		panel:set_y(parent_panel:h() - (panel:h() + self:GetRadarPanelY() + 24))
 	end
-	
+	panel:child("radar_range_label"):set_font_size(self._RADAR_TEXT_SIZE * scale)
 --	panel:set_position(0,panel:parent():h() - (panel_size + 32))
 		
 	bg:set_size(bg_size,bg_size)
 	
-	bg:set_position((panel:w() - bg_size) / 2,panel:h() - bg_size)
+	bg:set_position((panel:w() - bg_size) / 2,(panel:h() - bg_size) / 2)
 	if not skip_sort_children then 
 		self:_sort_teammates()
 		self:LayoutAbility()
@@ -13105,8 +13191,7 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 				)
 			end
 		end
-	end
-	
+	end	
 	MenuCallbackHandler.callback_noblehud_set_chat_notification_sfx = function(self,item)
 		local value = tonumber(item:value())
 		NobleHUD.settings.chat_notification_sfx = value
@@ -13117,14 +13202,12 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 			end,nil,0.5,"test_chat_sfx",true)
 		end
 		NobleHUD:SaveSettings()
-	end	
-	
+	end		
 	MenuCallbackHandler.callback_noblehud_set_chat_timestamp_mode = function(self,item)
 		local value = tonumber(item:value())
 		NobleHUD.settings.chat_timestamp_mode = value
 		NobleHUD:SaveSettings()
-	end	
-	
+	end		
 	MenuCallbackHandler.callback_noblehud_test_chat_notification_sfx = function(self)
 		local notif_sfx = NobleHUD.chat_notification_sounds[NobleHUD:GetChatNotificationSound()]
 		if notif_sfx then 
@@ -13132,25 +13215,19 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 				XAudio.Source:new(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/ui/" .. notif_sfx))
 			end,nil,0.5,"test_chat_sfx",true)
 		end
-	end
-	
+	end	
 	MenuCallbackHandler.callback_noblehud_set_chat_notification_sound_enabled = function(self,item)
 		NobleHUD.settings.chat_notification_sound_enabled = item:value() == "on"
 		NobleHUD:SaveSettings()
-	end
-	
+	end	
 	MenuCallbackHandler.callback_noblehud_set_chat_notification_icon_enabled = function(self,item)
 		NobleHUD.settings.chat_notification_icon_enabled = item:value() == "on"
 		NobleHUD:SaveSettings()
 	end
-	
-	
 	MenuCallbackHandler.callback_noblehud_set_chat_notification_autoshow_enabled = function(self,item)
 		NobleHUD.settings.chat_autoshow_enabled = item:value() == "on"
 		NobleHUD:SaveSettings()
 	end
-	
-	
 	MenuCallbackHandler.callback_noblehud_set_chat_autohide_mode = function(self,item)
 		local value = tonumber(item:value())
 		NobleHUD.settings.chat_autohide_mode = value
@@ -13162,12 +13239,10 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		--]]
 		NobleHUD:SaveSettings()
 	end	
-
 	MenuCallbackHandler.callback_noblehud_set_chat_autohide_timer = function(self,item)
 		NobleHUD.settings.chat_autohide_timer = tonumber(item:value())
 		NobleHUD:SaveSettings()
 	end	
-
 	MenuCallbackHandler.callback_noblehud_set_chat_panel_x = function(self,item)
 		local value = tonumber(item:value())
 		NobleHUD.settings.chat_panel_x = value
@@ -13176,7 +13251,6 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		end
 		NobleHUD:SaveSettings()
 	end	
-
 	MenuCallbackHandler.callback_noblehud_set_chat_panel_y = function(self,item)
 		local value = tonumber(item:value())
 		NobleHUD.settings.chat_panel_y = value
@@ -13185,7 +13259,6 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		end
 		NobleHUD:SaveSettings()
 	end	
-
 	MenuCallbackHandler.noblehud_chat_options_close = function(self)
 		--
 	end
@@ -13198,47 +13271,38 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	MenuCallbackHandler.callback_noblehud_set_score_display_mode = function(self,item)
 		NobleHUD.settings.score_display_mode = tonumber(item:value())
 		NobleHUD:SaveSettings()
-	end	
-	
+	end		
 	MenuCallbackHandler.callback_noblehud_set_popups_enabled = function(self,item)
 		NobleHUD.settings.popups_enabled = item:value() == "on"
 		NobleHUD:SaveSettings()
-	end
-	
+	end	
 	MenuCallbackHandler.callback_noblehud_set_announcer_enabled = function(self,item)
 		NobleHUD.settings.announcer_enabled = item:value() == "on"
 		NobleHUD:SaveSettings()
-	end
-	
+	end	
 	MenuCallbackHandler.callback_noblehud_set_announcer_frantic_enabled = function(self,item)
 		NobleHUD.settings.announcer_frantic_enabled = item:value() == "on"
 		NobleHUD:SaveSettings()
 	end
-
 	MenuCallbackHandler.callback_noblehud_set_medals_enabled = function(self,item)
 		NobleHUD.settings.medals_enabled = item:value() == "on"
 		NobleHUD:SaveSettings()
 	end
-	
 	MenuCallbackHandler.callback_noblehud_set_show_all_medals = function(self,item)
 		NobleHUD.settings.show_all_medals = item:value() == "on"
 		NobleHUD:SaveSettings()
 	end
-
 	MenuCallbackHandler.noblehud_score_options_close = function(self)
 		--NobleHUD:SaveSettings()
 	end
-	
 	MenuCallbackHandler.callback_noblehud_set_popup_style = function(self,item)
 		NobleHUD.settings.popup_style = tonumber(item:value())
 		NobleHUD:SaveSettings()
 	end
-
 	MenuCallbackHandler.callback_noblehud_set_popup_duration = function(self,item)
 		NobleHUD.settings.popup_duration = tonumber(item:value())
 		NobleHUD:SaveSettings()
 	end
-
 	MenuCallbackHandler.callback_noblehud_set_popup_font_size = function(self,item)
 		NobleHUD.settings.popup_font_size = tonumber(item:value())
 		NobleHUD:SaveSettings()
@@ -13250,43 +13314,35 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		NobleHUD.settings.radar_enabled = item:value() == "on"
 		NobleHUD:SetRadarEnabled(NobleHUD.settings.radar_enabled)
 	end
-
 	MenuCallbackHandler.callback_noblehud_set_radar_style = function(self,item)
 		NobleHUD.settings.radar_style = tonumber(item:value())
 		NobleHUD:LayoutRadar()
-	end	
-	
+	end
 	MenuCallbackHandler.callback_noblehud_set_radar_scale = function(self,item)
 		NobleHUD.settings.radar_scale = tonumber(item:value())
 --		set radar size here
 		NobleHUD:LayoutRadar()
 	end
-
 	MenuCallbackHandler.callback_noblehud_set_radar_x = function(self,item)
 		NobleHUD.settings.radar_x = tonumber(item:value())
 		NobleHUD:LayoutRadar()
-	end	
-	
+	end
 	MenuCallbackHandler.callback_noblehud_set_radar_y = function(self,item)
 		NobleHUD.settings.radar_y = tonumber(item:value())
 		NobleHUD:LayoutRadar()
-	end	
-	
+	end
 	MenuCallbackHandler.callback_noblehud_set_radar_align_horizontal = function(self,item)
 		NobleHUD.settings.radar_align_horizontal = tonumber(item:value())
 		NobleHUD:LayoutRadar()
-	end	
-	
+	end
 	MenuCallbackHandler.callback_noblehud_set_radar_align_vertical = function(self,item)
 		NobleHUD.settings.radar_align_vertical = tonumber(item:value())
 		NobleHUD:LayoutRadar()
-	end	
-	
+	end
 	MenuCallbackHandler.callback_noblehud_set_radar_distance = function(self,item)
 		NobleHUD.settings.radar_distance = tonumber(item:value())
 		NobleHUD:SetRadarDistance(NobleHUD.settings.radar_distance)
-	end	
-
+	end
 	MenuCallbackHandler.callback_noblehud_radar_options_close = function(self)
 		NobleHUD:SaveSettings()
 	end
@@ -13533,7 +13589,6 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	end
 	
 	
-	
 --BUFFS
 
 	--ALL
@@ -13601,10 +13656,8 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		NobleHUD:SaveSettings()
 	end
 	
-	
 
 	--MISC
-
 	MenuCallbackHandler.callback_noblehud_set_buffs_misc_dodge_chance_total_enabled = function(self,item)
 		local state = item:value() == "on"
 		NobleHUD.buff_settings.dodge_chance_total = state
@@ -13651,9 +13704,7 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	MenuCallbackHandler.noblehud_buffs_misc_options_close = function(self)
 	end
 	
-	
-	
-	
+
 	--PERKDECKS
 	MenuCallbackHandler.callback_noblehud_set_buffs_misc_armor_break_invulnerable_enabled = function(self,item)
 		NobleHUD.buff_settings.armor_break_invulnerable = item:value() == "on"

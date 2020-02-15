@@ -126,7 +126,7 @@
 	"noblehud_set_stamina_panel_x_desc" : "Set Stamina horizontal position",
 	"noblehud_set_stamina_panel_y_title" : "Set Stamina Panel Y",
 	"noblehud_set_stamina_panel_y_desc" : "Set Stamina vertical position",
-	"noblehud_set_ability_align_to_radar_title" : "Align Deployables to Radar",
+	"noblehud_set_ability_align_to_radar_title" : "Align Deployables to Motion Tracker",
 	"noblehud_set_ability_align_to_radar_desc" : "Aligns Deployable Panel next to Motion Tracker",
 	"noblehud_set_ability_panel_x_title" : "Set Deployable Panel X",
 	"noblehud_set_ability_panel_x_desc" : "Set Deployable horizontal position",
@@ -167,8 +167,8 @@
 	"noblehud_set_radar_distance_title" : "Effective Distance",
 	"noblehud_set_radar_distance_desc" : "Distance at which motion tracker functions",
 	
-	"noblehud_set_teammate_align_to_radar_title" : "Align Teammates To Radar",
-	"noblehud_set_teammate_align_to_radar_enabled_desc" : "Aligns Teammmate Panel next to Radar Panel",
+	"noblehud_set_teammate_align_to_radar_title" : "Align Teammates To Motion Tracker",
+	"noblehud_set_teammate_align_to_radar_enabled_desc" : "Aligns Teammmate Panel next to Motion Tracker",
 	
 	"noblehud_team_options_title" : "Teammates Panel...",
 	"noblehud_team_options_desc" : "Change Teammates Panel options",
