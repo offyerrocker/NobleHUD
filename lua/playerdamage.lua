@@ -82,10 +82,13 @@ end
 Hooks:PostHook(PlayerDamage,"_on_damage_event","noblehud_on_player_damage_event",function(self)
 	local max_armor = self:_max_armor()
 	if (self:get_real_armor() < max_armor) and (max_armor > 0) then 
+		NobleHUD:PlayShieldSound("shield_charge",false)
+	--[[
 		local shield_source = NobleHUD._shield_sound_source
 		if shield_source and shield_source:is_active() and (shield_source._buffer == NobleHUD._cache.sounds.shield_charge) then		
 			shield_source:stop()
 		end
+		--]]
 		--interrupt shield charging sound if hit
 	end
 	
@@ -137,17 +140,22 @@ Hooks:PreHook(PlayerDamage,"_regenerate_armor","noblehud_player_regen_armor",fun
 		
 		if not no_sound then 
 			if NobleHUD:IsShieldChargeSoundEnabled() then
+				NobleHUD:PlayShieldSound("shield_charge")
+				--[[
 				local shield_source = NobleHUD._shield_sound_source
+				
 				if shield_source and not shield_source:is_closed() then 
 					shield_source:stop()
 					if shield_source._buffer ~= NobleHUD._cache.sounds.shield_charge then 
 						shield_source:set_looping(false)
 						shield_source:set_buffer(NobleHUD._cache.sounds.shield_charge)
+						shield_source:set_volume(NobleHUD:GetShieldChargeVolume())
 					end
 					if shield_source:get_state() ~= 1 then 
 						shield_source:play()
 					end
 				end
+				--]]
 			end
 		end
 	end

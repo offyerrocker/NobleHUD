@@ -91,14 +91,18 @@ Hooks:PostHook(HUDTeammate,"remove_panel","noblehud_teammate_remove_panel",funct
 end)
 
 Hooks:PostHook(HUDTeammate,"set_condition","noblehud_teammate_setcondition",function(self,icon_data, text)
-	local panel = NobleHUD:GetTeammatePanel(self._id)
-	local vitals_icon = panel:child("vitals_subpanel"):child("vitals_icon")
-	if icon_data == "mugshot_normal" then
-		vitals_icon:set_image("guis/textures/lives_icon")
+	if self._main_player then
+		--todo
 	else
-		local icon, texture_rect = tweak_data.hud_icons:get_icon_data(icon_data)
+		local panel = NobleHUD:GetTeammatePanel(self._id)
+		local vitals_icon = panel:child("vitals_subpanel"):child("vitals_icon")
+		if icon_data == "mugshot_normal" then
+			vitals_icon:set_image("guis/textures/lives_icon")
+		else
+			local icon, texture_rect = tweak_data.hud_icons:get_icon_data(icon_data)
 
-		vitals_icon:set_image(icon, texture_rect[1], texture_rect[2], texture_rect[3], texture_rect[4])
+			vitals_icon:set_image(icon, texture_rect[1], texture_rect[2], texture_rect[3], texture_rect[4])
+		end
 	end
 end)
 
@@ -335,37 +339,38 @@ Hooks:PostHook(HUDTeammate,"set_stored_health_max","noblehud_set_stored_health_m
 end)
 
 Hooks:PostHook(HUDTeammate,"set_stored_health","noblehud_set_stored_health",function(self,stored_health_ratio)
-	local vitals_panel = NobleHUD._vitals_panel
-	local max_stored = NobleHUD._cache._max_stored_hp or 1
-	local ratio = math.clamp(stored_health_ratio / max_stored,0,1)
-	
-	for i = NobleHUD._HUD_HEALTH_TICKS,1,-1 do
-		local shown = ratio >= (i/NobleHUD._HUD_HEALTH_TICKS)
-		local left_tick = vitals_panel:child("stored_health_tick_left_outline_" .. i)
-		local right_tick = vitals_panel:child("stored_health_tick_right_outline_" .. i)
-		left_tick:set_visible(shown)
-		right_tick:set_visible(shown)
+	if self._main_player then
+		local vitals_panel = NobleHUD._vitals_panel
+		local max_stored = NobleHUD._cache._max_stored_hp or 1
+		local ratio = math.clamp(stored_health_ratio / max_stored,0,1)
+		
+		for i = NobleHUD._HUD_HEALTH_TICKS,1,-1 do
+			local shown = ratio >= (i/NobleHUD._HUD_HEALTH_TICKS)
+			local left_tick = vitals_panel:child("stored_health_tick_left_outline_" .. i)
+			local right_tick = vitals_panel:child("stored_health_tick_right_outline_" .. i)
+			left_tick:set_visible(shown)
+			right_tick:set_visible(shown)
+		end
+		vitals_panel:child("stored_health_tick_center_outline"):set_visible(ratio > (1/NobleHUD._HUD_HEALTH_TICKS))
 	end
-	vitals_panel:child("stored_health_tick_center_outline"):set_visible(ratio > (1/NobleHUD._HUD_HEALTH_TICKS))
 end)
 
 Hooks:PostHook(HUDTeammate,"set_absorb_active","noblehud_set_absorb",function(self,absorb_amount)
-	if not self._main_player then 
-		return
-	end
+	if self._main_player then 
 
-	local ratio = 100 * absorb_amount / tweak_data.upgrades.max_cocaine_stacks_per_tick
-	local vitals_panel = NobleHUD._vitals_panel
+		local ratio = 100 * absorb_amount / tweak_data.upgrades.max_cocaine_stacks_per_tick
+		local vitals_panel = NobleHUD._vitals_panel
 
-	local vitals_scale = NobleHUD:GetVitalsScale()
-	local VITALS_W = NobleHUD._VITALS_W
-	local VITALS_H = NobleHUD._VITALS_H
-	
-	if vitals_panel then 
-		local absorption_fill = vitals_panel:child("absorption_fill")
-		absorption_fill:set_texture_rect((1 - ratio) * VITALS_W * 0.5,0,(ratio * VITALS_W),VITALS_H)
-		absorption_fill:set_w(VITALS_W * ratio * vitals_scale)
-		absorption_fill:set_x((1 - ratio) * VITALS_W * vitals_scale * 0.5)
+		local vitals_scale = NobleHUD:GetVitalsScale()
+		local VITALS_W = NobleHUD._VITALS_W
+		local VITALS_H = NobleHUD._VITALS_H
+		
+		if vitals_panel then 
+			local absorption_fill = vitals_panel:child("absorption_fill")
+			absorption_fill:set_texture_rect((1 - ratio) * VITALS_W * 0.5,0,(ratio * VITALS_W),VITALS_H)
+			absorption_fill:set_w(VITALS_W * ratio * vitals_scale)
+			absorption_fill:set_x((1 - ratio) * VITALS_W * vitals_scale * 0.5)
+		end
 	end
 end)
 

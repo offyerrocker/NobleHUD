@@ -118,6 +118,18 @@
 			"value" : "shield_empty_sound_enabled"
 		},
 		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_shield_empty_sound_volume",
+			"title" : "noblehud_set_shield_empty_sound_volume_title",
+			"description" : "noblehud_set_shield_empty_sound_volume_desc",
+			"callback" : "callback_noblehud_set_shield_empty_sound_volume",
+			"value" : "shield_low_sound_volume",
+			"default_value" : 1,
+			"min" : 0,
+			"max" : 1,
+			"step" : 0.01
+		},
+		{
 			"type" : "toggle",
 			"id" : "id_noblehud_set_shield_low_sound_enabled",
 			"title" : "noblehud_set_shield_low_sound_enabled_title",
@@ -126,12 +138,36 @@
 			"value" : "shield_low_sound_enabled"
 		},
 		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_shield_low_sound_volume",
+			"title" : "noblehud_set_shield_low_sound_volume_title",
+			"description" : "noblehud_set_shield_low_sound_volume_desc",
+			"callback" : "callback_noblehud_set_shield_low_sound_volume",
+			"value" : "shield_low_sound_volume",
+			"default_value" : 1,
+			"min" : 0,
+			"max" : 1,
+			"step" : 0.01
+		},
+		{
 			"type" : "toggle",
 			"id" : "id_noblehud_set_shield_charge_sound_enabled",
 			"title" : "noblehud_set_shield_charge_sound_enabled_title",
 			"description" : "noblehud_set_shield_charge_sound_enabled_desc",
 			"callback" : "callback_noblehud_set_shield_charge_sound_enabled",
 			"value" : "shield_charge_sound_enabled"
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_shield_charge_sound_volume",
+			"title" : "noblehud_set_shield_charge_sound_volume_title",
+			"description" : "noblehud_set_shield_charge_sound_volume_desc",
+			"callback" : "callback_noblehud_set_shield_charge_sound_volume",
+			"value" : "shield_charge_sound_volume",
+			"default_value" : 1,
+			"min" : 0,
+			"max" : 1,
+			"step" : 0.01
 		},
 		{
 			"type" : "slider",

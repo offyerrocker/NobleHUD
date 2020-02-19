@@ -291,8 +291,11 @@ NobleHUD.settings = {
 	chat_panel_y = 0,
 	shield_low_threshold = 0.3,
 	shield_charge_sound_enabled = true,
+	shield_charge_sound_volume = 1,
 	shield_low_sound_enabled = true,
+	shield_low_sound_volume = 1,
 	shield_empty_sound_enabled = true,
+	shield_empty_sound_volume = 1,
 	--callsign_string = "S117", --automatically randomly generated
 	team_name = "Red Team",
 --	team_color = Color(0.5,0.2,0.2),
@@ -4856,7 +4859,18 @@ function NobleHUD:GetVitalsScale()
 	return self.settings.vitals_scale
 end
 
+function NobleHUD:GetShieldChargeVolume()
+	return self.settings.shield_charge_sound_volume
+end
 
+function NobleHUD:GetShieldEmptyVolume()
+	return self.settings.shield_empty_sound_volume
+end
+
+function NobleHUD:GetShieldLowVolume()
+	return self.settings.shield_low_sound_volume
+end
+		
 		--SET SETTINGS
 function NobleHUD:SetCrosshairEnabled(enabled)
 	self.crosshair_enabled = enabled
@@ -4922,7 +4936,6 @@ end
 
 
 --		MISC
-
 
 function NobleHUD:ShowMenu_AboutCallsign()
 	local function loc(s)
@@ -5258,14 +5271,25 @@ function NobleHUD:UpdateHUD(t,dt)
 			
 		--shield sfx (loop)
 		local player_armor_max = player_damage:_max_armor()
-		if player_armor_max > 0 and self._shield_sound_source and not self._shield_sound_source:is_closed() then
+		if player_armor_max > 0 then 
 			local player_armor = player_damage:get_real_armor()
+			if player_armor == 0 then 
+				self:PlayShieldSound("shield_empty")
+			elseif (player_armor / player_armor_max) <= NobleHUD:GetLowShieldThreshold() then 
+				self:PlayShieldSound("shield_low")
+			else
+				self:PlayShieldSound("shield_low",false)
+				self:PlayShieldSound("shield_empty",false)
+			end
+		--[[
+		and self._shield_sound_source and not self._shield_sound_source:is_closed() then
 			local shield_source = self._shield_sound_source
 			if self:IsShieldEmptySoundEnabled() and (player_armor == 0) then
 				if shield_source._buffer ~= self._cache.sounds.shield_empty then 
 					shield_source:stop()
 					shield_source:set_buffer(self._cache.sounds.shield_empty)
 					shield_source:set_looping(true)
+					shield_source:set_volume(self:GetShieldEmptyVolume())
 				end
 				if shield_source:get_state() ~= 1 then 
 					shield_source:play()
@@ -5275,6 +5299,7 @@ function NobleHUD:UpdateHUD(t,dt)
 					shield_source:stop()
 					shield_source:set_buffer(self._cache.sounds.shield_low)
 					shield_source:set_looping(true)
+					shield_source:set_volume(self:GetShieldLowVolume())
 				end
 				if shield_source:get_state() ~= 1 then 
 					shield_source:play()
@@ -5286,6 +5311,7 @@ function NobleHUD:UpdateHUD(t,dt)
 					end
 				end
 			end
+			--]]
 		end
 		
 		if self:GetScoreDisplayMode() == 2 then 
@@ -5880,7 +5906,7 @@ function NobleHUD:UpdateHUD(t,dt)
 						end
 					elseif buff_type == "value" then 
 						if buff_id == "berserker_melee_damage_multiplier" or buff_id == "berserker_damage_multiplier" or "buff_id" == "yakuza" then 
-							local health_ratio = buff_data.value
+							local health_ratio = buff_data.value or 1
 --							local health_ratio = managers.player:get_damage_health_ratio(player_damage:health_ratio(),"damage")
 							buff_icon:set_color(Color(1,1 - health_ratio,1 - health_ratio))
 							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%d",health_ratio * 100)))
@@ -6238,6 +6264,7 @@ function NobleHUD:OnGameStateChanged(before_state,state)
 		if GameStateFilters.any_end_game[state] or (state == "server_left") then 
 			--on game ended
 			if self._shield_sound_source then 
+				self:PlayShieldSound("stop")
 				self._shield_sound_source:close()
 				self._shield_sound_source = nil
 			end
@@ -6250,6 +6277,8 @@ function NobleHUD:OnGameStateChanged(before_state,state)
 		hud:hide()
 	elseif GameStateFilters.any_ingame[state] then 
 		hud:show()
+	else
+		self:PlayShieldSound("stop")
 	end
 end
 
@@ -6602,6 +6631,62 @@ function NobleHUD:PlayAnnouncerSound(name)
 		end
 	else
 		self:log("PlayAnnouncerSound(): sound [" .. name .. "] not found",{color = Color.red})
+	end
+end
+
+function NobleHUD:CheckShieldSoundVolume()
+end
+
+function NobleHUD:PlayShieldSound(event,enabled)
+	local source = self._shield_sound_source
+	if not (source and not source:is_closed()) then
+--		self:log("ERROR! Sound source is nonexistent",{color=Color.red})
+		return
+	end
+	enabled = not (enabled == false)
+	local should_loop
+	local volume = 1
+	if event == "stop" then 
+		source:stop()
+		return
+	elseif event == "shield_empty" then 
+		if not self:IsShieldEmptySoundEnabled() then 
+			source:stop()
+			return
+		end
+		should_loop = true
+		volume = self:GetShieldEmptyVolume()
+	elseif event == "shield_low" then 
+		if not self:IsShieldLowSoundEnabled() then 
+			source:stop()
+			return
+		end
+		should_loop = true
+		volume = self:GetShieldLowVolume()
+	elseif event == "shield_charge" then 
+		if not self:IsShieldChargeSoundEnabled() then 
+			source:stop()
+			return
+		end
+		should_loop = false
+		volume = self:GetShieldChargeVolume()
+	end	
+	local buffer = self._cache.sounds[tostring(event)]
+	if not buffer then 
+--		self:log("ERROR! PlayShieldSound(" .. tostring(event) .. "): Specified audio buffer is invalid ",{color=Color.red})
+		return
+	end
+	if enabled and source._buffer ~= buffer then 
+		source:stop()
+		source:set_buffer(buffer)
+		source:set_volume(volume)
+		source:set_looping(should_loop)
+	elseif not enabled then
+		source:stop()
+		return
+	end
+	if source:get_state() ~= 1 then 
+		source:play()
 	end
 end
 
@@ -12056,9 +12141,10 @@ function NobleHUD:_create_interact(hud)
 
 	local interact_bg = floating_panel:rect({
 		name = "interact_bg",
-		color = Color.black,
+		color = Color("000d18"), --Color("00315c")
 		w = 100,
-		h = 16
+		h = 16,
+		visible = true
 	})
 	
 	local interact_name = floating_panel:text({
@@ -12083,7 +12169,7 @@ function NobleHUD:_create_interact(hud)
 	
 	local debug_interact = floating_panel:rect({
 		name = "debug",
-		visible = false,
+		visible = true,
 		color = Color.red,
 		alpha = 0.1
 	})
@@ -12136,28 +12222,56 @@ function NobleHUD:animate_interact_bar_pulse(o,t,dt,start_t,duration)
 	local end_time = start_t + duration
 	local time_left = end_time - t
 	local progress = time_left / duration
-	local t_adjusted = (t - start_t)
-	local rotations = 5
 	--y = sin(mod(4x,pi/2))
+	local t_adjusted = t - start_t
+	local color_bg = Color.black
+	local color_tip = Color.white
+	local color_progress_1 = Color("00315c")
+	local color_progress_2 = self.color_data.hud_blueoutline
 	
-	local here = (0.5 + (math.cos((t_adjusted * 180) % 180) / 2)) * progress
---	local here = 0.5 + (math.cos((progress * math.deg(math.pi)) % math.deg(math.pi)) / 2)
+	local here = progress - 0.01
+--[[
+	local time_speed = 1
+	local phase_wax = 2.5
+	local phase_wane = 1
+	local phase_total = phase_wax + phase_wane
+	
+	local t_adjusted = ((t - start_t) * time_speed) % phase_total
+	
+	
+	local here
+	if t_adjusted <= phase_wax then 
+		here = t_adjusted / duration
+	else
+		here = progress - 0.01
+		color_progress_2 = self.interp_colors(color_progress_2,color_progress_1,math.max(1,(time_speed - phase_wane) / phase_wax))
+	end
+--]]	
+	
+	
+	
+--	local here = ((duration / time_left) * ((1 - (math.sin((t_adjusted * 180 / 10)) % 1)))) % progress
+	
+
+
+--	local here = (0.5 + (math.cos((t_adjusted * 180) % 180) / 2)) % progress
 --	local here = math.cos(math.deg(t_adjusted % math.deg(math.pi))/2) * progress * rotations
 	--local here = 1 - (math.sin((60 * now) % 60) * (1 - progress))
-	Console:SetTrackerValue("trackera",here)
-	Console:SetTrackerValue("trackerb",progress)
+--	Console:SetTrackerValue("trackera",here)
+--	Console:SetTrackerValue("trackerb",progress)
 	o:set_gradient_points({
 		0,
-		Color.black,-- self.color_data.hud_bluefill,
+		color_progress_1,-- self.color_data.hud_bluefill,
 		math.clamp(here,0,1),
-		self.color_data.hud_blueoutline,
-		progress + 0.01,
-		Color.white,
+		color_progress_2,
 		progress,
-		Color.black,
+		color_tip,
+		progress + 0.01,
+		color_bg,
 		1,
-		Color.black
+		color_bg
 	})
+	
 end
 
 
@@ -13132,7 +13246,7 @@ function HUDManager:_animate_helper_tube_on_fast(tube) --reduced delay; used for
 			tube:set_alpha(tube_alpha)
 --			NobleHUD:log(tube:name() .. "," .. dt)
 			tube:set_color(NobleHUD.interp_colors(tube:color(),desired_color,0.5)) --gradually progress toward "lit" color; effectively a logarithmic function
---			tube:set_color(interp_col(tube:color(),desired_color,dt * 1.5)) --gradually progress toward "lit" color; effectively a logarithmic function
+--			tube:set_color(NobleHUD.interp_colors(tube:color(),desired_color,dt * 1.5)) --gradually progress toward "lit" color; effectively a logarithmic function
 		else
 			delay = delay - dt
 		end
@@ -13572,14 +13686,6 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		--NobleHUD:SaveSettings()
 	end
 
---TEAM
-	
-	MenuCallbackHandler.callback_noblehud_set_teammate_align_to_radar_enabled = function(self,item)
-		NobleHUD.settings.teammate_align_to_radar = item:value() == "on"
-		NobleHUD:_sort_teammates()
-		NobleHUD:SaveSettings()
-	end
-	
 	
 --PLAYER
 	MenuCallbackHandler.callback_noblehud_set_master_hud_alpha = function(self,item)
@@ -13600,7 +13706,6 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		NobleHUD:LayoutVitals()
 		NobleHUD:SaveSettings()
 	end
-	
 	MenuCallbackHandler.callback_noblehud_set_stamina_enabled = function(self,item)
 		local value = item:value() == "on"
 		NobleHUD.settings.stamina_enabled = value
@@ -13636,6 +13741,7 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	end
 	MenuCallbackHandler.callback_noblehud_set_shield_empty_sound_enabled = function(self,item)
 		local value = item:value() == "on"
+		--[[
 		if not value and NobleHUD._shield_sound_source then 
 			--since shield sound check is done every frame, and 
 			--one cannot easily check current buffer, just stop the sound.
@@ -13645,29 +13751,66 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 			NobleHUD._shield_sound_source:close()
 			NobleHUD._shield_sound_source = nil
 		end		
+		--]]
 		NobleHUD.settings.shield_empty_sound_enabled = value
+		if not value then 
+			NobleHUD:PlayShieldSound("shield_empty",value)
+		end
+		NobleHUD:SaveSettings()
+	end
+	MenuCallbackHandler.callback_noblehud_set_shield_empty_sound_volume = function(self,item)
+		local value = tonumber(item:value())
+		NobleHUD.settings.shield_empty_sound_volume = value
+		NobleHUD:CheckShieldSoundVolume("shield_empty",value)
 		NobleHUD:SaveSettings()
 	end
 	MenuCallbackHandler.callback_noblehud_set_shield_charge_sound_enabled = function(self,item)
 		local value = item:value() == "on"
+		--[[
 		if not value and NobleHUD._shield_sound_source then 
 			NobleHUD._shield_sound_source:stop()
 			NobleHUD._shield_sound_source:close()
 			NobleHUD._shield_sound_source = nil
-		end		
+		end	
+--]]		
 		NobleHUD.settings.shield_charge_sound_enabled = value
+		if not value then 
+			NobleHUD:PlayShieldSound("shield_charge",value)
+		end
 		NobleHUD:SaveSettings()
 	end
+	MenuCallbackHandler.callback_noblehud_set_shield_charge_sound_volume = function(self,item)
+		local value = tonumber(item:value())
+		NobleHUD.settings.shield_charge_sound_volume = value
+		NobleHUD:CheckShieldSoundVolume("shield_charge",value)
+		NobleHUD:SaveSettings()
+	end
+	
 	MenuCallbackHandler.callback_noblehud_set_shield_low_sound_enabled = function(self,item)
 		local value = item:value() == "on"
+		--[[
 		if not value and NobleHUD._shield_sound_source then 
 			NobleHUD._shield_sound_source:stop()
 			NobleHUD._shield_sound_source:close()
 			NobleHUD._shield_sound_source = nil
 		end		
+		--]]
+		if not value then 
+			NobleHUD:PlayShieldSound("shield_low",value)
+		end
 		NobleHUD.settings.shield_low_sound_enabled = value
 		NobleHUD:SaveSettings()
 	end
+	MenuCallbackHandler.callback_noblehud_set_shield_low_sound_volume = function(self,item)
+		local value = tonumber(item:value())
+		NobleHUD.settings.shield_low_sound_volume = value
+		NobleHUD:CheckShieldSoundVolume("shield_low",value)
+		NobleHUD:SaveSettings()
+		if NobleHUD._shield_sound_source and NobleHUD._shield_sound_source._buffer == NobleHUD._cache.sounds.shield_low then
+			NobleHUD._shield_sound_source:set_volume(value)
+		end
+	end
+
 	MenuCallbackHandler.callback_noblehud_set_shield_low_threshold = function(self,item)
 		NobleHUD.settings.shield_low_threshold = tonumber(item:value())
 		NobleHUD:SaveSettings()
@@ -13681,11 +13824,16 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	end
 	
 --TEAM
+	MenuCallbackHandler.callback_noblehud_set_teammate_align_to_radar_enabled = function(self,item)
+		NobleHUD.settings.teammate_align_to_radar = item:value() == "on"
+		NobleHUD:_sort_teammates()
+		NobleHUD:SaveSettings()
+	end
+	
 	MenuCallbackHandler.callback_noblehud_set_teammate_panel_x = function(self,item)
 		NobleHUD.settings.teammate_x = tonumber(item:value())
 		NobleHUD:_sort_teammates()
 	end
-	
 	MenuCallbackHandler.callback_noblehud_set_teammate_panel_y = function(self,item)
 		NobleHUD.settings.teammate_y = tonumber(item:value())
 		NobleHUD:_sort_teammates()
