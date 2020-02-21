@@ -30,6 +30,7 @@ Hooks:PostHook(PlayerManager,"activate_temporary_property","noblehud_activate_te
 	NobleHUD:log("PlayerManager:activate_temporary_property(" .. NobleHUD.table_concat({name=name,time=time,value=value},",","=") .. ")",{color=Color.yellow})
 --	local t = self._temporary_upgrades[category] and self._temporary_upgrades[category][upgrade] and self._temporary_upgrades[category][upgrade].expire_time
 --	NobleHUD:AddBuff(upgrade,{end_t = t}) --i'd have to re-calculate stuff or overwrite the function to use duration instead of end_t. i'd rather risk having desynced end times
+	NobleHUD:AddBuff(name,{duration=time,value=value})
 end)
 
 Hooks:PostHook(PlayerManager,"activate_temporary_upgrade_by_level","noblehud_activate_temporary_upgrade_by_level",function(self,category, upgrade, level)

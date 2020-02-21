@@ -445,6 +445,7 @@
 	"noblehud_right" : "Right",
 	"noblehud_top" : "Top",
 	"noblehud_bottom" : "Bottom",
+	"noblehud_hud_interaction_complete" : "Done",
 	
 	"noblehud_buffs_specialization_options_title" : "Perk Decks...",
 	"noblehud_buffs_specialization_options_desc" : "Select Perk Deck Buffs To Track",

@@ -16,7 +16,7 @@ function HUDAssaultCorner:set_control_info(data)
 	NobleHUD:SetHostages(data.nr_hostages)
 end
 
-
+--[[
 function HUDAssaultCorner:show_casing(mode)
 
 	NobleHUD:log("Casing mode: " .. tostring(mode),{color=Color.yellow})
@@ -28,6 +28,7 @@ function HUDAssaultCorner:show_casing(mode)
 	self:_end_assault()
 	self._casing = true
 end
+--]]
 
 function HUDAssaultCorner:_start_assault(text_list)
 

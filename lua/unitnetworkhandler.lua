@@ -1,6 +1,6 @@
 Hooks:PreHook(UnitNetworkHandler, "sync_doctor_bag_taken", "noblehud_unitnetworkhandler_syncdoctorbagtaken", function(self, unit, amount, sender, ...)
 	local peer = self._verify_sender(sender)
-	if not alive(unit) or not self._verify_gamestate(self._gamestate_filter.any_ingame) or not peer then
+	if not (alive(unit) and self._verify_gamestate(self._gamestate_filter.any_ingame) and peer) then
 		return
 	end
 	NobleHUD:SetTeammateDowns(sender,0)

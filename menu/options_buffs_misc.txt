@@ -47,7 +47,7 @@
 			"title" : "noblehud_set_buffs_misc_phalanx_enabled_title",
 			"description" : "noblehud_set_buffs_misc_phalanx_enabled_desc",
 			"callback" : "callback_noblehud_set_buffs_misc_phalanx_enabled",
-			"value" : "phalanx"
+			"value" : "vip"
 		},
 		{
 			"type" : "divider",

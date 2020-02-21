@@ -12,9 +12,6 @@
 	* revive_damage_reduction is created in playermanager:set_property but only name and value are passed, not timer
 	
 		* "Speaking" icon for teammates and self
-		* [ASSET] Reduce the size of the teammate nameplate now that length is capped
-		* Reduce Shield sound volume
-			* Add shield sounds slider
 		* Sync data:
 			send assault phase
 		
@@ -48,15 +45,10 @@
 			
 		* Anarchist Lust for Life (active regen)
 		
-			Multiplayer/Bots
-		* Inspire Cooldown
-		
 			Multiplayer
 		* Second Wind (from teammate)
 		
 		* Downed (check playerbleedout.lua state)
-		* Messiah (test)
-		
 		
 		
 			
@@ -67,7 +59,6 @@
 		* HUDTeammate:set_custom_radial() (swansong and what have you for teammates)
 		* Add menu button to set teamname
 		* Add menu button to set teamcolor (through beardlib)
-		* [ASSET] Created flamethrower reticle looks like shit, current one is extremely unoptimized
 		
 		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER 
 		* underbarrel base does not trigger HUD change (ammo tick, crosshair)
@@ -79,7 +70,6 @@
 				* Set nickname color to red
 				* Set nickname text to "X"
 			- Floating ammo panel has incorrect width after switching weapons
-			- Multiple concurrent Pocket ECM Jammer buffs may interfere with each other
 			- Shield noises (low/depleted) may persist during loading
 			- Bot teammates in tabscreen occasionally override one another
 			- Trip Mines have their text cut off (14 | 6 is way too long in eurostile_ext)
@@ -88,6 +78,7 @@
 				* change font?
 			- Assault phase localization when not host
 			- Vanilla HUD is visible in drop-in spectate mode
+			- Multiple concurrent Pocket ECM Jammer buffs may interfere with each other
 			- Down Counter Standalone will fight NobleHUD for dominance when it comes to setting downs in the tabscreen
 				* This is because I tried to add compatibility between the two via network syncing, but didn't save whether or not peers had DCS in NobleHUD
 
@@ -100,6 +91,7 @@
 			* Mod options
 		
 	&& LOW PRIORITY FEATURES: &&
+		* [ASSET] Created flamethrower reticle looks like shit, current one is extremely unoptimized
 		* Damage numbers popups
 		* Show other things, such as equipment, on radar? check slotmask 
 		* Adjust overshield color to be more green (check MCC screenshots)
@@ -523,7 +515,6 @@ NobleHUD._killfeed_presets = {
 }
 
 
-
 NobleHUD._VITALS_W = 512
 NobleHUD._VITALS_H = 64
 NobleHUD._VITALS_TICK_W = 24
@@ -552,6 +543,16 @@ NobleHUD._BUFF_ITEM_H_COMPACT = 32
 
 NobleHUD._NAMEPLATE_W = 152
 NobleHUD._NAMEPLATE_H = 64
+
+NobleHUD._INTERACT_BAR_PANEL_W = 256
+NobleHUD._INTERACT_BAR_PANEL_H = 40
+NobleHUD._INTERACT_NAME_Y = 200
+NobleHUD._INTERACT_BAR_Y = 100
+NobleHUD._INTERACT_BAR_W = 128
+NobleHUD._INTERACT_BAR_H = 16
+NobleHUD._INTERACTION_FONT_SIZE = 16
+
+
 
 NobleHUD._TEAMMATE_ITEM_W = 512
 NobleHUD._TEAMMATE_ITEM_H = 48
@@ -774,7 +775,7 @@ NobleHUD.weapon_data = {
 --super short term: 7
 
 NobleHUD._buff_data = {
-	["phalanx"] = {
+	["vip"] = {
 		source = "manual",
 		priority = 1,
 		icon = "guis/textures/skull_phalanx",
@@ -5226,16 +5227,19 @@ function NobleHUD:UpdateHUD(t,dt)
 		
 		
 		if Network:is_server() then
-			--hud assault state 
-			local assaultstate = managers.groupai:state()
-			local assaulttasks = assaultstate and assaultstate._task_data
-			local assaultdata = assaulttasks and assaulttasks.assault
-			local phase = assaultdata and assaultdata.phase
-			local phasename = self._assault_phases[phase]
-			if phase and not (phasename or assaultstate:whisper_mode()) then 
-				self:log("Did not find phasename for " .. tostring(phase),{color = Color.red})
-			elseif phasename then
-				self:SetAssaultPhase(managers.localization:text(phasename),true)
+			local hudassault = managers.hud._hud_assault_corner
+			if hudassault._assault_mode == "normal" then 
+				--hud assault state 
+				local assaultstate = managers.groupai:state()
+				local assaulttasks = assaultstate and assaultstate._task_data
+				local assaultdata = assaulttasks and assaulttasks.assault
+				local phase = assaultdata and assaultdata.phase
+				local phasename = self._assault_phases[phase]
+				if phase and not (phasename or assaultstate:whisper_mode()) then 
+					self:log("Did not find phasename for " .. tostring(phase),{color = Color.red})
+				elseif phasename then
+					self:SetAssaultPhase(managers.localization:text(phasename),true)
+				end
 			end
 		end
 		
@@ -12103,79 +12107,67 @@ function NobleHUD:_create_interact(hud)
 		w = hud:w(),
 		h = hud:h(),
 		alpha = self:GetHUDAlpha(),
+		visible = true
+	})
+	self._interact_panel = interact_panel
+	
+	local margin_h = 50
+	local margin_v = 4
+	local INTERACT_NAME_Y = self._INTERACT_NAME_Y
+	local interact_name = interact_panel:text({
+		name = "interact_name",
+		text = "Press [F] to Enter Warthog",
+		align = "right",
+		color = self.color_data.hud_vitalsoutline_blue,
+		font = tweak_data.hud.medium_font_noshadow,
+		font_size = self._INTERACTION_FONT_SIZE,
+		x = -margin_h,
+		y = INTERACT_NAME_Y,
+		layer = 5,
 		visible = false
 	})
 	
-	local floating_w = 400
-	local floating_h = 100
+	local invalid_text = interact_panel:text({
+		name = "invalid_text",
+		text = "Invalid placement",
+		align = "right",
+		color = self.color_data.hud_vitalsfill_red,
+		font = tweak_data.hud.medium_font_noshadow,
+		font_size = self._INTERACTION_FONT_SIZE,
+		x = -margin_h,
+		y = INTERACT_NAME_Y + interact_name:line_height(),
+		layer = 4,
+		visible = false
+	})
 	
-	local floating_panel = interact_panel:panel({
-		name = "floating_panel",
-		w = floating_w,
-		h = floating_h,
-		x = hud:w() - (floating_w + 50),
-		y = 200
---		x = (hud:w() + floating_w) /2,
---		y = (hud:h() + floating_h) /2
+	
+	local INTERACT_BAR_PANEL_W = self._INTERACT_BAR_PANEL_W
+	local INTERACT_BAR_PANEL_H = self._INTERACT_BAR_PANEL_H
+	local INTERACT_BAR_Y = self._INTERACT_BAR_Y --vertical offset from screen center
+	local interact_bar_panel = interact_panel:panel({
+		name = "interact_bar_panel",
+		valign = "grow",
+		halign = "grow",
+		x = (interact_panel:w() - INTERACT_BAR_PANEL_W) / 2,
+		y = INTERACT_BAR_Y + ((interact_panel:h() - INTERACT_BAR_PANEL_H) / 2),
+		w = INTERACT_BAR_PANEL_W,
+		h = INTERACT_BAR_PANEL_H,
+		visible = false
 	})
 
-	local texture,texture_rect = tweak_data.hud_icons:get_icon_data("wp_target")
-	local interact_bitmap = floating_panel:bitmap({
-		name = "interact_bitmap",
-		texture = texture,
-		texture_rect = texture_rect,
-		w = 32,
-		h = 32,
-		x = 50,
-		y = 50,
-		visible = false, --disabled
-		layer = 1,
-		alpha = 1,
-		color = Color(0,0.3,0.9)
-	})
-	
-	local trace_vertical = interact_panel:bitmap({
-		name = "trace_vertical",
-		visible = false, --temp disabled cause it's ugly
-		texture = "guis/textures/ar_crosshair_2",
-		blend_mode = "add",
-		w = 2,
-		h = 2,
-		layer = 1,
-		alpha = 1,
-		rotation = 0,
-		color = self.color_data.hud_bluefill
-	})
-	local trace_horizontal = interact_panel:bitmap({
-		name = "trace_horizontal",
-		visible = false, --temp disabled cause it's ugly
-		texture = "guis/textures/ar_crosshair_2",
-		w = 2,
-		h = 2,
-		layer = 1,
-		alpha = 1,
-		blend_mode = "add",
-		rotation = 0,
-		color = self.color_data.hud_bluefill
-	})
-	
-	--todo menu option for this bad boy
-	local interact_bar = floating_panel:gradient({
+	local INTERACT_BAR_W = self._INTERACT_BAR_W
+	local INTERACT_BAR_H = self._INTERACT_BAR_H
+	local interact_bar = interact_bar_panel:gradient({
 		name = "interact_bar",
-		valign = "grow",
---		rotation = 180,
---		x = 100,
---		y = 100,
---		texture = "guis/textures/ar_crosshair_2",
-		w = 100,
-		h = 16,
+		x = (margin_v + (interact_bar_panel:w() - INTERACT_BAR_W)) / 2,
+		y = margin_v / 2,
+		w = INTERACT_BAR_W,
+		h = INTERACT_BAR_H,
 		layer = 3,
---		alpha = 1,
 		blend_mode = "add",
---		color = self.color_data.hud_bluefill,
 		gradient_points = {
 			0,
-			Color(1,1,0,0), --argb
+			Color(1,1,0,0),
 			0.5,
 			Color(1,0,1,0),
 			1,
@@ -12183,87 +12175,128 @@ function NobleHUD:_create_interact(hud)
 		},
 		visible = true
 	})
-
-	local interact_bg = floating_panel:rect({
-		name = "interact_bg",
-		color = Color("000d18"), --Color("00315c")
-		w = 100,
-		h = 16,
+	
+	local interact_empty = interact_bar_panel:rect({
+		name = "interact_empty",
+		color = Color("000d18"),
+		x = interact_bar:x(),
+		y = interact_bar:y(),
+		w = INTERACT_BAR_W,
+		h = INTERACT_BAR_H,
+		layer = 2,
 		visible = true
 	})
 	
-	local interact_name = floating_panel:text({
-		name = "interact_name",
-		text = "Enter Warthog",
-		align = "right",
-		color = self.color_data.hud_vitalsoutline_blue,
-		font = tweak_data.hud.medium_font_noshadow,
-		font_size = 16,
-		layer = 4
+	local interact_bg = interact_bar_panel:rect({
+		name = "interact_bg",
+		color = self.color_data.hud_bluefill,
+		x = interact_bar:x() - (margin_v / 2),
+		y = interact_bar:y() - (margin_v / 2),
+		w = INTERACT_BAR_W + (margin_v),
+		h = INTERACT_BAR_H + (margin_v),
+		layer = 1,
+		visible = true
 	})
-	local interact_progress = floating_panel:text({
+	
+	
+	--todo decimal precision option
+	local interact_progress = interact_bar_panel:text({
 		name = "interact_progress",
-		text = "1s",
-		align = "right",
+		text = "420s",
+		align = "center",
+		vertical = "bottom",
 		color = self.color_data.hud_vitalsoutline_blue,
 		font = tweak_data.hud.medium_font_noshadow,
-		font_size = 12,
-		y = interact_name:line_height(),
+		font_size = self._INTERACTION_FONT_SIZE,
 		layer = 5
 	})
-	
-	local debug_interact = floating_panel:rect({
-		name = "debug",
-		visible = true,
-		color = Color.red,
-		alpha = 0.1
-	})
-	
-	self._interact_panel = interact_panel
+
 end
 
 function NobleHUD:ShowInteract(data)
 	local interact_panel = self._interact_panel
-	local floating_panel = interact_panel:child("floating_panel")
-	local interact_name = floating_panel:child("interact_name")
-	self:animate_stop(interact_panel)
-	interact_panel:set_w(1280)
-	interact_name:set_font_size(16)
-	
-	if data then
-		local text = data.text or "Press $INTERACT to interact"
-		interact_name:set_text(text)
-		
-		if data.icon then 
-			local texture,texture_rect = tweak_data.hud_icons:get_icon_data(data.icon)
-			floating_panel:child("interact_bitmap"):set_image(texture)
-			if texture_rect then 
-				floating_panel:child("interact_bitmap"):set_texture_rect(texture_rect)
-			end
-		end
-		
+	local interact_name = interact_panel:child("interact_name")
+	self:animate_stop(interact_name)
+	interact_name:set_font_size(self._INTERACTION_FONT_SIZE)
+	if not interact_name:visible() then 
+		self:animate(interact_name,"animate_killfeed_text_in",nil,0.15,self._INTERACTION_FONT_SIZE or interact_name:font_size(),self.color_data.hud_text_blue,self.color_data.hud_text_flash)
 	end
-	if not interact_panel:visible() then 
-		self:animate(interact_name,"animate_killfeed_text_in",nil,0.15,interact_name:font_size(),self.color_data.hud_text_blue,self.color_data.hud_text_flash)
-	end
---	local itd = tweak_data.interaction[interact.tweak_data or ""] or {text_id = "ERROR"}
---	local interact_text_id = managers.localization:text(itd.text_id)
-	interact_panel:show()
+	local text = data.text or "Press $INTERACT to interact"
+	interact_name:set_text(text)
+	interact_name:show()
 end
 
-function NobleHUD:HideInteract(cancelled)
+function NobleHUD:HideInteract()
+	self._interact_panel:child("interact_name"):hide()
+	self._interact_panel:child("invalid_text"):hide()
+end
+
+function NobleHUD:ShowInteractBar(current,total)
+	local interact_bar_panel = self._interact_panel:child("interact_bar_panel")
+	self:animate_stop(interact_bar_panel)
+	self.cb_animate_interact_done()
+	self:SetInteractProgress(current,total)
+	interact_bar_panel:show()
+end
+
+function NobleHUD:SetInteractProgress(current,total)
+	self._interact_panel:child("interact_bar_panel"):child("interact_progress"):set_text(string.format("%0.01fs",math.abs(total - current) or -99.99))
+	self:animate_interact_progress(self._interact_panel:child("interact_bar_panel"):child("interact_bar"),Application:time(),nil,Application:time() - (total - current),total)
+end
+
+function NobleHUD:HideInteractBar(complete)
+	local anim_enabled = true
+	local interact_bar_panel = self._interact_panel:child("interact_bar_panel")
+	if complete and anim_enabled then 
+		interact_bar_panel:child("interact_progress"):set_text(managers.localization:text("noblehud_hud_interaction_complete"))
+		self:animate(interact_bar_panel,"animate_interact_done",self.cb_animate_interact_done,0.66,interact_bar_panel:child("interact_bg"):right() or self._INTERACT_BAR_PANEL_W)
+	else
+		interact_bar_panel:hide()
+	end
+	--todo animate on completed interaction
+end
+
+function NobleHUD:SetInteractValid(valid,text_id)
 	local interact_panel = self._interact_panel
-	if not cancelled then 
-		interact_panel:hide()
+	local interact_name = interact_panel:child("interact_name")
+	local invalid_text = interact_panel:child("invalid_text")
+	invalid_text:set_visible(not valid)
+	if text_id then 
+		invalid_text:set_text(managers.localization:to_upper_text(tostring(text_id)))
 	end
-	interact_panel:child("floating_panel"):child("interact_progress"):set_text("")
-	interact_panel:child("trace_vertical"):set_h(0)
-	interact_panel:child("trace_horizontal"):set_w(0)
 end
 
+function NobleHUD.cb_animate_interact_done()
+	local interact_panel = NobleHUD._interact_panel
+	local interact_bar_panel = NobleHUD._interact_panel:child("interact_bar_panel")
+	interact_bar_panel:hide()
+	interact_bar_panel:set_size(NobleHUD._INTERACT_BAR_PANEL_W,NobleHUD._INTERACT_BAR_PANEL_H)	
+	interact_bar_panel:set_position((interact_panel:w() - NobleHUD._INTERACT_BAR_PANEL_W) / 2,NobleHUD._INTERACT_BAR_Y + ((interact_panel:h() - NobleHUD._INTERACT_BAR_PANEL_H) / 2))
+end
+
+function NobleHUD:animate_interact_done(o,t,dt,start_t,duration,orig_w)
+	if t >= start_t + duration then 
+		return true
+	end
+	local ratio = math.clamp((t - start_t) / duration,0,1)
+	local ratio_sq = 1 - math.pow(ratio,2)
+	Console:SetTrackerValue("trackera",ratio_sq)
+	o:set_w(orig_w * ratio_sq)
+--	o:set_x((o:parent():w() - o:w()) / 2)
 	
-function NobleHUD:animate_interact_bar_pulse(o,t,dt,start_t,duration)
---todo pulse n times, where n is derived from duration
+--[[
+--	local floating_panel = o:child("floating_panel")
+	local ratio = (t - start_t) / duration
+	if ratio >= 1 then 
+		o:set_w(start_w)
+		o:child("floating_panel"):child("interact_progress"):set_text("")
+		return true
+	end
+	o:set_w(start_w * (1 - math.pow(ratio,2)))
+	--]]
+end
+
+function NobleHUD:animate_interact_progress(o,t,dt,start_t,duration)
 	local end_time = start_t + duration
 	local time_left = end_time - t
 	local progress = time_left / duration
@@ -12276,6 +12309,7 @@ function NobleHUD:animate_interact_bar_pulse(o,t,dt,start_t,duration)
 	
 	local here = progress - 0.01
 --[[
+--todo pulse n times, where n is calculated from duration
 	local time_speed = 1
 	local phase_wax = 2.5
 	local phase_wane = 1
@@ -12319,62 +12353,6 @@ function NobleHUD:animate_interact_bar_pulse(o,t,dt,start_t,duration)
 	
 end
 
-
-function NobleHUD:SetInteractProgress(current,total)
-	local interact_panel = self._interact_panel
-	local floating_panel = interact_panel:child("floating_panel")
-	local interact_progress = floating_panel:child("interact_progress")
-	self:animate_interact_bar_pulse(floating_panel:child("interact_bar"),Application:time(),0.01,Application:time() - (total - current),total)
---	NobleHUD:animate(floating_panel:child("interact_bar"),"animate_interact_bar_pulse",nil,total)
-	
---	floating_panel:child("interact_bar"):set_w()
-	interact_progress:set_text(string.format("%0.01fs",math.abs(total - current) or -99.99))
---	local _,_,w,_ = interact_progress:text_rect()
---	floating_panel:set_w(w)
-	
---	local itd = tweak_data.interaction[interact.tweak_data or ""] or {text_id = "ERROR"}
---	local interact_text_id = managers.localization:text(itd.text_id)
---	floating_panel:child("interact_name"):set_text(utf8.to_upper(interact_text_id or "ERROR"))
-
-end
-
-function NobleHUD:SetInteractValid(valid,id)
-	local interact_panel = self._interact_panel
-	local floating_panel = interact_panel:child("floating_panel")
-	local interact_name = floating_panel:child("interact_name")
-	if not valid then 
---		interact_name:hide()
-		interact_name:set_color(self.color_data.hud_vitalsfill_red)
-	else
---		interact_name:show()
-		interact_name:set_color(self.color_data.hud_vitalsfill_blue)
-	end
-	
-	if text_id then
-		interact_name:set_text(managers.localization:to_upper_text(text_id))
---		local _,_,w,_ = interact_name:text_rect()
---		floating_panel:set_w(w)
-	end
-end
-
-function NobleHUD:AnimateInteractDone()
-	local interact_panel = self._interact_panel
-	
-	self:animate(interact_panel,"animate_interact_done",function()
-		NobleHUD:HideInteract()
-	end,0.75,interact_panel:w())
-end
-
-function NobleHUD:animate_interact_done(o,t,dt,start_t,duration,start_w)
---	local floating_panel = o:child("floating_panel")
-	local ratio = (t - start_t) / duration
-	if ratio >= 1 then 
-		o:set_w(start_w)
-		o:child("floating_panel"):child("interact_progress"):set_text("")
-		return true
-	end
-	o:set_w(start_w * (1 - math.pow(ratio,2)))
-end
 
 
 -- 		KILLFEED
@@ -14086,8 +14064,8 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_misc_phalanx_enabled = function(self,item)
-		NobleHUD.buff_settings.phalanx = item:value() == "on"
-		NobleHUD:CheckBuff("phalanx")
+		NobleHUD.buff_settings.vip = item:value() == "on"
+		NobleHUD:CheckBuff("vip")
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_misc_flashbang_enabled = function(self,item)
