@@ -14,6 +14,18 @@
 			"value" : "dodge_chance_total"
 		},
 		{
+			"type" : "slider",
+			"id" : "noblehud_set_buffs_misc_dodge_chance_total_threshold",
+			"title" : "noblehud_set_buffs_misc_dodge_chance_total_threshold_title",
+			"description" : "noblehud_set_buffs_misc_dodge_chance_total_threshold_desc",
+			"callback" : "callback_noblehud_set_buffs_misc_dodge_chance_total_threshold",
+			"value" : "dodge_chance_threshold",
+			"default_value" : 0,
+			"min" : 0,
+			"max" : 1,
+			"step" : 0.01
+		},
+		{
 			"type" : "toggle",
 			"id" : "noblehud_set_buffs_misc_crit_chance_total_enabled",
 			"title" : "noblehud_set_buffs_misc_crit_chance_total_enabled_title",
@@ -22,12 +34,36 @@
 			"value" : "crit_chance_total"
 		},
 		{
+			"type" : "slider",
+			"id" : "noblehud_set_buffs_misc_crit_chance_total_threshold",
+			"title" : "noblehud_set_buffs_misc_crit_chance_total_threshold_title",
+			"description" : "noblehud_set_buffs_misc_crit_chance_total_threshold_desc",
+			"callback" : "callback_noblehud_set_buffs_misc_crit_chance_total_threshold",
+			"value" : "crit_chance_threshold",
+			"default_value" : 0,
+			"min" : 0,
+			"max" : 1,
+			"step" : 0.01
+		},
+		{
 			"type" : "toggle",
 			"id" : "noblehud_set_buffs_misc_dmg_resist_total_enabled",
 			"title" : "noblehud_set_buffs_misc_dmg_resist_total_enabled_title",
 			"description" : "noblehud_set_buffs_misc_dmg_resist_total_enabled_desc",
 			"callback" : "callback_noblehud_set_buffs_misc_dmg_resist_total_enabled",
 			"value" : "dmg_resist_total"
+		},
+		{
+			"type" : "slider",
+			"id" : "noblehud_set_buffs_misc_dmg_resist_total_threshold",
+			"title" : "noblehud_set_buffs_misc_dmg_resist_total_threshold_title",
+			"description" : "noblehud_set_buffs_misc_dmg_resist_total_threshold_desc",
+			"callback" : "callback_noblehud_set_buffs_misc_dmg_resist_total_threshold",
+			"value" : "dmg_resist_threshold",
+			"default_value" : 0,
+			"min" : 0,
+			"max" : 1,
+			"step" : 0.01
 		},
 		{
 			"type" : "toggle",
@@ -39,7 +75,7 @@
 		},
 		{
 			"type" : "divider",
-			"size" : 4
+			"size" : 16
 		},
 		{
 			"type" : "toggle",

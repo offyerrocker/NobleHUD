@@ -28,7 +28,6 @@
 		
 	%%% Buffs:
 		
-			
 		* Reorganize buffs tweak table
 		* Add default setting for each buff
 		* Add threshold procs for Resist/crit/dodge, and option to always show
@@ -53,8 +52,6 @@
 		
 			
 	&&& HIGH PRIORITY: &&&
-	
-		* Halo Objective bar for interact meter
 	
 		* HUDTeammate:set_custom_radial() (swansong and what have you for teammates)
 		* Add menu button to set teamname
@@ -1564,7 +1561,11 @@ NobleHUD._buff_data = {
 	}
 }
 
-NobleHUD.buff_settings = {}
+NobleHUD.buff_settings = {
+	dodge_chance_threshold = 0,
+	crit_chance_threshold = 0,
+	dmg_resist_threshold = 0
+}
 
 for buff_id,buff_data in pairs(NobleHUD._buff_data) do 
 	if not buff_data.disabled then
@@ -4831,6 +4832,16 @@ function NobleHUD:IsBuffEnabled(id)
 	return self.buff_settings[id]
 end
 
+function NobleHUD:GetDodgeChanceBuffThreshold()
+	return self.buff_settings.dodge_chance_threshold
+end
+function NobleHUD:GetCritChanceBuffThreshold()
+	return self.buff_settings.crit_chance_threshold
+end
+function NobleHUD:GetDmgResistBuffThreshold()
+	return self.buff_settings.dmg_resist_threshold
+end
+
 function NobleHUD:ShouldAlignAbilityToRadar()
 	return self.settings.ability_align_to_radar
 end
@@ -5147,11 +5158,7 @@ function NobleHUD:OnLoaded()
 	self:LayoutRadar()
 	self:LayoutStamina()
 	self:LayoutVitals()
-	
-	self:AddBuff("dmg_resist_total")
-	self:AddBuff("crit_chance_total")
-	self:AddBuff("dodge_chance_total")
-	
+
 	local level_data = managers.job:current_level_data()
 	local level_name = level_data and level_data.name_id
 	self:set_mission_name(level_name and managers.localization:text(level_name) or "")
@@ -5750,6 +5757,34 @@ function NobleHUD:UpdateHUD(t,dt)
 					self:RemoveBuff("sicario")
 				end
 			end
+			
+			if self:IsBuffEnabled("dodge_chance_total") then 
+				local dodge_chance_raw = managers.player:skill_dodge_chance(player:movement():running(),player:movement():crouching(),player:movement():zipline_unit(),false,managers.blackmarket:_get_concealment_from_local_player()) + managers.player:body_armor_value("dodge")
+				if dodge_chance_raw >= self:GetDodgeChanceBuffThreshold() then 
+					self:AddBuff("dodge_chance_total",{value = dodge_chance_raw})
+				else
+					self:RemoveBuff("dodge_chance_total")
+				end
+			end
+			
+			if self:IsBuffEnabled("crit_chance_total") then 
+				local crit_chance_raw = managers.player:critical_hit_chance()
+				if crit_chance_raw >= self:GetCritChanceBuffThreshold() then 
+					self:AddBuff("crit_chance_total",{value = crit_chance_raw})
+				else
+					self:RemoveBuff("crit_chance_total")
+				end	
+			end
+			
+			if self:IsBuffEnabled("dmg_resist_total") then 
+				local dmg_resist_raw = 1 - managers.player:damage_reduction_skill_multiplier("bullet")
+				if dmg_resist_raw >= self:GetDmgResistBuffThreshold() then 
+					self:AddBuff("dmg_resist_total",{value = dmg_resist_raw})
+				else
+					self:RemoveBuff("dmg_resist_total")
+				end
+			end
+			
 --[[			
 			if self:IsBuffEnabled("wild_kill_counter") then 
 				local wild_kill_counter = managers.player:get_wild_kill_counter()
@@ -5928,11 +5963,11 @@ function NobleHUD:UpdateHUD(t,dt)
 								end
 							end
 						elseif buff_id == "dmg_resist_total" then
-							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%d",100 * (1 - managers.player:damage_reduction_skill_multiplier("bullet")))))
+							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%d",100 * (buff_data.value))))
 						elseif buff_id == "dodge_chance_total" then
-							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%d",100 * managers.player:skill_dodge_chance(player:movement():running(),player:movement():crouching(),player:movement():zipline_unit(),false,managers.blackmarket:_get_concealment_from_local_player()) + managers.player:body_armor_value("dodge"))))
+							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%d",100 * buff_data.value)))
 						elseif buff_id == "crit_chance_total" then
-							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%d",100 * managers.player:critical_hit_chance())))
+							buff_label:set_text(string.gsub(buff_text,"$VALUE",string.format("%d",100 * buff_data.value)))
 						elseif buff_id == "grinder" then 
 							buff_label:set_text(string.gsub(buff_text,"$VALUE",tostring(buff_data.value or 0)))
 							if buff_data.value <= 0 then 
@@ -12280,7 +12315,7 @@ function NobleHUD:animate_interact_done(o,t,dt,start_t,duration,orig_w)
 	end
 	local ratio = math.clamp((t - start_t) / duration,0,1)
 	local ratio_sq = 1 - math.pow(ratio,2)
-	Console:SetTrackerValue("trackera",ratio_sq)
+--	Console:SetTrackerValue("trackera",ratio_sq)
 	o:set_w(orig_w * ratio_sq)
 --	o:set_x((o:parent():w() - o:w()) / 2)
 	
@@ -13764,17 +13799,6 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	end
 	MenuCallbackHandler.callback_noblehud_set_shield_empty_sound_enabled = function(self,item)
 		local value = item:value() == "on"
-		--[[
-		if not value and NobleHUD._shield_sound_source then 
-			--since shield sound check is done every frame, and 
-			--one cannot easily check current buffer, just stop the sound.
-			--the interruption should be imperceptible,
-			--especially since it'll probably be masked by the menu ui noises.
-			NobleHUD._shield_sound_source:stop()
-			NobleHUD._shield_sound_source:close()
-			NobleHUD._shield_sound_source = nil
-		end		
-		--]]
 		NobleHUD.settings.shield_empty_sound_enabled = value
 		if not value then 
 			NobleHUD:PlayShieldSound("shield_empty",value)
@@ -13789,13 +13813,6 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	end
 	MenuCallbackHandler.callback_noblehud_set_shield_charge_sound_enabled = function(self,item)
 		local value = item:value() == "on"
-		--[[
-		if not value and NobleHUD._shield_sound_source then 
-			NobleHUD._shield_sound_source:stop()
-			NobleHUD._shield_sound_source:close()
-			NobleHUD._shield_sound_source = nil
-		end	
---]]		
 		NobleHUD.settings.shield_charge_sound_enabled = value
 		if not value then 
 			NobleHUD:PlayShieldSound("shield_charge",value)
@@ -13811,13 +13828,6 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	
 	MenuCallbackHandler.callback_noblehud_set_shield_low_sound_enabled = function(self,item)
 		local value = item:value() == "on"
-		--[[
-		if not value and NobleHUD._shield_sound_source then 
-			NobleHUD._shield_sound_source:stop()
-			NobleHUD._shield_sound_source:close()
-			NobleHUD._shield_sound_source = nil
-		end		
-		--]]
 		if not value then 
 			NobleHUD:PlayShieldSound("shield_low",value)
 		end
@@ -14051,16 +14061,32 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		NobleHUD:ToggleBuff(state,"dodge_chance_total")
 		NobleHUD:SaveBuffSettings()
 	end	
+	
+	MenuCallbackHandler.callback_noblehud_set_buffs_misc_dodge_chance_total_threshold = function(self,item)
+		local value = tonumber(item:value())
+		NobleHUD.buff_settings.dodge_chance_threshold = value
+		NobleHUD:SaveBuffSettings()
+	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_misc_crit_chance_total_enabled = function(self,item)
 		local state = item:value() == "on"
 		NobleHUD.buff_settings.crit_chance_total = state
 		NobleHUD:ToggleBuff(state,"crit_chance_total")
 		NobleHUD:SaveBuffSettings()
 	end	
+	MenuCallbackHandler.callback_noblehud_set_buffs_misc_crit_chance_total_threshold = function(self,item)
+		local value = tonumber(item:value())
+		NobleHUD.buff_settings.crit_chance_threshold = value
+		NobleHUD:SaveBuffSettings()
+	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_misc_dmg_resist_total_enabled = function(self,item)
 		local state = item:value() == "on"
 		NobleHUD.buff_settings.dmg_resist_total = state
 		NobleHUD:ToggleBuff(state,"dmg_resist_total")
+		NobleHUD:SaveBuffSettings()
+	end	
+	MenuCallbackHandler.callback_noblehud_set_buffs_misc_dmg_resist_total_threshold = function(self,item)
+		local value = tonumber(item:value())
+		NobleHUD.buff_settings.dmg_resist_threshold = value
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_misc_phalanx_enabled = function(self,item)
