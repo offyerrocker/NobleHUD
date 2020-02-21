@@ -550,6 +550,9 @@ NobleHUD._BUFF_ITEM_W_COMPACT = 72
 NobleHUD._BUFF_ITEM_H = 32
 NobleHUD._BUFF_ITEM_H_COMPACT = 32
 
+NobleHUD._NAMEPLATE_W = 152
+NobleHUD._NAMEPLATE_H = 64
+
 NobleHUD._TEAMMATE_ITEM_W = 512
 NobleHUD._TEAMMATE_ITEM_H = 48
 
@@ -5274,8 +5277,10 @@ function NobleHUD:UpdateHUD(t,dt)
 		if player_armor_max > 0 then 
 			local player_armor = player_damage:get_real_armor()
 			if player_armor == 0 then 
+				self:PlayShieldSound("shield_low",false)
 				self:PlayShieldSound("shield_empty")
 			elseif (player_armor / player_armor_max) <= NobleHUD:GetLowShieldThreshold() then 
+				self:PlayShieldSound("shield_empty",false)
 				self:PlayShieldSound("shield_low")
 			else
 				self:PlayShieldSound("shield_low",false)
@@ -6273,6 +6278,7 @@ function NobleHUD:OnGameStateChanged(before_state,state)
 		hud:hide()
 	elseif GameStateFilters.waiting_for_players[state] or GameStateFilters.waiting_for_respawn[state] or GameStateFilters.waiting_for_spawn_allowed[state] then 
 		hud:hide()
+		self:PlayShieldSound("stop")
 	elseif state == "ingame_access_camera" then 
 		hud:hide()
 	elseif GameStateFilters.any_ingame[state] then 
@@ -6634,7 +6640,15 @@ function NobleHUD:PlayAnnouncerSound(name)
 	end
 end
 
-function NobleHUD:CheckShieldSoundVolume()
+function NobleHUD:CheckShieldSoundVolume(event,value)
+	local source = self._shield_sound_source
+	if not (source and not source:is_closed()) then
+--		self:log("ERROR! Sound source is nonexistent",{color=Color.red})
+		return
+	end
+	if source._buffer == self._cache.sounds[tostring(event)] then 
+		source:set_volume(value)
+	end
 end
 
 function NobleHUD:PlayShieldSound(event,enabled)
@@ -6649,43 +6663,47 @@ function NobleHUD:PlayShieldSound(event,enabled)
 	if event == "stop" then 
 		source:stop()
 		return
-	elseif event == "shield_empty" then 
-		if not self:IsShieldEmptySoundEnabled() then 
-			source:stop()
-			return
+	elseif enabled then 
+		if event == "shield_empty" then 
+			if not self:IsShieldEmptySoundEnabled() then	
+--				source:stop()
+				return
+			end
+			should_loop = true
+			volume = self:GetShieldEmptyVolume()
+		elseif event == "shield_low" then 
+			if not self:IsShieldLowSoundEnabled() then 
+--				source:stop()
+				return
+			end
+			should_loop = true
+			volume = self:GetShieldLowVolume()
+		elseif event == "shield_charge" then 
+			if not self:IsShieldChargeSoundEnabled() then 
+--				source:stop()
+				return
+			end
+			should_loop = false
+			volume = self:GetShieldChargeVolume()
 		end
-		should_loop = true
-		volume = self:GetShieldEmptyVolume()
-	elseif event == "shield_low" then 
-		if not self:IsShieldLowSoundEnabled() then 
-			source:stop()
-			return
-		end
-		should_loop = true
-		volume = self:GetShieldLowVolume()
-	elseif event == "shield_charge" then 
-		if not self:IsShieldChargeSoundEnabled() then 
-			source:stop()
-			return
-		end
-		should_loop = false
-		volume = self:GetShieldChargeVolume()
 	end	
 	local buffer = self._cache.sounds[tostring(event)]
 	if not buffer then 
 --		self:log("ERROR! PlayShieldSound(" .. tostring(event) .. "): Specified audio buffer is invalid ",{color=Color.red})
 		return
 	end
-	if enabled and source._buffer ~= buffer then 
-		source:stop()
-		source:set_buffer(buffer)
-		source:set_volume(volume)
-		source:set_looping(should_loop)
+	if source._buffer ~= buffer then 
+		if enabled then 
+			source:stop()
+			source:set_buffer(buffer)
+			source:set_volume(volume)
+			source:set_looping(should_loop)
+			source:play()
+		end
 	elseif not enabled then
 		source:stop()
 		return
-	end
-	if source:get_state() ~= 1 then 
+	elseif source:get_state() ~= 1 then 
 		source:play()
 	end
 end
@@ -8628,7 +8646,7 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 	local callsign_box = panel:panel({
 		name = "callsign_box",
 		layer = 2,
-		w = 75
+		w = 56
 	})
 	local character_bitmap = callsign_box:bitmap({
 		name = "character_bitmap",
@@ -8640,11 +8658,27 @@ function NobleHUD:_create_teammate_panel(teammates_panel,i)
 		h = 24,
 		y = (teammate_h - (24)) * 0.5
 	})
+	local c_ratio = callsign_box:w() / self._NAMEPLATE_W
+	local character_bitmap_bg = callsign_box:bitmap({
+		name = "character_bitmap_bg",
+		layer = 0,
+		rotation = 360,
+		alpha = 0.25,
+		texture = "guis/textures/teammate_nameplate_fill",
+		color = self.color_data.hud_weapon_color,
+		w = self._NAMEPLATE_W * c_ratio,
+		h = self._NAMEPLATE_H * c_ratio,
+		y = (teammate_h - (24)) * 0.5,
+		visible = false
+	})
+	
 	local player_name = callsign_box:text({
 		name = "player_name",
 		layer = 1,
 		text = "",
+		y = 1,
 		align = "center",
+		valign = "center",
 		vertical = "center",
 		color = Color.white,
 		font_size = tweak_data.hud_players.name_size,
@@ -8929,13 +8963,24 @@ function NobleHUD:_set_teammate_color(i,id)
 	if (panel and alive(panel)) then
 		local color = tweak_data.chat_colors[id or 5]
 		local color_2 = (color * 0.8):with_alpha(1)
-		local bitmap = panel:child("callsign_box"):child("character_bitmap")
+		local callsign_box = panel:child("callsign_box")
+		local bitmap_bg = callsign_box:child("character_bitmap_bg")
+		local bitmap = callsign_box:child("character_bitmap")
 		bitmap:set_image("guis/textures/teammate_nameplate")
-		bitmap:set_size(100 * 0.75,32 * 0.75)
-		bitmap:set_y((panel:h() - bitmap:h()) * 0.5)
+		local c_ratio = callsign_box:w() / self._NAMEPLATE_W
+		bitmap:set_size(self._NAMEPLATE_W * c_ratio,self._NAMEPLATE_H * c_ratio)
+		bitmap_bg:set_size(self._NAMEPLATE_W * c_ratio,self._NAMEPLATE_H * c_ratio)
+		local bitmap_x = (callsign_box:w() - bitmap:w()) / 2
+		local bitmap_y = (panel:h() - bitmap:h()) / 2		
+		bitmap:set_x(bitmap_x)
+		bitmap:set_y(bitmap_y)
+		bitmap_bg:set_x(bitmap_x)
+		bitmap_bg:set_y(bitmap_y)
 		if color then 
-			panel:child("callsign_box"):child("player_name"):set_color(color)
-			bitmap:set_color(color) --optional
+			bitmap_bg:show()
+			bitmap_bg:set_color(color)
+--			callsign_box:child("player_name"):set_color(color)
+--			bitmap:set_color(color) --optional
 		end
 		
 		local player_box = NobleHUD._tabscreen:child("scoreboard"):child("player_box_" .. tostring(i))

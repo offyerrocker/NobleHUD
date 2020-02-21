@@ -84,6 +84,7 @@ Hooks:PostHook(HUDTeammate,"remove_panel","noblehud_teammate_remove_panel",funct
 	panel:child("vitals_subpanel"):hide()
 	panel:child("grenade_subpanel"):hide()
 	local callsign_box = panel:child("callsign_box")
+	callsign_box:child("character_bitmap_bg"):hide()
 	callsign_box:child("character_bitmap"):set_image("guis/textures/teammate_nameplate_vacant")
 	callsign_box:child("player_name"):set_text("")
 	NobleHUD:_sort_teammates()

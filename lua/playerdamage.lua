@@ -83,79 +83,16 @@ Hooks:PostHook(PlayerDamage,"_on_damage_event","noblehud_on_player_damage_event"
 	local max_armor = self:_max_armor()
 	if (self:get_real_armor() < max_armor) and (max_armor > 0) then 
 		NobleHUD:PlayShieldSound("shield_charge",false)
-	--[[
-		local shield_source = NobleHUD._shield_sound_source
-		if shield_source and shield_source:is_active() and (shield_source._buffer == NobleHUD._cache.sounds.shield_charge) then		
-			shield_source:stop()
-		end
-		--]]
 		--interrupt shield charging sound if hit
 	end
-	
-	
-	--[[
-	if self:_max_armor() > 0 then 
-		local armor = self:get_real_armor()
-		if armor <= 0 then 
-			OffyLib:c_log("Armor broken!")
-			local player_armor_max = player_damage:_max_armor()
-			if player_armor_max > 0 and self._shield_sound_source and self._shield_sound_source:is_active() then
-				local player_armor = player_damage:get_real_armor()
-				local shield_source = self._shield_sound_source
-				if self:IsShieldEmptySoundEnabled() and (player_armor == 0) then
-					if shield_source._buffer ~= self._cache.sounds.shield_empty then 
-						shield_source:stop()
-						shield_source:set_buffer(self._cache.sounds.shield_empty)
-						shield_source:set_looping(true)
-					end
-					if shield_source:get_state() ~= 1 then 
-						shield_source:play()
-					end
-				elseif self:IsShieldLowSoundEnabled() and ((player_armor / player_armor_max) <= NobleHUD:GetLowShieldThreshold()) then
-					if shield_source._buffer ~= self._cache.sounds.shield_low then 
-						shield_source:stop()
-						shield_source:set_buffer(self._cache.sounds.shield_low)
-						shield_source:set_looping(true)
-					end
-					if shield_source:get_state() ~= 1 then 
-						shield_source:play()
-					end
-				else
-					if shield_source:get_state() == 1 then 
-						shield_source:stop()
-					end
-				end
-			end
-			
-		elseif armor <= NobleHUD:GetLowShieldThreshold() then 
-			OffyLib:c_log("Armor low!")
-		end
-	end	
---]]
 end)
 
 Hooks:PreHook(PlayerDamage,"_regenerate_armor","noblehud_player_regen_armor",function(self,no_sound)
 	local max_armor = self:_max_armor()
 	if (self:get_real_armor() < max_armor) and (max_armor > 0) then 
-		
 		if not no_sound then 
 			if NobleHUD:IsShieldChargeSoundEnabled() then
 				NobleHUD:PlayShieldSound("shield_charge")
-				--[[
-				local shield_source = NobleHUD._shield_sound_source
-				
-				if shield_source and not shield_source:is_closed() then 
-					shield_source:stop()
-					if shield_source._buffer ~= NobleHUD._cache.sounds.shield_charge then 
-						shield_source:set_looping(false)
-						shield_source:set_buffer(NobleHUD._cache.sounds.shield_charge)
-						shield_source:set_volume(NobleHUD:GetShieldChargeVolume())
-					end
-					if shield_source:get_state() ~= 1 then 
-						shield_source:play()
-					end
-				end
-				--]]
 			end
 		end
 	end

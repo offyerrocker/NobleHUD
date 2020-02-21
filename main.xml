@@ -55,6 +55,7 @@
 		<texture path="guis/textures/grenadelauncher_crosshair_2"/>
 		<texture path="guis/textures/teammate_nameplate_vacant"/>
 		<texture path="guis/textures/teammate_nameplate"/>
+		<texture path="guis/textures/teammate_nameplate_fill"/>
 		<texture path="guis/textures/score_banner_large"/>
 		<texture path="guis/textures/lives_icon"/>
 <!--		<texture path="guis/textures/damage_overlay_1"/>
