@@ -1,11 +1,57 @@
 --[[ 
 
+--changes from v0.07b:
+
+- Added Buffs Tracker, with (many) assorted options, modified and reworked from KineticHUD
+	- Internally, most buff-detection-related code has been moved to a separate folder for organization, to make it easier to later separate the buff tracker into a standalone mod
+- Added animated Interaction Bar and reorganized code to be more consistent
+- Added Motion Tracker panel scaling, alignment, and placement options
+- Added Health/Shields panel scaling option
+- Added Stamina panel placement options
+- Added Deployables panel alignment/placement options
+- Added Teammates panel alignment/placement options
+- Revamped Teammates panel nameplate
+	- Nameplate now takes up less extra space without being any harder to read
+	- Fixed nameplate name text being vertically off-center by one entire pixel
+	- Nameplate name text is now colored white to better match Halo Reach's style
+	- Nameplate outline is now colored blue to better match Halo Reach's style
+	- Nameplate now contains a translucent fill, which is colored according to the peer slot (green/blue/red/yellow) instead
+- Added volume slider bars for shield sounds (shield SFX for recharge, empty, and low)
+- Streamlined code for shield sounds, and fixed certain situations where sounds would not play
+- Grunt Birthday Party now attempts to spawn confetti particles if they are loaded; if not, flying dollar/money bundle particles are used instead
+- Added a hoxhud chat easter egg ;)
+- Added a overwatch chat easter egg ;)
+- Changed birthday chat easter egg to have better detection
+- Fixed scoreboard occasionally having duplicate names or profile pictures. Blame OVK
+- Fixed having multiple grenade launchers equipped potentially causing one grenade launcher crosshair to be invisible
+- Fixed Motion Tracker blips being off-center, including the "out of range" blips
+- Disabled Motion Tracker's radar range setting and locked it to 25 because why would you turn the range down anyway
+- "Friendly" enemies, such as the gangsters guarding the trucks on Aftershock, are detected as friendlies, and will trigger the "betrayal" voiceline, as well as a points penalty.
+- Minor text fixes
+
+- Known issues:
+	- Panel information for respective panels may be incorrect after changing scaling/placement/alignment, but will refresh eventually after proper events
+	- Teammates' generated callsigns may not appear properly in waypoints (the ones above teammates' heads) when joining as a drop-in client, and will instead display the teammates' entire names. This is at the top of my priority list for next update.
+	- Some buffs are not yet implemented; I am working on implementing the remaining buffs. 
+	- Bots currently have no player icon in the scoreboard
+	- Teammates' down counters still do not reset properly
+	- Long text for deployable amounts, such as "14|6" for fully upgraded Trip Mines/Shaped Charges may be too large to fit in the Deployables panel
+	- Misc. interaction circle (the one that appears when bots are reviving you) is currently disabled and does not display
+	- Berserker Aced buff may sometimes appear when you are at low health, even if you do not have Berserker Aced.
+
+
 
 ***** TODO: *****
-	Berkserker aced seems always active. that's bad. 
+	Berkserker aced seems always active, particularly in swan song. that's bad. 
+	
+	* Reorganize popup animate code to allow damage popups to reuse damage animations
+	* Add damage popups via other hooks? From CopDamage?
+	* Cumulative damage 
+		* For athena, use existing popup but reset text, and position/animation progress
+	 * Medals should directly reference unit names; for example, "Your driving assisted $PLAYERNAME"
+		* Requires a bit of a reorganization for medal code
 	
 	Notes:
-		 * Medals should directly reference unit names; for example, "Your driving assisted $PLAYERNAME"
 		
 		* "Speaking" icon for teammates and self
 		* Sync data:
@@ -142,7 +188,8 @@
 			* manually selectable 
 			* customizable alpha (master)
 		* Assault timer? Nah Dom's got it covered in BAI
-		* Killfeed/JoyScore
+		* Killfeed
+			* Integration with JoyScoreCounter
 			* Record medals with score
 			* Show weapon icon (PLAYERNAME [WEAPON_ICON] ENEMYNAME) ?
 		* More Medals:
@@ -5140,6 +5187,8 @@ function NobleHUD:OnLoaded()
 	self:LoadXAudioSounds()
 	self._cache.loaded = true
 
+--	managers.player:register_message(Message.OnWeaponFired,"noblehud_recoil_fire",callback(NobleHUD,NobleHUD,"_add_weapon_bloom",0.5))
+
 	self:set_weapon_info()
 	
 	local player = managers.player:local_player()
@@ -5194,6 +5243,10 @@ function NobleHUD:OnLoaded()
 			managers.hud:script("guis/mask_off_hud").panel:child("mask_on_text"):set_text("")
 		end
 	end
+end
+
+function NobleHUD:IsLoaded() 
+	return self._cache.loaded
 end
 
 function NobleHUD:UpdateHUD(t,dt)
@@ -9237,8 +9290,6 @@ function NobleHUD:GetPeerIdFromPanelId(panel_id)
 	end
 end
 
---for id, data in pairs(managers.criminals._characters or {}) do if data.taken and data.peer_id then logall(data) Log("-") logall(data.data) Log("---") end end
-
 function NobleHUD:GetPanelIdFromPeerId(peer_id)
 	if not peer_id or peer_id == managers.network:session():local_peer():id() then
 		return HUDManager.PLAYER_PANEL
@@ -9936,6 +9987,40 @@ function NobleHUD:animate_popup_queue(o,t,dt,start_t,cb,duration,dest_y,rate)
 	end
 	o:set_y(oy + (10 * dt * (dest_y - oy) / rate))
 end
+function NobleHUD:animate_popup_damage_bluespider(o,t,dt,start_t,cb,duration,unit,fadeout_duration) 
+--temp
+	if alive(unit) then 
+		if t - start_t > duration then 
+			if t - start_t > duration + fadeout_duration then 		
+				return true
+			end
+			local a_ratio = ((t - start_t) - duration) / fadeout_duration
+			o:set_alpha(1 - a_ratio)
+		else
+			o:set_alpha(o:alpha() + (dt * duration * 2))	
+		end
+		local viewport_cam = managers.viewport:get_current_camera()
+		local unit_pos = unit:position()
+		local unit_screen_pos = unit_pos and NobleHUD._ws:world_to_screen(viewport_cam,unit_pos)
+		if unit_screen_pos then
+	
+			local aim = viewport_cam:rotation():yaw()
+			local my_pos = viewport_cam:position()	
+			local angle_from = (180 + aim - NobleHUD.angle_from(unit_pos.x,unit_pos.y,my_pos.x,my_pos.y)) % 360
+			
+			if (math.abs(90 - angle_from) > 90) or o:parent():outside(unit_screen_pos.x,unit_screen_pos.y) then 
+				o:set_x(-1000)
+				o:set_y(-1000)
+			else
+				o:set_x(unit_screen_pos.x)
+				o:set_y(unit_screen_pos.y)
+			end
+			
+		end
+	else
+		return true
+	end
+end
 
 --below this line, score functions are deprecated
 
@@ -10006,9 +10091,9 @@ function NobleHUD:_add_score(score)
 end
 
 function NobleHUD:set_score_label()
-	if not JoyScoreCounter then 
+--	if not JoyScoreCounter then 
 		self._score_panel:child("score_label"):set_text(NobleHUD.make_nice_number(self.score_session))
-	end
+--	end
 end
 
 function NobleHUD:create_score_popup(score,unit,unitname)
@@ -13661,11 +13746,17 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 
 
 --SCORE
-	
-
 	MenuCallbackHandler.callback_noblehud_set_score_display_mode = function(self,item)
 		NobleHUD.settings.score_display_mode = tonumber(item:value())
 		NobleHUD:SaveSettings()
+		
+		if NobleHUD:IsLoaded() then 
+			if NobleHUD:GetScoreDisplayMode() == 1 then
+				NobleHUD:SetScoreLabel(NobleHUD.make_nice_number(NobleHUD._cache.score_session))
+			elseif NobleHUD:GetScoreDisplayMode() == 2 then 
+				NobleHUD:SetScoreLabel(managers.experience:cash_string(managers.money:get_potential_payout_from_current_stage()))
+			end
+		end
 	end		
 	MenuCallbackHandler.callback_noblehud_set_popups_enabled = function(self,item)
 		NobleHUD.settings.popups_enabled = item:value() == "on"
