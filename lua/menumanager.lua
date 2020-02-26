@@ -2,15 +2,11 @@
 
 
 ***** TODO: *****
+	Berkserker aced seems always active. that's bad. 
+	
 	Notes:
-	
-	
-	* Track buffs even if disabled (by user pref), but do not show panel if not extant?
-	* Test Winters
-	
-	* Background for buffs so that they're visible against a white background
-	* revive_damage_reduction is created in playermanager:set_property but only name and value are passed, not timer
-	
+		 * Medals should directly reference unit names; for example, "Your driving assisted $PLAYERNAME"
+		
 		* "Speaking" icon for teammates and self
 		* Sync data:
 			send assault phase
@@ -27,6 +23,10 @@
 		* Users cannot select an alternative crosshair for rocket launchers since they are technically grenade launchers
 		
 	%%% Buffs:
+			
+		* Track buffs even if disabled (by user pref), but do not show panel if not extant?
+		
+		* Background for buffs so that they're visible against a white background
 		
 		* Reorganize buffs tweak table
 		* Add default setting for each buff
@@ -40,6 +40,8 @@
 		* Stockholm Syndrome Aced Charge
 		* Fully Loaded
 		
+		Captain Winters buff should flash red white and blue cause MURICA
+		
 			Perk Decks
 			
 		* Anarchist Lust for Life (active regen)
@@ -50,10 +52,16 @@
 		* Downed (check playerbleedout.lua state)
 		
 		
+		* revive_damage_reduction is created in playermanager:set_property but only name and value are passed, not timer
+		
 			
 	&&& HIGH PRIORITY: &&&
+		- BUG: Teammates panel and tabscreen are not correct for drop-ins
+		- Bots have no icon
+	
 	
 		* HUDTeammate:set_custom_radial() (swansong and what have you for teammates)
+		
 		* Add menu button to set teamname
 		* Add menu button to set teamcolor (through beardlib)
 		
@@ -63,12 +71,9 @@
 		* BAI sync data compatibility?
 
 		%% BUGS:
-			- Detect teammate dead through set condition mugshot_custody
-				* Set nickname color to red
-				* Set nickname text to "X"
+			
 			- Floating ammo panel has incorrect width after switching weapons
 			- Shield noises (low/depleted) may persist during loading
-			- Bot teammates in tabscreen occasionally override one another
 			- Trip Mines have their text cut off (14 | 6 is way too long in eurostile_ext)
 				* resize font size based on length? 
 				* change label position? 
@@ -88,8 +93,17 @@
 			* Mod options
 		
 	&& LOW PRIORITY FEATURES: &&
-		* [ASSET] Created flamethrower reticle looks like shit, current one is extremely unoptimized
+
+		* Detect teammate dead through set condition mugshot_custody
+			* Set nickname color to red
+			* Set nickname text to "X"
 		* Damage numbers popups
+				
+		* Weapontype-specific bloom decay
+		* Blinky "No ammo" alert
+		* Voice command radial
+		
+		* [ASSET] Created flamethrower reticle looks like shit, current one is extremely unoptimized
 		* Show other things, such as equipment, on radar? check slotmask 
 		* Adjust overshield color to be more green (check MCC screenshots)
 		* Flash mission name at mission start? (See mission/submission name in MCC screenshots)
@@ -119,9 +133,6 @@
 		* Animate function for text that randomly hides individual characters (similar to auntie dot's fadeout function)
 			* Given list of integers representing non-space character positions, foreach hide animate(text:set_color_range(pos,pos,color:with_alpha(a))) after random(n) delay
 			* Mainly for use in Objectives panel
-		* Weapontype-specific bloom decay
-		* Blinky "No ammo" alert
-		* Voice command radial
 		* Mod Options:
 			* Grenade/deployable area swap
 		* Suspicion panel?
@@ -4178,6 +4189,7 @@ function NobleHUD:make_callsign_name(raw_name,min_len,max_len,fallback_character
 	end
 	
 	result = string.upper(result)
+	self:log("Made nickname: [" .. tostring(raw_name) .. "] --> [" .. tostring(result) .. "]") --!
 	return result
 end
 
@@ -9150,8 +9162,8 @@ function NobleHUD:_add_teammate_equipment(i,data)
 			local eq_size = 24
 			local new_equipment = equipment_subpanel:panel({
 				name = equipment_name,
-				w = eq_size * 1.5,
-				h = eq_size *  1.5,
+				w = eq_size,
+				h = eq_size,
 				alpha = 0 --due to animate
 			})
 			local icon = new_equipment:bitmap({
@@ -11039,16 +11051,19 @@ function NobleHUD:update_characters()
 	end
 end
 
-function NobleHUD:_set_scoreboard_character(id,peer_id,character_id)
+function NobleHUD:_set_scoreboard_character(id,peer_id,character_id,player_name)
 	local player_box = self._tabscreen:child("scoreboard"):child("player_box_" .. tostring(id))
 --	self:log("NobleHUD:_set_scoreboard_character(" .. NobleHUD.table_concat({id=id,peer_id=peer_id,character_id=character_id},"|","=",true) ..")")
 	
 	
 	if alive(player_box) then 
 		local icon_box = player_box:child("icon_box")
-		local mask_id = tweak_data.blackmarket.masks.character_locked[managers.criminals.convert_old_to_new_character_workname(character_id)]
-		local mask_icon = tweak_data.blackmarket:get_mask_icon(mask_id)
+		local mask_id,mask_icon
 		
+		if character_id then 
+			mask_id = tweak_data.blackmarket.masks.character_locked[managers.criminals.convert_old_to_new_character_workname(character_id)]
+			mask_icon = tweak_data.blackmarket:get_mask_icon(mask_id)
+		end
 		local color_1 = tweak_data.chat_colors[5]
 		local color_2 = (color_1 * 0.8):with_alpha(1)
 		
@@ -11077,6 +11092,8 @@ function NobleHUD:_set_scoreboard_character(id,peer_id,character_id)
 			end
 			if character_id then 
 				player_box:child("name_box"):child("name_label"):set_text(managers.localization:text("menu_" .. character_id))
+			elseif player_name then 
+				player_box:child("name_box"):child("name_label"):set_text(player_name)				
 			end
 		end
 		icon_box:child("icon_bg"):set_color(color_1)
@@ -12457,7 +12474,8 @@ function NobleHUD:AddMedal(category,rank) --from name
 	end
 end
 
-function NobleHUD:AddMedalFromData(data,category) --direct reference to table passed here
+function NobleHUD:AddMedalFromData(data,category)
+		--direct reference to table passed here
 	local killfeed = self._killfeed_panel
 	if not (data and data.icon_xy) then 
 --		self:log("ERROR: bad data to AddMedalFromData(" .. tostring(data) .. ")")
@@ -12646,9 +12664,6 @@ function NobleHUD:ClearChatNotification()
 	self:DoChatNotification(false)
 	self:RemoveDelayedCallback("autohide_chat")
 end
-
-
---things below this line aren't implemented yet
 
 
 --		WAITING
@@ -13012,7 +13027,7 @@ function NobleHUD:CheckBuff(id) --again mostly used for menu callbacks
 end
 
 
---		HELPER
+--		HELPER (not implemented)
 
 function NobleHUD:_create_helper(hud) --auntie dot avatar and subtitles
 	local helper_panel = hud:panel({

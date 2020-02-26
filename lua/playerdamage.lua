@@ -130,27 +130,29 @@ function PlayerDamage:_regenerate_armor(no_sound)
 end
 --]]
 
-local orig_dmg_m = PlayerDamage.damage_melee
-function PlayerDamage:damage_melee(attack_data,...)
-	local bleed_out = self._bleed_out
-	local result = {orig_dmg_m(self,attack_data,...)}
+if not NobleHUD:IsSafeMode() then 
+	local orig_dmg_m = PlayerDamage.damage_melee
+	function PlayerDamage:damage_melee(attack_data,...)
+		local bleed_out = self._bleed_out
+		local result = {orig_dmg_m(self,attack_data,...)}
 
-	if not bleed_out and self._bleed_out then 
-		if attack_data.attacker_unit then 
-			NobleHUD:SetKiller(attack_data.attacker_unit)
+		if not bleed_out and self._bleed_out then 
+			if attack_data.attacker_unit then 
+				NobleHUD:SetKiller(attack_data.attacker_unit)
+			end
 		end
+		return unpack(result)
 	end
-	return unpack(result)
-end
 
-local orig_dmg_b = PlayerDamage.damage_bullet
-function PlayerDamage:damage_bullet(attack_data,...)
-	local bleed_out = self._bleed_out
-	local result = {orig_dmg_b(self,attack_data,...)}
-	if not bleed_out and self._bleed_out then 
-		if attack_data.attacker_unit then 
-			NobleHUD:SetKiller(attack_data.attacker_unit)
+	local orig_dmg_b = PlayerDamage.damage_bullet
+	function PlayerDamage:damage_bullet(attack_data,...)
+		local bleed_out = self._bleed_out
+		local result = {orig_dmg_b(self,attack_data,...)}
+		if not bleed_out and self._bleed_out then 
+			if attack_data.attacker_unit then 
+				NobleHUD:SetKiller(attack_data.attacker_unit)
+			end
 		end
+		return unpack(result)
 	end
-	return unpack(result)
 end

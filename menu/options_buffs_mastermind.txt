@@ -62,7 +62,7 @@
 			"value" : "stockholm_ready"
 		},
 		{
-			"type" : "toggle",
+			"type" : "DISABLED_toggle",
 			"id" : "noblehud_set_buffs_mastermind_partners_in_crime_enabled",
 			"title" : "noblehud_set_buffs_mastermind_partners_in_crime_enabled_title",
 			"description" : "noblehud_set_buffs_mastermind_partners_in_crime_enabled_desc",
