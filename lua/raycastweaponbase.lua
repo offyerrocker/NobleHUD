@@ -36,7 +36,7 @@ function RaycastWeaponBase:fire(...)
 								color = color,
 								visible = true
 							})
-							NobleHUD:animate(damage_popup,"animate_popup_damage_bluespider",function(o) o:parent():remove(o) end,nil,2,body,1)
+							NobleHUD:animate(damage_popup,"animate_popup_damage_bluespider",function(o) o:parent():remove(o) end,2,body,1)
 						end
 					end
 					

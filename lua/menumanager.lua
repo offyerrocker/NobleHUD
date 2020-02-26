@@ -6283,17 +6283,17 @@ function NobleHUD:UpdateHUD(t,dt)
 					local popup_animate_result
 					if style == "animate_popup_queue" then 
 						popup_queues = popup_queues + 1
-						popup_animate_result = self[style](self,popup,t,dt,popup_start_t,nil,popup_duration,self._popup_end_y + (popup_queues * popup_height),3)
+						popup_animate_result = self[style](self,popup,t,dt,popup_start_t,popup_duration,self._popup_end_y + (popup_queues * popup_height),3)
 						if popup_animate_result then
 							fadeout_popup(popup,0.66,-1)
 						end
 					elseif style == "animate_popup_bluespider" then
-						popup_animate_result = self[style](self,popup,t,dt,popup_start_t,nil,popup_duration,popup_unit,0.15)
+						popup_animate_result = self[style](self,popup,t,dt,popup_start_t,popup_duration,popup_unit,0.15)
 						if popup_animate_result then 
 							popup:parent():remove(popup)
 						end
 					elseif style == "animate_popup_athena" then
-						popup_animate_result = self[style](self,popup,t,dt,popup_start_t,nil,popup_duration,popup_unit,-30,0.5)
+						popup_animate_result = self[style](self,popup,t,dt,popup_start_t,popup_duration,popup_unit,-30,0.5)
 						if popup_animate_result then 
 							popup:parent():remove(popup)
 						end
@@ -9909,7 +9909,7 @@ function NobleHUD:_set_killcount(slot,kills)
 	end
 end
 
-function NobleHUD:animate_popup_bluespider(o,t,dt,start_t,cb,duration,unit,fadeout_duration) 
+function NobleHUD:animate_popup_bluespider(o,t,dt,start_t,duration,unit,fadeout_duration) 
 	if alive(unit) then 
 		if t - start_t > duration then 
 			if t - start_t > duration + fadeout_duration then
@@ -9943,7 +9943,7 @@ function NobleHUD:animate_popup_bluespider(o,t,dt,start_t,cb,duration,unit,fadeo
 		return true
 	end
 end
-function NobleHUD:animate_popup_athena(o,t,dt,start_t,cb,duration,unit,distance,fadeout_duration)
+function NobleHUD:animate_popup_athena(o,t,dt,start_t,duration,unit,distance,fadeout_duration)
 	if alive(unit) then 
 		if t - start_t > duration then 
 			if t - start_t > duration + fadeout_duration then 		
@@ -9979,7 +9979,7 @@ function NobleHUD:animate_popup_athena(o,t,dt,start_t,cb,duration,unit,distance,
 	
 --	o:set_y(o:y() + (rate * dt)) --distance is per second
 end
-function NobleHUD:animate_popup_queue(o,t,dt,start_t,cb,duration,dest_y,rate)
+function NobleHUD:animate_popup_queue(o,t,dt,start_t,duration,dest_y,rate)
 	local oy = o:y()
 	o:set_alpha(o:alpha() + (dt * rate)) --will always become fully visible in 1/rate seconds
 	if t - start_t > duration then 
@@ -9987,7 +9987,7 @@ function NobleHUD:animate_popup_queue(o,t,dt,start_t,cb,duration,dest_y,rate)
 	end
 	o:set_y(oy + (10 * dt * (dest_y - oy) / rate))
 end
-function NobleHUD:animate_popup_damage_bluespider(o,t,dt,start_t,cb,duration,unit,fadeout_duration) 
+function NobleHUD:animate_popup_damage_bluespider(o,t,dt,start_t,duration,unit,fadeout_duration) 
 --temp
 	if alive(unit) then 
 		if t - start_t > duration then 
