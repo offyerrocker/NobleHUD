@@ -5186,6 +5186,8 @@ end
 function NobleHUD:OnLoaded()
 	self:LoadXAudioSounds()
 	self._cache.loaded = true
+	
+	CopDamage.register_listener("noblehud_on_cop_damage",{"on_damage"},callback(NobleHUD,NobleHUD,"CreateDamagePopup"))
 
 --	managers.player:register_message(Message.OnWeaponFired,"noblehud_recoil_fire",callback(NobleHUD,NobleHUD,"_add_weapon_bloom",0.5))
 
@@ -5326,7 +5328,12 @@ function NobleHUD:UpdateHUD(t,dt)
 		for object_id,data in pairs(self._animate_targets) do 
 			local result
 			if type(data and data.func) == "string" then 
-				result = NobleHUD[data.func](NobleHUD,data.object,t,dt,data.start_t,unpack(data.args))
+				if NobleHUD[data.func] then 					
+					result = NobleHUD[data.func](NobleHUD,data.object,t,dt,data.start_t,unpack(data.args))
+				else
+					self:log("ERROR: Unknown animate function: NobleHUD:" .. tostring(data.func) .. "()")
+					self._animate_targets[object_id] = nil
+				end
 			elseif type(data.func) == "function" then
 				result = data.func(data.object,t,dt,data.start_t,unpack(data.args))
 			else
@@ -9875,6 +9882,92 @@ function NobleHUD:ScorePopupShowsUnitName()
 	return true
 end
 
+function NobleHUD:CreateDamagePopup(damage_info)
+	if not damage_info then
+		return
+	end
+	local attacker_unit = damage_info and damage_info.attacker_unit
+
+	if alive(attacker_unit) and attacker_unit:base() and attacker_unit:base().thrower_unit then
+		attacker_unit = attacker_unit:base():thrower_unit()
+	end
+	if attacker_unit == managers.player:local_player() then 
+		local dmg_style 
+		local cumulative = true
+		
+		damage_info = damage_info or {}
+		NobleHUD._patootie = damage_info
+		local col_ray = damage_info.col_ray or {}
+		local result = damage_info.result or {}
+		local unit = col_ray.unit
+		local damage = damage_info.damage
+		local name = damage_info.name
+		local body = col_ray.body
+		local distance = col_ray.distance
+		local hit_position = col_ray.hit_position or damage_info.pos
+		local headshot = damage_info.headshot
+		local variant = damage_info.variant
+		local killshot = result.type == "death"
+		
+		local screen_pos = NobleHUD._ws:world_to_screen(managers.viewport:get_current_camera(),(body and body:position()) or hit_position or (unit and unit:position()))
+		local color = Color.white
+		local layer = 1
+		local font_size = 24
+		local from_fire = damage_info.is_fire_dot_damage or damage_info.fire_dot_data 
+		
+		--dot damage is when unit is on fire
+		--fire_dot_data is when unit is in fire
+		
+		--different colors for different variants
+		--color flashing
+		--font size change animate
+		--movement (borderlands type parabolic arc, or simple drift)
+		
+		if killshot then 
+			color = Color.red
+			layer = 3
+			font_size = 32
+		elseif headshot then 
+			color = Color.yellow
+			font_size = 28
+		elseif from_fire then
+			color = Color(0.6,0.2,0)
+			font_size = 28
+		end
+		
+		local popup_name 
+		
+		popup_name = "damage_popup_" .. tostring(unit or from_fire and "fire")
+		
+		local damage_popup = unit and NobleHUD._popups_panel:child(popup_name)
+		if cumulative and damage_popup then 
+			damage_popup:set_position(screen_pos.x,screen_pos.y)
+			damage_popup:set_alpha(1)
+			damage_popup:set_color(color)
+			damage_popup:set_layer(layer)
+			damage_popup:set_font_size(font_size)
+			damage_popup:set_text(string.format("%d",(tonumber(damage_popup:text()) or 0) + damage))
+			--todo save damaged unit to table, reference table instead of rounded text
+		else
+			damage_popup = NobleHUD._popups_panel:text({
+				name = popup_name,
+				text = string.format("%d",damage),
+				font = "fonts/font_medium_shadow_mf" or "fonts/font_large_mf", --fonts/font_futura --fonts/font_small_shadow_mf
+				font_size = font_size,
+				layer = layer,
+				x = screen_pos.x,
+				y = screen_pos.y,
+				color = color,
+				visible = true
+			})
+		end
+		
+		local attached_unit = body or unit
+		
+		NobleHUD:animate(damage_popup,"animate_popup_damage_body",function(o) o:parent():remove(o) end,2,1,attached_unit,hit_position)
+	end
+end
+
 function NobleHUD:_set_mission_timer(text) --hud only
 	self._score_panel:child("mission_timer"):set_text(tostring(text))
 end
@@ -9987,9 +10080,13 @@ function NobleHUD:animate_popup_queue(o,t,dt,start_t,duration,dest_y,rate)
 	end
 	o:set_y(oy + (10 * dt * (dest_y - oy) / rate))
 end
-function NobleHUD:animate_popup_damage_bluespider(o,t,dt,start_t,duration,unit,fadeout_duration) 
+
+function NobleHUD:animate_popup_damage_body(o,t,dt,start_t,duration,fadeout_duration,unit,position) 
 --temp
 	if alive(unit) then 
+		position = unit:position()
+	end
+	if position then 
 		if t - start_t > duration then 
 			if t - start_t > duration + fadeout_duration then 		
 				return true
@@ -10000,13 +10097,12 @@ function NobleHUD:animate_popup_damage_bluespider(o,t,dt,start_t,duration,unit,f
 			o:set_alpha(o:alpha() + (dt * duration * 2))	
 		end
 		local viewport_cam = managers.viewport:get_current_camera()
-		local unit_pos = unit:position()
-		local unit_screen_pos = unit_pos and NobleHUD._ws:world_to_screen(viewport_cam,unit_pos)
+		local unit_screen_pos = position and NobleHUD._ws:world_to_screen(viewport_cam,position)
 		if unit_screen_pos then
 	
 			local aim = viewport_cam:rotation():yaw()
 			local my_pos = viewport_cam:position()	
-			local angle_from = (180 + aim - NobleHUD.angle_from(unit_pos.x,unit_pos.y,my_pos.x,my_pos.y)) % 360
+			local angle_from = (180 + aim - NobleHUD.angle_from(position.x,position.y,my_pos.x,my_pos.y)) % 360
 			
 			if (math.abs(90 - angle_from) > 90) or o:parent():outside(unit_screen_pos.x,unit_screen_pos.y) then 
 				o:set_x(-1000)

@@ -130,7 +130,7 @@ function PlayerDamage:_regenerate_armor(no_sound)
 end
 --]]
 
-if not NobleHUD:IsSafeMode() then 
+--if not NobleHUD:IsSafeMode() then 
 	local orig_dmg_m = PlayerDamage.damage_melee
 	function PlayerDamage:damage_melee(attack_data,...)
 		local bleed_out = self._bleed_out
@@ -155,4 +155,4 @@ if not NobleHUD:IsSafeMode() then
 		end
 		return unpack(result)
 	end
-end
+--end
