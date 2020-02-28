@@ -649,6 +649,26 @@
 	"noblehud_buff_lock_n_load_label" : "Lock N Load x$VALUE",
 	"noblehud_buff_underdog_label" : "Underdog $TIMER",
 	"noblehud_buff_underdog_aced_label" : "Underdog Aced $TIMER",
-	"noblehud_buff_quick_fix_label" : "Quick Fix Aced $TIMER"
+	"noblehud_buff_quick_fix_label" : "Quick Fix Aced $TIMER",
+
+	"noblehud_damage_popup_options_title" : "Damage Number Popups...",
+	"noblehud_damage_popup_options_desc" : "Set Damage Numbers Options",
+	"noblehud_set_damage_popups_enabled_title" : "Enable Damage Number Popups",
+	"noblehud_set_damage_popups_enabled_desc" : "If enabled, Damage Number popups will display when damaging an enemy",
+	"noblehud_set_damage_popups_style_title" : "Popup Style",
+	"noblehud_set_damage_popups_style_desc" : "Set how Damage Number popups will animate",
+	"noblehud_damage_popup_style_body" : "Body Part",
+	"noblehud_damage_popup_style_hit" : "Hit Location",
+	"noblehud_damage_popup_style_vault" : "Vault",
+	"noblehud_set_damage_popups_lifetime_title" : "Popup Lifetime",
+	"noblehud_set_damage_popups_lifetime_desc" : "Set how long Damage Number popups will be fully visible",
+	"noblehud_set_damage_popups_fadeout_title" : "Popup Fadeout",
+	"noblehud_set_damage_popups_fadeout_desc" : "Set how long it takes for Damage Number popups to disappear",
+	"noblehud_set_damage_popups_cumulative_enabled_title" : "Show Cumulative Damage Amount",
+	"noblehud_set_damage_popups_cumulative_enabled_desc" : "Show Total Damage Amounts",
+	"noblehud_set_damage_popups_cumulative_refresh_title" : "Cumulative Damage Refresh Timer",
+	"noblehud_set_damage_popups_cumulative_refresh_desc" : "Maximum time between cumulative damage hits.",
+	"noblehud_set_damage_popups_redundant_title" : "Redundant Popups",
+	"noblehud_set_damage_popups_redundant_desc" : "Create popups for each individual hit. Recommended off if Cumulative is enabled."
 
 }

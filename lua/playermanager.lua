@@ -80,3 +80,7 @@ function PlayerManager:select_next_item()
 	end
 --self:has_category_upgrade("player","second_deployable")
 end
+
+Hooks:PostHook(PlayerManager,"on_killshot","noblehud_on_player_killshot",function(self,killed_unit,variant,headshot,weapon_id)
+	NobleHUD:OnEnemyKilled(nil,headshot,killed_unit,variant,weapon_id)
+end)

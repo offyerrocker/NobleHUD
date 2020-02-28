@@ -1,0 +1,86 @@
+{
+	"menu_id" : "noblehud_damage_popup_options",
+	"parent_menu_id" : "noblehud_options",
+	"title" : "noblehud_damage_popup_options_title",
+	"description" : "noblehud_damage_popup_options_desc",
+	"back_callback" : "noblehud_damage_popup_options_close",
+	"items" : [
+		{
+			"type" : "toggle",
+			"id" : "id_noblehud_set_damage_popups_enabled",
+			"title" : "noblehud_set_damage_popups_enabled_title",
+			"description" : "noblehud_set_damage_popups_enabled_desc",
+			"callback" : "callback_noblehud_set_damage_popups_enabled",
+			"value" : "damage_popups_enabled"
+		},
+		{
+			"type" : "divider",
+			"size" : 4
+		},
+		{
+			"type" : "multiple_choice",
+			"id" : "id_noblehud_set_damage_popups_style",
+			"title" : "noblehud_set_damage_popups_style_title",
+			"description" : "noblehud_set_damage_popups_style_desc",
+			"callback" : "callback_noblehud_set_damage_popups_style",
+			"items" : [
+				"noblehud_damage_popup_style_body",
+				"noblehud_damage_popup_style_hit",
+				"noblehud_damage_popup_style_vault"
+			],
+			"value" : "damage_popups_style"
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_damage_popups_lifetime",
+			"title" : "noblehud_set_damage_popups_lifetime_title",
+			"description" : "noblehud_set_damage_popups_lifetime_desc",
+			"callback" : "callback_noblehud_set_damage_popups_lifetime",
+			"value" : "damage_popups_lifetime",
+			"default_value" : 0.9,
+			"min" : 0,
+			"max" : 10,
+			"step" : 0.25
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_damage_popups_fadeout",
+			"title" : "noblehud_set_damage_popups_fadeout_title",
+			"description" : "noblehud_set_damage_popups_fadeout_desc",
+			"callback" : "callback_noblehud_set_damage_popups_fadeout",
+			"value" : "damage_popups_fadeout",
+			"default_value" : 0.5,
+			"min" : 0,
+			"max" : 5,
+			"step" : 0.25
+		},
+		{
+			"type" : "toggle",
+			"id" : "id_noblehud_set_damage_popups_cumulative_enabled",
+			"title" : "noblehud_set_damage_popups_cumulative_enabled_title",
+			"description" : "noblehud_set_damage_popups_cumulative_enabled_desc",
+			"callback" : "callback_noblehud_set_damage_popups_cumulative_enabled",
+			"value" : "damage_popups_cumulative_enabled"
+		},
+		{
+			"type" : "slider",
+			"id" : "id_noblehud_set_damage_popups_cumulative_refresh",
+			"title" : "noblehud_set_damage_popups_cumulative_refresh_title",
+			"description" : "noblehud_set_damage_popups_cumulative_refresh_desc",
+			"callback" : "callback_noblehud_set_damage_popups_cumulative_refresh",
+			"value" : "damage_popups_cumulative_refresh",
+			"default_value" : 2,
+			"min" : 0,
+			"max" : 30,
+			"step" : 1
+		},
+		{
+			"type" : "toggle",
+			"id" : "id_noblehud_set_damage_popups_redundant",
+			"title" : "noblehud_set_damage_popups_redundant_title",
+			"description" : "noblehud_set_damage_popups_redundant_desc",
+			"callback" : "callback_noblehud_set_damage_popups_redundant",
+			"value" : "damage_popups_redundant"
+		}
+	]
+}

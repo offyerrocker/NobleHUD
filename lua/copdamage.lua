@@ -21,6 +21,7 @@ local impact_bones_tmp = {
 	"RightFoot"
 }
 
+--[[
 Hooks:PostHook(CopDamage,"_check_damage_achievements","noblehud_copdamage_damageachievements",function(self,attack_data,head)
 	local stat, err = pcall(function ()
 		NobleHUD:OnEnemyKilled(attack_data,head,self._unit)
@@ -29,6 +30,7 @@ Hooks:PostHook(CopDamage,"_check_damage_achievements","noblehud_copdamage_damage
 		NobleHUD:log("Prevented CopDamage:_check_damage_achievements() crash:" .. tostring(stat),{color = Color.red})
 	end
 end)
+--]]
 
 Hooks:PreHook(CopDamage,"_on_damage_received","noblehud_copdamage_ondamagereceived",function(self,attack_data)
 	if attack_data and alive(attack_data.attacker_unit) and (attack_data.attacker_unit ~= managers.player:local_player()) and managers.groupai:state():all_criminals()[attack_data.attacker_unit:key()] then 
@@ -38,7 +40,7 @@ Hooks:PreHook(CopDamage,"_on_damage_received","noblehud_copdamage_ondamagereceiv
 	end
 end)
 
-
+--[[
 local orig_melee = CopDamage.damage_melee
 function CopDamage:damage_melee(attack_data,...)
 	local result = {orig_melee(self,attack_data,...)} --catch result
@@ -76,3 +78,4 @@ function CopDamage:damage_melee(attack_data,...)
 	end
 	return unpack(result) --return original result(s) to caller
 end
+--]]

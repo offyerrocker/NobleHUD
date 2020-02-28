@@ -285,101 +285,6 @@ CODE:
 
 --]]
 
-_G.NobleHUD = {}
-
-NobleHUD.settings = {
-	debug = false,
-	safe_mode = false,
-	crosshair_enabled = true,
-	crosshair_bloom = true,
-	crosshair_shake = true,
-	crosshair_alpha = 0.5,
-	crosshair_dynamic_color = true,
-	crosshair_stability = 100,
-	crosshair_static_color = {1,0,0},
-	radar_enabled = true,
-	score_display_mode = 1,
-	medals_enabled = true,
-	vitals_scale = 1,
-	popup_style = 1,
-	popups_enabled = true,
-	popup_font_size = 16,
-	radar_distance = 25,
-	radar_x = 32,
-	radar_y = 32,
-	radar_align_horizontal = 1,
-	radar_align_vertical = 3,
-	radar_style = 2,
-	radar_scale = 0.8,
-	popup_duration = 3,
-	show_all_medals = false,
-	announcer_enabled = true,
-	announcer_frantic_enabled = false,
-	stamina_enabled = true,
-	stamina_x = 250,
-	stamina_y = 630,
-	ability_x = 0,
-	ability_y = 0,
-	ability_align_to_radar = true,
-	interact_style = 1,
-	weapon_ammo_tick_full_alpha = 0.8,
-	weapon_ammo_tick_empty_alpha = 0.15,
-	weapon_ammo_real_counter = false,
-	steelsight_hides_reticle_enabled = true,
-	master_hud_alpha = 0.9,
-	chat_autohide_timer = 3,
-	chat_autohide_mode = 1,
-	chat_autoshow_enabled = true,
-	chat_notification_icon_enabled = true,
-	chat_notification_sound_enabled = true,
-	chat_notification_sfx = 1,
-	chat_timestamp_mode = 3,
-	chat_panel_x = 0,
-	chat_panel_y = 0,
-	shield_low_threshold = 0.3,
-	shield_charge_sound_enabled = true,
-	shield_charge_sound_volume = 1,
-	shield_low_sound_enabled = true,
-	shield_low_sound_volume = 1,
-	shield_empty_sound_enabled = true,
-	shield_empty_sound_volume = 1,
-	--callsign_string = "S117", --automatically randomly generated
-	team_name = "Red Team",
---	team_color = Color(0.5,0.2,0.2),
-	unusual = 1, --more like unused-ual
-	crosshair_type_assaultrifle_single = 1,
-	crosshair_type_assaultrifle_auto = 1,
-	crosshair_type_pistol_single = 1,
-	crosshair_type_pistol_auto = 1,
-	crosshair_type_revolver = 1,
-	crosshair_type_smg_single = 1,
-	crosshair_type_smg_auto = 1,
-	crosshair_type_shotgun_single = 1,
-	crosshair_type_shotgun_auto = 1,
-	crosshair_type_lmg_single = 1,
-	crosshair_type_lmg_auto = 1,
-	crosshair_type_snp = 1,
-	crosshair_type_rocket = 1,
-	crosshair_type_minigun = 1,
-	crosshair_type_flamethrower = 1,
-	crosshair_type_saw = 1,
-	crosshair_type_grenade_launcher = 1,
-	crosshair_type_bow = 1,
-	crosshair_type_crossbow = 1,
-	buffs_master_enabled = true,
-	buffs_panel_x = 440,
-	buffs_panel_y = 22,
-	buffs_panel_w = 1280,
-	buffs_panel_h = 720,
-	buffs_panel_align = 1,
-	buffs_panel_vertical = 2,
-	buff_align_center = true, --not used
-	buff_align_vertical = false, --not used
-	teammate_align_to_radar = true,
-	teammate_x = 16,
-	teammate_y = 392,
-	buffs_compact_mode_enabled = false
-}
 
 NobleHUD.chat_notification_sounds = {
 	"advance.ogg",
@@ -388,85 +293,6 @@ NobleHUD.chat_notification_sounds = {
 	"beep3.ogg",
 	"beep4.ogg",
 	"bumper5.ogg"
-}
-
-NobleHUD.network_messages = {
-	down_counter = "DownCounterStandalone",
-	sync_assault = "SyncAssaultPhase",
-	sync_teamname = "SyncNobleHUDTeamName",
-	sync_callsign = "SyncNobleHUDCallsign",
-	sync_teamcolor = "SyncNobleHUDTeamColor"
-}
-
-NobleHUD.color_data = {
-	hud_vitalsoutline_blue = Color(121/255,197/255,255/255), --vitals outline color
-	hud_vitalsoutline_yellow = Color(255/255,211/255,129/255),
-	hud_vitalsoutline_red = Color(135/255,0/255,0/255),
-	hud_vitalsfill_blue = Color(58/255,138/255,199/255), --vitals fill color
-	hud_vitalsfill_yellow = Color(255/255,195/255,74/255),
-	hud_vitalsfill_red = Color(212/255,0/255,0/255),
-	hud_vitalsglow_red = Color(255/255,115/255,115/255), --empty pink flash
-	hud_hit_health = Color("ff3d10"), --orange
-	hud_hit_armor = Color("32a0ff"), --blue
-	hud_hit_vehicle = Color("2141ff"), --blue-purple
-	hud_weapon_color = Color(113/255,202/255,239/255), --"official" blue hud color
-	hud_text_blue = Color(100/255,178/255,255/255),
-	hud_text_flash = Color(254/255,239/255,239/255),
-	hud_killfeed_lightyellow = Color(253/255,255/255,217/255),
-	hud_killfeed_yellow = Color(255/255,231/255,0),
-	hud_helper_bluefill = Color(218/255,238/255,255/255),
-	hud_helper_blueglow = Color(0,0.3,0.9),
-	hud_overshield_fill = Color("00ffd3"), --teal; for maniac
-	hud_storedhealth_fill = Color("ff00c7"), --magenta-red; for ex-presidents
-	hud_delayeddamage_fill = Color("ff9e00"), --orange; for stoic 
-	hud_lightblue = Color("a1f0ff"), --powder blue; unused
-	hud_bluefill = Color("66cfff"), --sky blue; unused
-	hud_blueoutline = Color("3173bb"),
-	hud_hint_orange = Color("FFB432"),
-	hud_hint_lightorange = Color("FFE5B8"),
---	hud_blueoutline = Color(168/255,203/255,255/255), --shield/hp outline color; unused
-	hud_text = Color.white,
-	hud_radar_cop = Color(212/255,0/255,0/255), --red
-	hud_radar_criminal = Color("F1E667"), --yellow
-	hud_radar_civilian = Color("18D400"), --green
-	hud_radar_gangster = Color("D46800"), --orange
-	hud_radar_convert = Color("67EFF1"), --cyan
-	hud_radar_turret = Color("B600D4"), --purple
-	hud_radar_empty_vehicle = Color(0.7,0.7,0.7),
-	hud_radar_friendly_vehicle = Color("F1E667"),
-	hud_radar_hostile_vehicle = Color(212/255,0/255,0/255),
-	hud_compass = Color("2EA1FF"),
-	hud_objective_title_text = Color(0.66,0.66,0.66),
-	hud_objective_label_text = Color.white,
-	hud_objective_shadow_text = Color(0,0,0),
-	hud_wave_start = Color("FFD700"), -- yellow
-	hud_wave_end = Color("29da23"), -- green
-	hud_buff_status = Color("FFD700"), -- yellow
-	hud_buff_negative = Color("FF2E2E"),
-	hud_buff_neutral = Color.white,
-	hud_buff_positive = Color("2B8EFF"), --blue, i hope
-	hud_latency_low = Color(0,1,0),
-	hud_latency_medium = Color(1,1,0),
-	hud_latency_high = Color(1,0,0),
-	hud_latency_unbearable = Color(1,0.5,0.5),
-	normal = Color("B2B2B2"), --grey
-	unique = Color("FFD700"), --yellow 
-	vintage = Color("476291"), --desat navy ish
-	genuine = Color("4D6455"), --desat forest green ish
-	strange = Color("CF6A32"), --desat orangey
-	unusual = Color("8650AC"), --purple
-	haunted = Color("38F3AB"), --turquoise
-	collector = Color("AA0000"), --collector's, but i hate dealing with escape + quotes in strings. dark red
-	decorated = Color("FAFAFA"), --lighter grey?
-	community = Color("70B04A"), --also self-made; magenta
-	valve = Color("A50F79"), --burgundy?
-	void = Color("544071"), --purple; more sat than unusual
-	solar = Color("E1834F"), --orange
-	arc = Color("6F8EA2"), --powder blue
-	common = Color("43734B"), --moderately green
-	rare = Color("5076a3"), --blue; lighter than vintage
-	legendary = Color("522F65"), --purple; lighter than unusual
-	exotic = Color("CEAE33") --(bright lemony yellow)
 }
 
 NobleHUD.special_chars = {
@@ -494,13 +320,6 @@ NobleHUD._toxic_messages = {
 	"I would have been your daddy, but... aw, nevermind."
 }
 
-NobleHUD._mod_path = ModPath
-NobleHUD._options_path = ModPath .. "menu/"
-NobleHUD._buff_settings_path = SavePath .. "noblehud_buff_settings.txt"
-NobleHUD._settings_path = SavePath .. "noblehud_settings.txt"
-NobleHUD._localization_path = ModPath .. "localization/"
-NobleHUD._cartographer_path = ModPath .. "cartographer/"
-NobleHUD._announcer_path = ModPath .. "assets/snd/announcer/"
 
 --for reference; set later
 NobleHUD._announcer_sound_source = nil
@@ -520,7 +339,7 @@ for cat,s in pairs() do
 end
 --]]
 
-NobleHUD.fonts = {
+NobleHUD.fonts = { --not currently used
 	eurostile_ext = "fonts/font_eurostile_ext",
 	eurostile_normal = "fonts/font_eurostile_normal"
 }
@@ -649,6 +468,7 @@ NobleHUD._cache = { --buffer type deal, holds IMPORTANT THINGS tm
 	score_timer_mult = 1,
 	score_popups_count = 0,
 	score_popups = {},
+	enemy_damage = {},
 	score_session = 0,
 	game_state = "",
 	newest_medal = false,
@@ -955,7 +775,7 @@ NobleHUD._buff_data = {
 		priority = 5,
 		icon = 4, --hitman perk deck
 		icon_tier = 7,
---		disabled = true, --guaranteed regen from Hitman 9/9 Tooth and Claw; not implemented
+--		disabled = true, --guaranteed regen from Hitman 9 Tooth and Claw; not implemented
 		label = "noblehud_buff_hitman_label",
 		label_compact = "$TIMER",
 		persistent_timer = true,
@@ -971,7 +791,7 @@ NobleHUD._buff_data = {
 		icon_tier = 1,
 		label = "noblehud_buff_overdog",
 		label_compact = "x$VALUE $TIMER",
-		value_type = "timer", --10x melee damage within 1s from infiltrator 1/9 or Sociopath 1/9, Overdog; not implemented
+		value_type = "timer", --10x melee damage within 1s from infiltrator 1 or Sociopath 1, Overdog; not implemented
 		duration = 1,
 		text_color = NobleHUD.color_data.hud_buff_positive,
 		flash = true
@@ -985,7 +805,7 @@ NobleHUD._buff_data = {
 		icon_tier = 3,
 		label = "noblehud_buff_tension",
 		label_compact = "$TIMER",
-		value_type = "timer", --sociopath armorgate on kill cooldown; 3/9; also blending in so idk
+		value_type = "timer", --sociopath armorgate on kill cooldown; 3; also blending in so idk
 		text_color = NobleHUD.color_data.hud_buff_negative,
 		flash = true
 	},
@@ -3868,498 +3688,7 @@ NobleHUD._animate_targets = {
 --]]
 }
 
---    UTILS
-local also_blt_log = false
-function NobleHUD:log(...)
-	if not self.settings.debug then 
-		return
-	end
-	if Console then 
-		Console:Log(...)
-	end
-	if also_blt_log then 
-		log(...)
-	end
-end
-
-function NobleHUD.table_concat(tbl,div,key_div,include_subtables,current_level)
-	if type(include_subtables) ~= "number" then 
-		include_subtables = 1 --default
-	end
-	current_level = (type(current_level) == "number") and current_level or 1
-	local function a(b)
-		if include_subtables and (type(b) == "table") and current_level <= include_subtables then 
-			return ("{" .. NobleHUD.table_concat(v,div,key_div,include_subtables) .. "}")
-		else
-			return tostring(b)
-		end
-	end	
-	div = (div and tostring(div)) or " "
-	if type(tbl) == "table" then 
-		local str 
-		if key_div then
-			if key_div == true then 
-				key_div = " : "
-			else
-				key_div = tostring(key_div)
-			end
-			for k,v in pairs(tbl) do 
-				if str then
-					str = str .. div .. tostring(k) .. key_div.. a(v)
-				else
-					str = tostring(k) .. key_div .. a(v)
-				end
-			end
-		else
-			for k,v in pairs(tbl) do 
-				if str then 
-					str = str .. div .. a(v) 
-				else 
-					str = a(v)
-				end
-			end
-		end
-		return str or "ERROR2"
-	end
-	return "ERROR"
-end
-
-local function concat(...) --2lazy 2type
-	return NobleHUD.table_concat(...)
-end
-
-function NobleHUD.angle_from(a,b,c,d) -- converts to angle with ranges (-180 , 180); for result range 0-360, do +180 to result
---mvector3.angle() is a big fat meanie zucchini;
-	a = a or "nil"
-	b = b or "nil"
-	c = c or "nil"
-	d = d or "nil"
-	local function do_angle(x1,y1,x2,y2)
-		local angle = 0
-		local x = x2 - x1 --x diff
-		local y = y2 - y1 --y diff
-		if x ~= 0 then 
-			angle = math.atan(y / x) % 180
-			if y == 0 then 
-				if x > 0 then 
-					angle = 180 --right
-				else
-					angle = 0 --left 
-				end
-			elseif y > 0 then 
-				angle = angle - 180
-			end
-		else
-			if y > 0 then
-				angle = 270 --up
-			else
-				angle = 90 --down
-			end
-		end
-		
-		return angle
-	end
-	local vectype = type(Vector3())
-	if (type(a) == vectype) and (type(b) == vectype) then  --vector pos diff
-		return do_angle(a.x,a.y,b.x,b.y)
-	elseif (type(a) == "number") and (type(b) == "number") and (type(c) == "number") and (type(d) == "number") then --manual x/y pos diff
-		return do_angle(a,b,c,d)
-	else
-		NobleHUD:log("ERROR: angle_from(" .. concat({a,b,c,d},",") .. ") failed - bad/mismatched arg types")
-		return
-	end
-end
-
-function NobleHUD.vec2_distance(a,b,c,d)
-	local function do_dis(x1,y1,x2,y2)
-		return math.sqrt(math.pow(x2 - x1,2) + math.pow(y2 - y1,2))
-	end
-	
-	local vectype = type(Vector3())
-	if (type(a) == vectype) and (type(b) == vectype) then  --vector pos diff
-		return do_dis(a.x,a.y,b.x,b.y)
-	elseif (type(a) == "number") and (type(b) == "number") and (type(c) == "number") and (type(d) == "number") then --manual x/y pos diff
-		return do_dis(a,b,c,d)
-	else
-		NobleHUD:log("ERROR: vec2_distance(" .. concat({a,b,c,d},",") .. ") failed - bad/mismatched arg types")
-		return 0
-	end
-end
-
-function NobleHUD.format_seconds(raw)
---[[
-	local e = os.time()
-	local seconds = os.date("%S")
-	local minutes = os.date("%M")
-	local hours = os.date("%H")
-	local days = os.date("%d")
-	local fulltime = os.date("%X")
-	return os.date(e)
-	os.clock()
---]]
-	return string.format("%02i:%02i",math.floor(raw / 60),math.floor(raw % 60))
-end
-
-function NobleHUD.even(n)
-	return (n % 2) == 0
-end
-
-function NobleHUD.make_nice_number(num,include_decimal)
-	local is_negative
-	if num < 0 then 
-		is_negative = true
-		num = math.abs(num)
-	end
-	local raw = tostring(num)
-	local int = string.format("%i",num)
-	local length = string.len(int)
-	local str = ""
-	local i = 1
-	for j = length,1,-1 do 
-		str = string.sub(int,j,j) .. str
-		if ((i % 3) == 0) and (j > 1) then
-			str = "," .. str
-		end
-		i = i + 1
-	end
-	if include_decimal then 
-		local decimal_pos = string.find(raw,"%.")
-		if decimal_pos then 
-			str = str .. string.sub(raw,(decimal_pos))
-		end
-	end
-	if is_negative then 
-		str = "-" .. str
-	end
-	return str
-end
-
-function NobleHUD.make_compact_number(num,scale,places)
-	local str
-	if (not scale) or type(scale) ~= "number" then 
-		scale = 1
-	end
-	places = places or 1
-	
-	local function e(power) --yeah i'm that lazy
-		return math.pow(10,power)
-	end
-	
-	local powers = {
-		k = 3,
-		m = 6,
-		b = 9,
-		t = 12,
-		q = 15,
-		p = 18
-	}
-	
-	local function formatter(p)
-		if places == 0 then 
-			return "%i"
-		else
-			return "%0." .. (p) .. "f"
-		end
-	end
-	
-	local suffix = "k"
-	if scale == -1 then 
-		for abbr,v in pairs(powers) do 
-			if num/e(v) > 1 then 
-				suffix = abbr
-			end
-		end
-	else
-		for abbr,v in pairs(powers) do 
-			if (scale >= v) and (powers[suffix] <= v) then 
-				suffix = abbr
-			end
-		end
-	end
-	local power = powers[suffix]
-	
-	local rem =(num % e(power))
-	str = string.format(formatter(places) .. suffix,num / e(powers[suffix]))
-	
-	return str or string.format("%." .. scale .. "f",num)
-end
-
-function NobleHUD:make_callsign_name(raw_name,min_len,max_len,fallback_character_name)
-	fallback_character_name = fallback_character_name and tostring(fallback_character_name) or ""
-	local blacklisted_prefixes = {
-		["the"] = true,
-		["a"] = true,
-		["an"] = true --sorry if "an" is just your first name
-	}
-	local function validity_check(s,skip_length_check) 
-		return s and ((string.len(tostring(s)) >= min_len) or skip_length_check)
-	end
-	local function without_vowels(s)
-		return string.gsub(s,"[AEIOUaeiou]","")
-	end
-
-
-	local best_word = ""
-	local condensed = ""
-	local result = ""
-	local anid = "" --alphanumeric id
-	local word_number = 1
-	local first_word
-	local prev_word_number = 1
-	local prev_word
-	local missing_characters = 0
-	for raw_word in string.gmatch(raw_name,"%w+") do 
-		local word = string.gsub(raw_word,"%W","")
-		local word_len = string.len(word) 
-		if word_len <= 0 then 
-			--YOU GET NOTHING
-		else
-			if not best_word then 
-				best_word = word
-			else
-				local best_len = string.len(best_word)
-				
-				if string.find(string.sub(word,1,1),"%a") then 
-					if best_len >= max_len then 
-					else
-					end
-					best_word = best_word or word
-				elseif (string.match(word,"%a+") == word) then
-					
-				end
-			end
-			if missing_characters > 0 then 
-				local ramen_len = math.min(math.max(1,missing_characters),word_len)
-				missing_characters = missing_characters - ramen_len
-				anid = anid .. string.sub(word,1,ramen_len)
-			end
-			if word_number == 1 then 
-				first_word = word
-			end
-			if word_number == 1 and blacklisted_prefixes[string.lower(word)] then
-
-			else
-				condensed = condensed .. word
-				if string.match(word,"%d+") then --found digit to use as callsign
-					local anid_s,anid_e = string.find(word,"%d+")
-					local anid_word = string.sub(word,anid_s,anid_e)
-					local anid_len = string.len(anid_word)
-					if anid_len and anid_len > 0 then --should be a given
-						if anid_len >= max_len then
-							anid = string.sub(anid_word,1,max_len)
-						elseif anid_len <= min_len then --too short; add to anid if possible
-							local max_missing = max_len - anid_len
-							local min_missing = max_len - anid_len
-							
-							if anid_s == 1 then 
-								local donor
-								local wn
-								if first_word and string.len(first_word) >= 1 then --pull from first word
-									wn = 1
-									donor = first_word
-								elseif prev_word and string.len(prev_word) >= 1 then --pull from previous word
-									donor = prev_word
-									wn = prev_word_number
-								end
-								if donor then
-									local s_offset = 0
-									if wn == word_number then 
-										s_offset = anid_e
-										anid = anid_word .. string.sub(donor,1 + s_offset,max_missing + s_offset)
-									else
-										anid = string.sub(donor,1,max_missing) .. anid_word
-									end
-								else
-									--guess i'll die
-								end
-							else
-								--if anid_e == word_len 
-								anid = string.sub(word,1,math.min(max_missing,anid_s - 1)) .. anid_word
-							
-							end
-						end
-					end
-				end
-			end
-		end
-		prev_word = word
-		prev_word_number = word_number
-		word_number = word_number + 1
-	end
-	if string.len(condensed) < min_len then 
-		result = string.gsub(raw_name,"%W","")
-	else
-		result = condensed
-	end
-		
-	if validity_check(anid) and string.len(anid) <= max_len then 
-		result = anid
-		--anid always takes priority
-	else
-		--if no anid, then check current result
-		local result_len = string.len(result)
-		if result_len <= max_len and result_len > min_len then 
-			--current result is usable
-		else
-			--result isn't currently usable, see if it can be modified to usability
-			--check vowel-less first
-			local result_vowelless = without_vowels(result)
-			local result_vowelless_len = string.len(result_vowelless)
-			if result_vowelless_len <= max_len and result_vowelless_len > min_len then
-				result = result_vowelless --use vowel-less as callsign
-			else --vowel-less does not work, so take first four letters
-				
-				result = string.sub(result,1,max_len)
-				result_len = string.len(result)
-				if result_len <= max_len and result_len > min_len then 
-					--use this result
-				else --result is unsuitable, try fallback
-					local fallback_len = string.len(fallback_character_name)
-					if fallback_len <= max_len and fallback_len > min_len then 
-						--fallback_character_name is the right size
-						result = fallback_character_name
-					else--fallback_character_name is not the right size
-						--attempt removing vowels
-						result_vowelless = without_vowels(fallback_character_name)
-						result_vowelless_len = string.len(result_vowelless)
-						if result_vowelless_len <= max_len and result_vowelless_len > min_len then 
-							--without vowels, fallback_character_name is usable
-							result = result_vowelless
-						else
-							--last resort is simply cropping the raw name to max_len
-							result = string.sub(raw_name,1,max_len)
-						end
-					end
-				end
-			end
-		end
-	end
-	
-	result = string.upper(result)
-	self:log("Made nickname: [" .. tostring(raw_name) .. "] --> [" .. tostring(result) .. "]") --!
-	return result
-end
-
-function NobleHUD.to_camelcase(s)
-	if s == nil then 
-		return s
-	end
-	if string.len(s) <= 1 then 
-		return s
-	else
-		s = tostring(s)
-		return utf8.to_upper(string.sub(s,1,1)) .. string.sub(s,2)
-	end
-end
-
-function NobleHUD:GetToxicMessage()
-	return self._toxic_messages[math.random(#self._toxic_messages)] or ""
-end
-
-function NobleHUD.choose(tbl)
-	if type(tbl) == "table" and #tbl > 0 then 
-		return tbl[math.random(#tbl)]
-	else
-		local a = {}
-		for i,v in pairs(tbl) do 
-			table.insert(a,i)
-		end
-		return tbl[a[math.random(#a)]]
-	end
-end
-
-function NobleHUD.random_character(l,n,c)
---
-	if not (l or n or c) then 
-		l = 1
-		n = 1
-		c = 1
---		local tbl = NobleHUD.choose(NobleHUD._random_chars)
---		return tbl[math.random(#tbl)]
-	else
-		local function b(a)
-			return a and 1 or 0
-		end
-		
-		l = b(l)
-		n = b(n)
-		c = b(c)
-	end
-	
-	local t = l + n + c
-	
---		l = 0 + l
-	n = l + n
-	c = n + c
-	
-	local r = math.random()
-	if r < (l/t) then 
-		local i = math.random(1,string.len(NobleHUD._random_chars.letters))
-		return string.sub(NobleHUD._random_chars.letters,i,i)
-		--NobleHUD._random_chars.letters[math.random(#NobleHUD._random_chars.letters)]
-	elseif r < (n/t) then 
-		local i = math.random(1,string.len(NobleHUD._random_chars.numbers))
-		return string.sub(NobleHUD._random_chars.numbers,i,i)
-		--NobleHUD._random_chars.numbers[math.random(#NobleHUD._random_chars.numbers)]
-	elseif r < (c/t) then
-		local i = math.random(1,string.len(NobleHUD._random_chars.characters))
-		return string.sub(NobleHUD._random_chars.characters,i,i)
-		--NobleHUD._random_chars.characters[math.random(#NobleHUD._random_chars.characters)]
-	end
-
-end
-
-function NobleHUD.interp_colors(one,two,percent) --interpolates colors based on a percentage
---percent is [0,1]
-	percent = math.clamp(percent,0,1)
-	
---color 1
-	local r1 = one.red
-	local g1 = one.green
-	local b1 = one.blue
-	
---color 2
-	local r2 = two.red
-	local g2 = two.green
-	local b2 = two.blue
-
---delta
-	local r3 = r2 - r1
-	local g3 = g2 - g1
-	local b3 = b2 - b1
-	
-	return Color(r1 + (r3 * percent),g1 + (g3 * percent), b1 + (b3 * percent))	
-end
-
-function NobleHUD:GetMedalIcon(x,y)
-	return self._medal_atlas,{
-		x * 90,y * 90,90,90 --sure hope i got this right
-	}
-end
-
-function NobleHUD:AddDelayedCallback(func,args,timer,id)
-	if timer then 
-		timer = timer + Application:time()
-	end
-	id = id or (#NobleHUD._delayed_callbacks + 1)
-	NobleHUD._delayed_callbacks[id] = {func = func,args = args or {},timer = timer}
-end
-
-function NobleHUD:RemoveDelayedCallback(id)
-	NobleHUD._delayed_callbacks[tostring(id)] = nil
-end
-
-function NobleHUD:animate(object,func,done_cb,...) --i'll make my own animate function, with blackjack, and hookers
-	NobleHUD._animate_targets[tostring(object)] = {
-		object = object,
-		start_t = Application:time(),
-		func = func,
-		done_cb = done_cb,
-		args = {...}
-	}
-end
---format: result = data.func(data.object,t,dt,data.start_t,unpack(data.args))
---done callback: done_cb(data.object,result,unpack(data.args))
+--Animate functions
 
 function NobleHUD:animate_remove_done_cb(object,new)
 	local o = NobleHUD._animate_targets[tostring(object)]
@@ -4468,55 +3797,7 @@ function NobleHUD:animate_scale(o,t,dt,start_t,duration,start_w,start_h,end_w,en
 	end
 end
 
---overkill made "PRIMARY" weapons in slot [2] and "SECONDARY" weapons in slot [1],
---probably recycled/holdover/legacy code from PD:TH
---no longer used
-function NobleHUD.correct_weapon_selection(num,default)
-	return ((num == 1) and 2 or 1) or (default or 1)
-end
 
-function NobleHUD.get_specialization_icon_data_with_fallback(spec, no_fallback, tier, tier_floors)
---i had to write this because get_specialization_icon_data() always picks the top tier. booooo
-	spec = spec or managers.skilltree:get_specialization_value("current_specialization")
-
-	local data = tweak_data.skilltree.specializations[spec]
-	local max_tier = managers.skilltree:get_specialization_value(spec, "tiers", "max_tier")
-	
-	if tier_floors and type(tier_floors) == "table" then
-	--this code-nugget takes optional input "tier_floors" (table) which is a whitelist for icon tiers to use.
-	--it takes the highest possible unlocked tier from this whitelist, and uses that. 
-	--this is helpful for if you want to get the highest tier icon but do not want to use the "generic" perks (eg 2,4,6,8), for instance. 
-		tier = max_tier
-		local result
-		for _,max_eligible in pairs(tier_floors) do 
-			if max_eligible <= tier then 
-				result = max_eligible
-			end
-		end
-		tier = result
-	end
-	
-	local tier_data = data and data[tier or max_tier] --this, the arg tier, and the tier_floors option are the only things i changed. :|
-
-	if not tier_data then
-		if no_fallback then
-			return
-		else
-			return tweak_data.hud_icons:get_icon_data("fallback")
-		end
-	end
-
-	local guis_catalog = "guis/" .. (tier_data.texture_bundle_folder and "dlcs/" .. tostring(tier_data.texture_bundle_folder) .. "/" or "")
-	local x = tier_data.icon_xy and tier_data.icon_xy[1] or 0
-	local y = tier_data.icon_xy and tier_data.icon_xy[2] or 0
-
-	return guis_catalog .. "textures/pd2/specialization/icons_atlas", {
-		x * 64,
-		y * 64,
-		64,
-		64
-	}
-end
 
 --		SETTINGS
 
@@ -4943,6 +4224,34 @@ end
 
 function NobleHUD:GetShieldLowVolume()
 	return self.settings.shield_low_sound_volume
+end
+		
+function NobleHUD:IsDamagePopupsEnabled()
+	return self.settings.damage_popups_enabled
+end
+
+function NobleHUD:GetDamagePopupsStyle()
+	return self.settings.damage_popups_style
+end
+
+function NobleHUD:IsDamagePopupsCumulative()
+	return self.settings.damage_popups_cumulative_enabled
+end
+function NobleHUD:GetDamagePopupsCumulativeRefreshTime()
+	return self.settings.damage_popups_cumulative_refresh
+end
+
+function NobleHUD:IsDamagePopupsRepeat()
+--whether or not multiple damage popups should be created for multiple damage instances on the same unit or not
+	return self.settings.damage_popups_redundant
+end
+
+function NobleHUD:GetDamagePopupsLifetime()
+	return self.settings.damage_popups_lifetime
+end
+
+function NobleHUD:GetDamagePopupsFadeoutTime()
+	return self.settings.damage_popups_fadeout
 end
 		
 		--SET SETTINGS
@@ -5479,14 +4788,14 @@ function NobleHUD:UpdateHUD(t,dt)
 			return 
 		end
 		local player_aim = player:movement():m_head_rot():yaw()
-		
+		self:SetCompassDirection(player_aim)
 		local cam_aim = viewport_cam:rotation():yaw()
 --		local cam_rot_a = viewport_cam:rotation():y()
 
-		local compass_yaw = ((cam_aim) / 180) - 1 --should this perhaps use modulo
+--		local compass_yaw = ((cam_aim) / 180) - 1 --should this perhaps use modulo
 		--todo get range of cam_aim
 	
-		self._compass_panel:child("compass_strip"):set_x(compass_yaw * self._compass_panel:w())
+--		self._compass_panel:child("compass_strip"):set_x(compass_yaw * self._compass_panel:w())
 		
 		--radar/crosshair stuff
 
@@ -5569,7 +4878,7 @@ function NobleHUD:UpdateHUD(t,dt)
 				
 				local all_sentries = World:find_units_quick("sphere",player_pos,RADAR_DISTANCE_MAX,managers.slot:get_mask("sentry_gun"))
 				for _,unit in pairs(all_sentries) do 
-					if unit and alive(unit) then 
+					if unit and alive(unit) and not (unit:character_damage() and unit:character_damage():dead()) then 
 						local dis = mvector3.distance_sq(player_pos,unit:position())
 						if dis >= RADAR_DISTANCE_MAX_SQ then 
 							self:remove_radar_blip(unit)
@@ -6410,26 +5719,37 @@ function NobleHUD:OnPeerSynced(peer,peer_id)
 	end
 end
 
-function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
+function NobleHUD:OnEnemyKilled(attack_data,headshot,unit,variant,player_weapon_id)
 	local t = Application:time()
-	local player = attack_data.attacker_unit
-	if not alive(player) then
-		return
-	elseif player ~= managers.player:local_player() then
---		self:AddMedal("grave")
-		return
+	local player = managers.player:local_player()
+	
+	local weapon_base
+	if attack_data then
+		if (not player) or (attack_data.attacker_unit ~= managers.player:local_player()) then
+			return
+		end
+		local player_weapon = attack_data.weapon_unit
+		weapon_base = alive(player_weapon) and player_weapon:base()
 	end
+	attack_data = attack_data or {}
 	headshot = headshot or attack_data.head_shot
+	
+	
 	local player_movement = player:movement()
-	local player_weapon = attack_data.weapon_unit
-	local weapon_base = alive(player_weapon) and player_weapon:base()
-	local player_weapon_categories
-	local player_weapon_id = weapon_base and weapon_base.get_name_id and weapon_base:get_name_id() or ""
+	
+	local player_weapon_categories,player_weapon_tweakdata
 	if weapon_base then 
-		player_weapon_categories = weapon_base and weapon_base.categories and weapon_base:categories()
+		player_weapon_id = player_weapon_id or weapon_base.get_name_id and weapon_base:get_name_id() or ""
+		player_weapon_tweakdata = tweak_data.weapon[player_weapon_id]
+		player_weapon_categories = weapon_base.categories and weapon_base:categories()
+	else
+		player_weapon_id = player_weapon_id or ""
+		player_weapon_tweakdata = tweak_data.weapon[player_weapon_id] or {}
+		player_weapon_categories = player_weapon_tweakdata.categories or {}
 	end
+	
 	local player_state = managers.player:current_state()
-	local variant = attack_data.variant
+	local variant = variant or attack_data.variant
 	local base = unit and unit:base()
 	local movement = unit and unit:movement()
 	local unit_type = base._tweak_table
@@ -6449,7 +5769,7 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 	}
 	local unit_team = (brain and brain._logic_data and brain._logic_data.team and brain._logic_data.team.id) or ""
 	if friendly_teams[unit_team] or (unit and (CopDamage.is_civilian(unit:base()._tweak_table) or managers.enemy:is_civilian(unit))) then 
-		self:log("Killed enemy with team " .. tostring(brain._logic_data.team.id),{color=Color.green})
+--		self:log("Killed enemy with team " .. tostring(brain._logic_data.team.id),{color=Color.green})
 		is_friendly_fire = true
 	end
 	
@@ -6465,7 +5785,7 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 		--no +1 kills for you, you murderer >:(
 	else
 		if self:IsSkullActive("birthday") and headshot and unit and alive(unit) and unit:base() then 
-			local function spawn_money_confetti(effect_name)
+			local function spawn_headshot_confetti(effect_name)
 				local result = World:effect_manager():spawn({
 					effect = Idstring(effect_name or "effects/payday2/particles/impacts/money_impact_pd2"),
 					position = movement and movement:m_head_pos() or unit:position() or Vector3()
@@ -6479,15 +5799,20 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 					})
 				end
 			end
-			spawn_money_confetti("effects/payday2/particles/explosions/balloon_pop_red")
-			spawn_money_confetti("effects/payday2/particles/explosions/balloon_pop_orange")
-			spawn_money_confetti("effects/payday2/particles/explosions/balloon_pop_green")
-			spawn_money_confetti("effects/payday2/particles/explosions/balloon_pop_blue")
-			spawn_money_confetti("effects/payday2/particles/explosions/balloon_pop_purple")
-			spawn_money_confetti("effects/payday2/particles/explosions/balloon_pop_white")
+			spawn_headshot_confetti("effects/payday2/particles/explosions/balloon_pop_red")
+			spawn_headshot_confetti("effects/payday2/particles/explosions/balloon_pop_orange")
+			spawn_headshot_confetti("effects/payday2/particles/explosions/balloon_pop_green")
+			spawn_headshot_confetti("effects/payday2/particles/explosions/balloon_pop_blue")
+			spawn_headshot_confetti("effects/payday2/particles/explosions/balloon_pop_purple")
+			spawn_headshot_confetti("effects/payday2/particles/explosions/balloon_pop_white")
 			
 			XAudio.UnitSource:new(unit,XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg"))
 		end
+		
+		if managers.statistics._global.killed.total and managers.statistics._global.session.killed.total.count == 0 then 
+			self:AddMedal("first")
+		end
+		
 		if player_weapon_id == primary_id then
 			self:_set_killcount(1,managers.statistics:session_killed_by_weapon(primary_id))
 		elseif player_weapon_id == secondary_id then 
@@ -6528,13 +5853,13 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 		end
 		
 		
-		if weapon_base and weapon_base.thrower_unit then
-			if variant == "explosion" then 
-				local ptd = tweak_data.blackmarket.projectiles[player_weapon_id]
-				if ptd and ptd.is_a_grenade then
-					self:AddMedal("spree_grenade",self:KillsCache("grenade",1))
-				end
-			end
+		local ptd = tweak_data.blackmarket.projectiles[player_weapon_id]
+		if ptd and ptd.is_a_grenade then
+--			if variant == "explosion" then 
+--			if weapon_base and weapon_base.thrower_unit then
+			self:AddMedal("spree_grenade",self:KillsCache("grenade",1))
+--			end
+--			end
 		elseif variant == "bullet" then 
 			if headshot then
 				if ext_anim.sprint then 
@@ -6579,6 +5904,20 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 			self:AddMedal("pummel")
 			self:AddMedal("spree_hammer",melee_count)
 				
+			local mvec_1 = Vector3()
+			local mvec_2 = Vector3()
+			mvector3.set(mvec_1, unit:position())
+			mvector3.subtract(mvec_1, player:position())
+			mvector3.normalize(mvec_1)
+			mvector3.set(mvec_2, unit:rotation():y())
+			if mvector3.dot(mvec_1, mvec_2) >= 0 then
+				self:AddMedal("beatdown")
+			end
+			if unit:movement():cool() then
+				self:AddMedal("assassination")
+				medal_multiplier = medal_multiplier * self:GetMedalMultiplier("assassination")
+			end
+			--[[
 			if attack_data.cool then 
 				self:AddMedal("assassination")
 				medal_multiplier = medal_multiplier * self:GetMedalMultiplier("assassination")
@@ -6586,8 +5925,9 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 			if attack_data.from_behind then
 				self:AddMedal("beatdown")
 			end
+			--]]
 		elseif variant == "graze" then 
-			--nothing special
+			--supercombine kill medal?
 		elseif variant == "vehicle" then 
 			self:AddMedal("splatter")
 			self:AddMedal("spree_splatter",self:KillsCache("vehicle",1))
@@ -6607,8 +5947,7 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit)
 		self:AddMedal("spree_all",spree_count)
 		self:KillsCache("last_kill_t",t,true)
 	end
-	attack_data.name = attack_data.name or unit_type
-	self:TallyScore(attack_data,unit,medal_multiplier,is_friendly_fire)
+	self:TallyScore(attack_data.name or unit_type,unit,medal_multiplier,is_friendly_fire)
 end
 
 function NobleHUD:KillsCache(category,amount,set)
@@ -9720,8 +9059,8 @@ function NobleHUD:SetRevives(text)
 	end
 end
 
-function NobleHUD:TallyScore(data,unit,medal_multiplier,is_friendly_fire)
-	local name = tostring(data.name)
+function NobleHUD:TallyScore(name,unit,medal_multiplier,is_friendly_fire)
+	name = tostring(name)
 	local score = self:GetRawScoreFromUnitName(name)
 	local localized_unitname = managers.localization:text("noblehud_unitname_" .. name)
 	local total_multiplier = self:GetTotalScoreMultiplier()
@@ -9746,10 +9085,6 @@ function NobleHUD:TallyScore(data,unit,medal_multiplier,is_friendly_fire)
 	else
 		--unit is worth no score, or unit name is wrong
 	end
-end
-
-function NobleHUD:PopupsEnabled()
-	return true
 end
 
 function NobleHUD:UpdateScoreTimerMultiplier(t)
@@ -9882,24 +9217,46 @@ function NobleHUD:ScorePopupShowsUnitName()
 	return true
 end
 
+function NobleHUD:SetTrackedEnemyDamage(key,amount,additive)
+	if self._cache.enemy_damage[key] and additive and amount then
+		self._cache.enemy_damage[key] = self._cache.enemy_damage[key] + amount
+	else 
+		self._cache.enemy_damage[key] = amount
+	end
+	return self._cache.enemy_damage[key]
+end
+
+function NobleHUD:RemoveTrackedEnemyDamage(key)
+	if self._cache.enemy_damage[key] then 
+		self._cache.enemy_damage[key] = nil
+	end
+end
+
 function NobleHUD:CreateDamagePopup(damage_info)
-	if not damage_info then
+	if not (damage_info and self:IsDamagePopupsEnabled()) then
 		return
 	end
+	
+	local popup_style = self:GetDamagePopupsStyle()
+	local animate_movement = true
+	local cumulative = self:IsDamagePopupsCumulative()
+	local should_repeat = self:IsDamagePopupsRepeat()
+	local fadeout_duration = self:GetDamagePopupsFadeoutTime()
+	local lifetime = self:GetDamagePopupsLifetime()
+	
 	local attacker_unit = damage_info and damage_info.attacker_unit
 
 	if alive(attacker_unit) and attacker_unit:base() and attacker_unit:base().thrower_unit then
 		attacker_unit = attacker_unit:base():thrower_unit()
 	end
 	if attacker_unit == managers.player:local_player() then 
-		local dmg_style 
-		local cumulative = true
 		
 		damage_info = damage_info or {}
 		NobleHUD._patootie = damage_info
 		local col_ray = damage_info.col_ray or {}
 		local result = damage_info.result or {}
 		local unit = col_ray.unit
+		local key = unit and unit:key() and tostring(unit:key())
 		local damage = damage_info.damage
 		local name = damage_info.name
 		local body = col_ray.body
@@ -9909,11 +9266,16 @@ function NobleHUD:CreateDamagePopup(damage_info)
 		local variant = damage_info.variant
 		local killshot = result.type == "death"
 		
-		local screen_pos = NobleHUD._ws:world_to_screen(managers.viewport:get_current_camera(),(body and body:position()) or hit_position or (unit and unit:position()))
-		local color = Color.white
+		local screen_pos = {x = -1000,y = -1000}
+		if not animate_movement then 
+			screen_pos = NobleHUD._ws:world_to_screen(managers.viewport:get_current_camera(),(body and body:position()) or hit_position or (unit and unit:position()))
+		end
+		local color = Color.white --flash color
+		local new_color = Color.white --end color
 		local layer = 1
 		local font_size = 24
-		local from_fire = damage_info.is_fire_dot_damage or damage_info.fire_dot_data 
+		local from_fire = damage_info.is_fire_dot_damage or damage_info.fire_dot_data or (variant == "fire")
+		
 		
 		--dot damage is when unit is on fire
 		--fire_dot_data is when unit is in fire
@@ -9924,47 +9286,74 @@ function NobleHUD:CreateDamagePopup(damage_info)
 		--movement (borderlands type parabolic arc, or simple drift)
 		
 		if killshot then 
-			color = Color.red
+			color = self.color_data.hud_vitalsfill_red
+			new_color = self.color_data.collector
 			layer = 3
 			font_size = 32
 		elseif headshot then 
-			color = Color.yellow
+			color = self.color_data.unique
+			new_color = Color.white
+			layer = 2
 			font_size = 28
 		elseif from_fire then
-			color = Color(0.6,0.2,0)
+			color = self.color_data.unique
+			new_color = self.color_data.strange
 			font_size = 28
+			damage = damage or (damage_info.fire_dot_data and damage_info.fire_dot_data.dot_damage) or 1
 		end
 		
-		local popup_name 
+		local popup_name = (key or hit_position) and tostring(key or hit_position)
+		--may not appear for things like countertase
 		
-		popup_name = "damage_popup_" .. tostring(unit or from_fire and "fire")
-		
-		local damage_popup = unit and NobleHUD._popups_panel:child(popup_name)
-		if cumulative and damage_popup then 
-			damage_popup:set_position(screen_pos.x,screen_pos.y)
-			damage_popup:set_alpha(1)
-			damage_popup:set_color(color)
-			damage_popup:set_layer(layer)
+		local damage_string = damage
+		if cumulative and key then 
+			damage_string = self:SetTrackedEnemyDamage(key,damage,true)
+			
+			--[[
+				self._cache.enemy_damage[key] = self._cache.enemy_damage[key] + damage
+				damage_string = (self._cache.enemy_damage[key] or damage_string)
+			else
+				self._cache.enemy_damage[key] = damage
+			end
+			self:AddDelayedCallback(callback(NobleHUD,NobleHUD,"SetTrackedEnemyDamage",key,nil,false),nil,self:GetDamagePopupsCumulativeRefreshTime(),"clear_enemy_damage_" .. key)
+			self:AddDelayedCallback(callback(NobleHUD,NobleHUD,"RemoveTrackedEnemyDamage",key),nil,lifetime + fadeout_time)
+			--]]
+			self:AddDelayedCallback(callback(NobleHUD,NobleHUD,"RemoveTrackedEnemyDamage",key),nil,self:GetDamagePopupsCumulativeRefreshTime(),"clear_enemy_damage_" .. key)
+		end
+			
+		local damage_popup = popup_name and NobleHUD._popups_panel:child(popup_name)
+		if damage_popup and not should_repeat then 
+			self:animate_stop(damage_popup)
+			damage_popup:set_text(string.format("%d",damage_string))
 			damage_popup:set_font_size(font_size)
-			damage_popup:set_text(string.format("%d",(tonumber(damage_popup:text()) or 0) + damage))
-			--todo save damaged unit to table, reference table instead of rounded text
+			damage_popup:set_layer(layer)
+			damage_popup:set_position(screen_pos.x,screen_pos.y)
+			damage_popup:set_color(color)
+			damage_popup:set_alpha(1)
 		else
 			damage_popup = NobleHUD._popups_panel:text({
-				name = popup_name,
-				text = string.format("%d",damage),
-				font = "fonts/font_medium_shadow_mf" or "fonts/font_large_mf", --fonts/font_futura --fonts/font_small_shadow_mf
+				name = popup_name or ("damage_popup_" .. tostring(damage_info)),
+				text = string.format("%d",damage_string),
+				font = "fonts/font_medium_shadow_mf", --"fonts/font_large_mf" --fonts/font_futura --fonts/font_small_shadow_mf
 				font_size = font_size,
 				layer = layer,
 				x = screen_pos.x,
 				y = screen_pos.y,
 				color = color,
+				alpha = 1,
 				visible = true
 			})
 		end
 		
 		local attached_unit = body or unit
 		
-		NobleHUD:animate(damage_popup,"animate_popup_damage_body",function(o) o:parent():remove(o) end,2,1,attached_unit,hit_position)
+		if popup_style == 1 then 
+			NobleHUD:animate(damage_popup,"animate_popup_damage_body",function(o) o:parent():remove(o) end,lifetime,fadeout_duration,attached_unit,hit_position,new_color) --unit body part
+		elseif popup_style == 2 then 
+			NobleHUD:animate(damage_popup,"animate_popup_damage_body",function(o) o:parent():remove(o) end,lifetime,fadeout_duration,nil,hit_position,new_color) --hit position
+		else
+			NobleHUD:animate(damage_popup,"animate_popup_damage_vault",function(o) o:parent():remove(o) end,lifetime,fadeout_duration,nil,hit_position,font_size,new_color,math.random(360),math.clamp((damage - 60) / 20,0.5,3) + math.random(),20) --vault
+		end
 	end
 end
 
@@ -10081,8 +9470,7 @@ function NobleHUD:animate_popup_queue(o,t,dt,start_t,duration,dest_y,rate)
 	o:set_y(oy + (10 * dt * (dest_y - oy) / rate))
 end
 
-function NobleHUD:animate_popup_damage_body(o,t,dt,start_t,duration,fadeout_duration,unit,position) 
---temp
+function NobleHUD:animate_popup_damage_body(o,t,dt,start_t,duration,fadeout_duration,unit,position,new_color) 
 	if alive(unit) then 
 		position = unit:position()
 	end
@@ -10096,22 +9484,84 @@ function NobleHUD:animate_popup_damage_body(o,t,dt,start_t,duration,fadeout_dura
 		else
 			o:set_alpha(o:alpha() + (dt * duration * 2))	
 		end
+		if new_color then 
+			o:set_color(NobleHUD.interp_colors(o:color(),new_color,dt / duration))
+		end
 		local viewport_cam = managers.viewport:get_current_camera()
-		local unit_screen_pos = position and NobleHUD._ws:world_to_screen(viewport_cam,position)
-		if unit_screen_pos then
+		local screen_pos = position and NobleHUD._ws:world_to_screen(viewport_cam,position)
+		if screen_pos then
 	
 			local aim = viewport_cam:rotation():yaw()
 			local my_pos = viewport_cam:position()	
 			local angle_from = (180 + aim - NobleHUD.angle_from(position.x,position.y,my_pos.x,my_pos.y)) % 360
 			
-			if (math.abs(90 - angle_from) > 90) or o:parent():outside(unit_screen_pos.x,unit_screen_pos.y) then 
+			if (math.abs(90 - angle_from) > 90) or o:parent():outside(screen_pos.x,screen_pos.y) then 
 				o:set_x(-1000)
 				o:set_y(-1000)
 			else
-				o:set_x(unit_screen_pos.x)
-				o:set_y(unit_screen_pos.y)
+				o:set_x(screen_pos.x)
+				o:set_y(screen_pos.y)
 			end
 			
+		end
+	else
+		return true
+	end
+end
+
+function NobleHUD:animate_popup_damage_vault(o,t,dt,start_t,duration,fadeout_duration,unit,position,font_size,new_color,direction,hor_velocity,ver_velocity)
+	if alive(unit) then
+		position = unit:position()
+	end
+	if position then
+		local t_adjusted = 100 * (t - start_t)
+		local t_offset = 2 * (math.sin(t_adjusted) + 0.5)
+		if t - start_t > duration then 
+			if t - start_t > duration + fadeout_duration then 
+				return true
+			end
+			local a_ratio = ((t - start_t) - duration) / fadeout_duration
+			o:set_alpha(1 - a_ratio)
+		else
+			o:set_alpha(o:alpha() + (dt * duration * 2))
+		end
+		
+		local x_v = math.sin(direction) * hor_velocity * t_adjusted
+		local y_v = math.cos(direction) * hor_velocity * t_adjusted
+		
+		local z_v = ((-1 / ver_velocity) * math.pow(t_adjusted,2)) + (t_offset * t_adjusted)
+
+
+		position = position + Vector3(x_v,y_v,z_v)
+		
+		--[[
+		local distance = mvector3.distance(viewport_cam:position(),position) 
+		if distance > 0 then
+			distance = math.clamp(1 / distance,font_size,font_size)
+			o:set_font_size()
+		else		
+			o:set_font_size(font_size)
+		end
+		--]]
+		
+		if new_color then 
+			o:set_color(NobleHUD.interp_colors(o:color(),new_color,dt / duration))
+		end
+		
+		local viewport_cam = managers.viewport:get_current_camera()
+		local screen_pos = position and NobleHUD._ws:world_to_screen(viewport_cam,position)
+		if screen_pos then 
+			local aim = viewport_cam:rotation():yaw()
+			local my_pos = viewport_cam:position()
+			local angle_from = (180 + aim - NobleHUD.angle_from(position.x,position.y,my_pos.x,my_pos.y)) % 360
+			
+			if (math.abs(90 - angle_from) > 90) or o:parent():outside(screen_pos.x,screen_pos.y) then 
+				o:set_x(-1000)
+				o:set_y(-1000)
+			else
+				o:set_x(screen_pos.x)
+				o:set_y(screen_pos.y)
+			end
 		end
 	else
 		return true
@@ -10179,7 +9629,7 @@ function NobleHUD:_tally_score(data)
 		self:set_score_label()
 		return
 	end	
-	self:log("ERROR: _tally_score(" .. concat(data,",") .. ")")
+	self:log("ERROR: _tally_score(" .. NobleHUD.table_concat(data,",") .. ")")
 end
 
 function NobleHUD:_add_score(score)
@@ -11616,10 +11066,6 @@ function NobleHUD:animate_blip_fadeout(o)
 	self._radar_panel:remove(o)
 end
 
-function NobleHUD:animate_blip_move(o,delay)
---unused
-end
-
 function NobleHUD:_set_radar_range(text)
 	self._radar_panel:child("radar_range_label"):set_text(string.gsub(managers.localization:text("noblehud_hud_radar_distance_label"),"$DISTANCE",text))	
 end
@@ -12331,6 +11777,10 @@ function NobleHUD:_create_compass(hud)
 	return compass_panel
 end
 
+function NobleHUD:SetCompassDirection(angle)
+	local compass_yaw = (angle / 180) - 1
+	self._compass_panel:child("compass_strip"):set_x(compass_yaw * self._compass_panel:w())
+end
 
 --		INTERACTION
 
@@ -13704,50 +13154,6 @@ Hooks:Add("LocalizationManagerPostInit", "noblehud_addlocalization", function( l
 	loc:load_localization_file(path .. "english.txt")
 end)
 
-function NobleHUD:LoadSettings()
-	local file = io.open(self._settings_path, "r")
-	if (file) then
-		for k, v in pairs(json.decode(file:read("*all"))) do
-			self.settings[k] = v
-		end
-	else
-		self:SaveSettings()
-	end
-
-	if not self.settings.callsign_string then 
-		self.settings.callsign_string = string.upper(self.random_character(true,false,false)) .. string.format("%03d",math.random(1000) - 1)
-		self:SaveSettings()
-	end
-end
-
-function NobleHUD:SaveSettings()
-	local file = io.open(self._settings_path,"w+")
-	if file then
-		file:write(json.encode(self.settings))
-		file:close()
-	end
-end
-
-
-function NobleHUD:SaveBuffSettings()
-	local file = io.open(self._buff_settings_path,"w+")
-	if file then
-		file:write(json.encode(self.buff_settings))
-		file:close()
-	end
-end
-
-function NobleHUD:LoadBuffSettings()
-	local file = io.open(self._buff_settings_path, "r")
-	if (file) then
-		for k, v in pairs(json.decode(file:read("*all"))) do
-			self.buff_settings[k] = v
-		end
-	else
-		self:SaveBuffSettings()
-	end
-end
-
 Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 		
 --CHAT 
@@ -14253,7 +13659,7 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 			NobleHUD._buffs_panel:child("debug_buffs"):hide()
 		end
 		NobleHUD:SaveSettings()
-	end
+	end	
 	
 
 	--MISC
@@ -14588,6 +13994,34 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	MenuCallbackHandler.noblehud_buffs_fugitive_options_close = function(self)
 	end
 	
+	MenuCallbackHandler.callback_noblehud_set_damage_popups_enabled = function(self,item)
+		NobleHUD.settings.damage_popups_enabled = item:value() == "on"
+		NobleHUD:SaveSettings()
+	end
+	MenuCallbackHandler.callback_noblehud_set_damage_popups_style = function(self,item)
+		NobleHUD.settings.damage_popups_style = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+	MenuCallbackHandler.callback_noblehud_set_damage_popups_lifetime = function(self,item)
+		NobleHUD.settings.damage_popups_lifetime = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+	MenuCallbackHandler.callback_noblehud_set_damage_popups_fadeout = function(self,item)
+		NobleHUD.settings.damage_popups_fadeout = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+	MenuCallbackHandler.callback_noblehud_set_damage_popups_cumulative_enabled = function(self,item)
+		NobleHUD.settings.damage_popups_cumulative_enabled = item:value() == "on"
+		NobleHUD:SaveSettings()
+	end
+	MenuCallbackHandler.callback_noblehud_set_damage_popups_cumulative_refresh = function(self,item)
+		NobleHUD.settings.damage_popups_cumulative_refresh = tonumber(item:value())
+		NobleHUD:SaveSettings()
+	end
+	MenuCallbackHandler.callback_noblehud_set_damage_popups_redundant = function(self,item)
+		NobleHUD.settings.damage_popups_redundant = item:value() == "on"
+		NobleHUD:SaveSettings()
+	end
 	
 	
 	MenuCallbackHandler.callback_noblehud_close = function(self)
@@ -14618,4 +14052,5 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	MenuHelper:LoadFromJsonFile(NobleHUD._options_path .. "options_buffs_fugitive.txt", NobleHUD, NobleHUD.buff_settings)
 	MenuHelper:LoadFromJsonFile(NobleHUD._options_path .. "options_buffs_specialization.txt", NobleHUD, NobleHUD.buff_settings)
 	MenuHelper:LoadFromJsonFile(NobleHUD._options_path .. "options_buffs_misc.txt", NobleHUD, NobleHUD.buff_settings)
+	MenuHelper:LoadFromJsonFile(NobleHUD._options_path .. "options_damage_popups.txt", NobleHUD, NobleHUD.settings)
 end)
