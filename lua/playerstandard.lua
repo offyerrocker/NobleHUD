@@ -14,6 +14,35 @@ Hooks:PostHook(PlayerStandard,"_end_action_steelsight","noblehud_end_steelsight"
 	end
 end)
 
+Hooks:PostHook(PlayerStandard,"_check_action_deploy_underbarrel","noblehud_check_action_underbarrel",function(self,t,input)
+	if input.btn_deploy_bipod then 
+		local weapon = self._equipped_unit:base()
+		local index = tweak_data.weapon[weapon._name_id].use_data.selection_index
+		local slot,firemode = NobleHUD:get_slot_and_firemode()
+		local underbarrel = NobleHUD.weapon_data[slot].underbarrel.base
+		
+		if underbarrel and underbarrel._on then 
+			firemode = "underbarrel"
+		end
+		NobleHUD:_set_firemode(slot,firemode)
+	end
+end)
+
+Hooks:PostHook(PlayerStandard,"_check_action_weapon_firemode","noblehud_check_action_firemode",function(self,t,input)
+	if input.btn_weapon_firemode_press then 
+		local weapon = self._equipped_unit:base()
+		local index = tweak_data.weapon[weapon._name_id].use_data.selection_index
+		local slot,firemode = NobleHUD:get_slot_and_firemode()
+		local underbarrel = NobleHUD.weapon_data[slot].underbarrel.base
+		
+		if underbarrel and underbarrel._on then 
+--			firemode = "underbarrel"
+			return
+		end
+		NobleHUD:_set_firemode(slot,firemode)
+	end
+end)
+--[[
 local orig_check_firemode = PlayerStandard._check_action_weapon_firemode
 function PlayerStandard:_check_action_weapon_firemode(t,input,...)
 	if input.btn_weapon_firemode_press then 
@@ -26,6 +55,7 @@ function PlayerStandard:_check_action_weapon_firemode(t,input,...)
 	end
 	return orig_check_firemode(self,t,input,...)
 end
+--]]
 --[[
 elseif NewRaycastWeaponBase.can_use_burst_mode then
 	--burstfire mod present

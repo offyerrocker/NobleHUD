@@ -527,6 +527,16 @@ Hooks:PostHook(HUDTeammate,"set_ammo_amount_by_type","noblehud_set_ammo",functio
 
 end)
 
+Hooks:PostHook(HUDTeammate,"set_teammate_weapon_firemode","noblehud_set_teammate_firemode",function(self,slot,firemode)
+	if self._main_player then 
+		NobleHUD:log("set_teammate_weapon_firemode(" .. tostring(slot) .. tostring(firemode) .. ")")
+	end
+--
+end)
+
+
+
+
 
 --mission equipment stuff
 
@@ -731,8 +741,6 @@ Hooks:PostHook(HUDTeammate,"set_grenade_cooldown","noblehud_set_grenade_cooldown
 	end
 end)
 
-
-
 --caution! under construction! 
 if true then return end 
 
@@ -746,8 +754,3 @@ Hooks:PostHook(HUDTeammate,"set_custom_radial","noblehud_set_custom_radial",func
 		NobleHUD:log("]")
 end)
 --]]
-
-
-Hooks:PostHook(HUDTeammate,"set_teammate_weapon_firemode","noblehud_set_teammate_firemode",function(self,slot,firemode)
---
-end)
