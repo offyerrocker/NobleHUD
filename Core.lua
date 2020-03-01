@@ -1,4 +1,5 @@
 --[[
+fak nearby shortname
 
 
 ***** TODO: *****
@@ -248,14 +249,15 @@ CODE:
 --]]
 
 
+local modpath = NobleHUD:GetPath()
+NobleHUD._mod_path = modpath
+NobleHUD._options_path = modpath .. "menu/"
+NobleHUD._localization_path = modpath .. "localization/"
+NobleHUD._cartographer_path = modpath .. "cartographer/"
+NobleHUD._announcer_path = modpath .. "assets/snd/announcer/"
 
-NobleHUD._mod_path = ModPath
-NobleHUD._options_path = ModPath .. "menu/"
 NobleHUD._buff_settings_path = SavePath .. "noblehud_buff_settings.txt"
 NobleHUD._settings_path = SavePath .. "noblehud_settings.txt"
-NobleHUD._localization_path = ModPath .. "localization/"
-NobleHUD._cartographer_path = ModPath .. "cartographer/"
-NobleHUD._announcer_path = ModPath .. "assets/snd/announcer/"
 NobleHUD.num_killfeed_messages = 0
 
 NobleHUD._killfeed_start_x = 100
@@ -991,7 +993,7 @@ NobleHUD._buff_data = {
 		icon_color = NobleHUD.color_data.hud_buff_positive,
 		text_color = NobleHUD.color_data.hud_buff_positive,
 		label = "noblehud_buff_messiah_ready_label",
-		label_compact = "noblehud_buff_generic_status_ready",
+		label_compact = "RDY", --!
 		value_type = "status",
 		flash = true
 	},
@@ -1022,7 +1024,7 @@ NobleHUD._buff_data = {
 		priority = 2,
 		icon = "tea_cookies",
 		label = "noblehud_buff_uppers_ready_label",
-		label_compact = "noblehud_buff_generic_status_ready",
+		label_compact = "RDY", --!
 		text_color = NobleHUD.color_data.hud_buff_status,
 		value_type = "status",
 		flash = false

@@ -1,9 +1,9 @@
 {
 	"name" : "Halo: Reach HUD",
-	"description" : "I do know how to pick em.",
+	"description" : "I have defied gods and demons.",
 	"author" : "Offyerrocker",
 	"contact" : "Discord: Offyerrocker#3878",
-	"version" : "0.8b",
+	"version" : "0.82b",
 	"image" : "icon.png",
 	"blt_version" : 2,
 	"priority" : 7,
