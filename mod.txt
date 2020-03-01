@@ -3,7 +3,7 @@
 	"description" : "I have defied gods and demons.",
 	"author" : "Offyerrocker",
 	"contact" : "Discord: Offyerrocker#3878",
-	"version" : "0.82b",
+	"version" : "0.83b",
 	"image" : "icon.png",
 	"blt_version" : 2,
 	"priority" : 7,

@@ -501,7 +501,8 @@ NobleHUD.settings = {
 	damage_popups_cumulative_refresh = 2,
 	damage_popups_redundant = true,
 	damage_popups_lifetime = 0.66,
-	damage_popups_fadeout = 0.5
+	damage_popups_fadeout = 0.5,
+	damage_popups_show_raw = false
 }
 
 NobleHUD.buff_settings = {

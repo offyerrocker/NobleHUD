@@ -661,6 +661,8 @@
 	"noblehud_damage_popup_options_desc" : "Set Damage Numbers Options",
 	"noblehud_set_damage_popups_enabled_title" : "Enable Damage Number Popups",
 	"noblehud_set_damage_popups_enabled_desc" : "If enabled, Damage Number popups will display when damaging an enemy",
+	"noblehud_set_damage_popups_raw_title" : "Show Raw Damage",
+	"noblehud_set_damage_popups_raw_desc" : "Show un-adjusted damage numbers",
 	"noblehud_set_damage_popups_style_title" : "Popup Style",
 	"noblehud_set_damage_popups_style_desc" : "Set how Damage Number popups will animate",
 	"noblehud_damage_popup_style_body" : "Body Part",

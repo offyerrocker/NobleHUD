@@ -15,7 +15,15 @@
 		},
 		{
 			"type" : "divider",
-			"size" : 4
+			"size" : 8
+		},
+		{
+			"type" : "toggle",
+			"id" : "id_noblehud_set_damage_popups_raw",
+			"title" : "noblehud_set_damage_popups_raw_title",
+			"description" : "noblehud_set_damage_popups_raw_desc",
+			"callback" : "callback_noblehud_set_damage_popups_raw",
+			"value" : "damage_popups_show_raw"
 		},
 		{
 			"type" : "multiple_choice",

@@ -2214,7 +2214,7 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit,variant,player_weapon_
 	if is_friendly_fire then
 		self:ClearKillsCache()
 		self:PlayAnnouncerSound("betrayal")
-		self:AddKillfeedMessage(string.gsub(managers.localization:text("noblehud_medal_betrayal"),"$1",unit_name,{color_2 = Color.red}))
+		self:AddKillfeedMessage(string.gsub(managers.localization:text("noblehud_medal_betrayal"),"$1",unit_name),{color_2 = Color.red})
 		--no +1 kills for you, you murderer >:(
 	else
 		if self:IsSkullActive("birthday") and headshot and unit and alive(unit) and unit:base() then 
@@ -5736,6 +5736,10 @@ function NobleHUD:RemoveTrackedEnemyDamage(key)
 	end
 end
 
+function NobleHUD:IsDamagePopupsRaw()
+	return self.settings.damage_popups_show_raw
+end
+
 function NobleHUD:CreateDamagePopup(damage_info)
 	if not (damage_info and self:IsDamagePopupsEnabled()) then
 		return
@@ -5761,7 +5765,7 @@ function NobleHUD:CreateDamagePopup(damage_info)
 		local result = damage_info.result or {}
 		local unit = col_ray.unit
 		local key = unit and unit:key() and tostring(unit:key())
-		local damage = damage_info.damage
+		local damage = (self:IsDamagePopupsRaw() and damage_info.raw_damage or damage_info.damage)
 		local name = damage_info.name
 		local body = col_ray.body
 		local distance = col_ray.distance
@@ -5789,6 +5793,7 @@ function NobleHUD:CreateDamagePopup(damage_info)
 		--font size change animate
 		--movement (borderlands type parabolic arc, or simple drift)
 		
+		
 		if killshot then 
 			color = self.color_data.hud_vitalsfill_red
 			new_color = self.color_data.collector
@@ -5803,8 +5808,10 @@ function NobleHUD:CreateDamagePopup(damage_info)
 			color = self.color_data.unique
 			new_color = self.color_data.strange
 			font_size = 28
-			damage = damage or (damage_info.fire_dot_data and damage_info.fire_dot_data.dot_damage) or 1
+			damage = damage or (damage_info.fire_dot_data and damage_info.fire_dot_data.dot_damage)
 		end
+		
+		damage = damage and (damage * 10) or 1
 		
 		local popup_name = (key or hit_position) and tostring(key or hit_position)
 		--may not appear for things like countertase
@@ -10555,6 +10562,10 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	
 	MenuCallbackHandler.callback_noblehud_set_damage_popups_enabled = function(self,item)
 		NobleHUD.settings.damage_popups_enabled = item:value() == "on"
+		NobleHUD:SaveSettings()
+	end
+	MenuCallbackHandler.callback_noblehud_set_damage_popups_raw = function(self,item)
+		NobleHUD.settings.damage_popups_show_raw = item:value() == "on"
 		NobleHUD:SaveSettings()
 	end
 	MenuCallbackHandler.callback_noblehud_set_damage_popups_style = function(self,item)
