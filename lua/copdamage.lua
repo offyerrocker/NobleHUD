@@ -35,7 +35,7 @@ end)
 Hooks:PreHook(CopDamage,"_on_damage_received","noblehud_copdamage_ondamagereceived",function(self,attack_data)
 	if attack_data and alive(attack_data.attacker_unit) and (attack_data.attacker_unit ~= managers.player:local_player()) and managers.groupai:state():all_criminals()[attack_data.attacker_unit:key()] then 
 		if attack_data.result.type == "death" then 
-			NobleHUD:OnTeammateKill(attack_data.attacker_unit)
+			NobleHUD:OnTeammateKill(attack_data)
 		end
 	end
 end)
@@ -70,7 +70,7 @@ function CopDamage:damage_melee(attack_data,...)
 		elseif managers.groupai:state():all_criminals()[attack_data.attacker_unit:key()] then
 			if type(result[1]) == "table" then 
 				if result[1].type == "death" then 
-					NobleHUD:OnTeammateKill(attack_data.attacker_unit)
+					NobleHUD:OnTeammateKill(attack_data)
 				end
 			end
 		end

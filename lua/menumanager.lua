@@ -1,291 +1,3 @@
---[[ changelog!
-
---changes from v0.7b:
-
-- Added Buffs Tracker, with (many) assorted options, modified and reworked from KineticHUD
-	- Internally, most buff-detection-related code has been moved to a separate folder for organization, to make it easier to later separate the buff tracker into a standalone mod
-- Added animated Interaction Bar and reorganized code to be more consistent
-- Added Motion Tracker panel scaling, alignment, and placement options
-- Added Health/Shields panel scaling option
-- Added Stamina panel placement options
-- Added Deployables panel alignment/placement options
-- Added Teammates panel alignment/placement options
-- Revamped Teammates panel nameplate
-	- Nameplate now takes up less extra space without being any harder to read
-	- Fixed nameplate name text being vertically off-center by one entire pixel
-	- Nameplate name text is now colored white to better match Halo Reach's style
-	- Nameplate outline is now colored blue to better match Halo Reach's style
-	- Nameplate now contains a translucent fill, which is colored according to the peer slot (green/blue/red/yellow) instead
-- Added volume slider bars for shield sounds (shield SFX for recharge, empty, and low)
-- Streamlined code for shield sounds, and fixed certain situations where sounds would not play
-- Grunt Birthday Party now attempts to spawn confetti particles if they are loaded; if not, flying dollar/money bundle particles are used instead
-- Added a hoxhud chat easter egg ;)
-- Added a overwatch chat easter egg ;)
-- Changed birthday chat easter egg to have better detection
-- Fixed scoreboard occasionally having duplicate names or profile pictures. Blame OVK
-- Fixed having multiple grenade launchers equipped potentially causing one grenade launcher crosshair to be invisible
-- Fixed Motion Tracker blips being off-center, including the "out of range" blips
-- Disabled Motion Tracker's radar range setting and locked it to 25 because why would you turn the range down anyway
-- "Friendly" enemies, such as the gangsters guarding the trucks on Aftershock, are detected as friendlies, and will trigger the "betrayal" voiceline, as well as a points penalty.
-- Minor text fixes
-
-- Known issues:
-	- Panel information for respective panels may be incorrect after changing scaling/placement/alignment, but will refresh eventually after proper events
-	- Teammates' generated callsigns may not appear properly in waypoints (the ones above teammates' heads) when joining as a drop-in client, and will instead display the teammates' entire names. This is at the top of my priority list for next update.
-	- Some buffs are not yet implemented; I am working on implementing the remaining buffs. 
-	- Bots currently have no player icon in the scoreboard
-	- Teammates' down counters still do not reset properly
-	- Long text for deployable amounts, such as "14|6" for fully upgraded Trip Mines/Shaped Charges may be too large to fit in the Deployables panel
-	- Misc. interaction circle (the one that appears when bots are reviving you) is currently disabled and does not display
-	- Berserker Aced buff may sometimes appear when you are at low health, even if you do not have Berserker Aced.
-
-
-
-***** TODO: *****
-	Berkserker aced seems always active, particularly in swan song. that's bad. 
-	
-	* Reorganize popup animate code to allow damage popups to reuse damage animations
-	* Add damage popups via other hooks? From CopDamage?
-	* Cumulative damage 
-		* For athena, use existing popup but reset text, and position/animation progress
-	 * Medals should directly reference unit names; for example, "Your driving assisted $PLAYERNAME"
-		* Requires a bit of a reorganization for medal code
-	
-	Notes:
-		
-		* "Speaking" icon for teammates and self
-		* Sync data:
-			send assault phase
-		
-		* Teammate Vitals
-			* Teammate divider for vitals;
-			* change vitals text color
-			* Teammate vitals icon fill/blink effect (for non-conditional) - use vitals_icon_bg?
-			
-		* Test sync data success
-			* assault
-			* team_name
-			
-		* Users cannot select an alternative crosshair for rocket launchers since they are technically grenade launchers
-		
-	%%% Buffs:
-			
-		* Track buffs even if disabled (by user pref), but do not show panel if not extant?
-		
-		* Background for buffs so that they're visible against a white background
-		
-		* Reorganize buffs tweak table
-		* Add default setting for each buff
-		* Add threshold procs for Resist/crit/dodge, and option to always show
-		
-			Singleplayer
-			
-		* Armor/Health tracker
-		* Partners In Crime
-		* Partners In Crime Aced
-		* Stockholm Syndrome Aced Charge
-		* Fully Loaded
-		
-		Captain Winters buff should flash red white and blue cause MURICA
-		
-			Perk Decks
-			
-		* Anarchist Lust for Life (active regen)
-		
-			Multiplayer
-		* Second Wind (from teammate)
-		
-		* Downed (check playerbleedout.lua state)
-		
-		
-		* revive_damage_reduction is created in playermanager:set_property but only name and value are passed, not timer
-		
-			
-	&&& HIGH PRIORITY: &&&
-		* underbarrel base does not trigger HUD change (ammo tick, crosshair)
-		
-		- BUG: Teammates panel and tabscreen are not correct for drop-ins
-		- Bots have no icon
-	
-	
-		* HUDTeammate:set_custom_radial() (swansong and what have you for teammates)
-		
-		* Add menu button to set teamname
-		* Add menu button to set teamcolor (through beardlib)
-		
-		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER 
-
-		* BAI sync data compatibility?
-
-		%% BUGS:
-			
-			- Floating ammo panel has incorrect width after switching weapons
-			- Shield noises (low/depleted) may persist during loading
-			- Trip Mines have their text cut off (14 | 6 is way too long in eurostile_ext)
-				* resize font size based on length? 
-				* change label position? 
-				* change font?
-			- Assault phase localization when not host
-			- Vanilla HUD is visible in drop-in spectate mode
-			- Multiple concurrent Pocket ECM Jammer buffs may interfere with each other
-			- Down Counter Standalone will fight NobleHUD for dominance when it comes to setting downs in the tabscreen
-				* This is because I tried to add compatibility between the two via network syncing, but didn't save whether or not peers had DCS in NobleHUD
-
-		%% FEATURES: %%
-			* Tab screen
-				--move scoreboard based on score or peerid?
-			* Teammates panel
-				- center vertically to subpanel
-				- ammo?
-			* Mod options
-		
-	&& LOW PRIORITY FEATURES: &&
-
-		* Detect teammate dead through set condition mugshot_custody
-			* Set nickname color to red
-			* Set nickname text to "X"
-		* Damage numbers popups
-				
-		* Weapontype-specific bloom decay
-		* Blinky "No ammo" alert
-		* Voice command radial
-		
-		* [ASSET] Created flamethrower reticle looks like shit, current one is extremely unoptimized
-		* Show other things, such as equipment, on radar? check slotmask 
-		* Adjust overshield color to be more green (check MCC screenshots)
-		* Flash mission name at mission start? (See mission/submission name in MCC screenshots)
-				
-		* Joker panel
-		* Mod options
-			* Slider setting for popup_fadeout_time
-			* Keybinds for Safety etc
-			* Placement and Scaling
-				* weapons? 
-				* deployable scaling?
-				* score panel?
-		* HIGH SCORES
-			- Convert scores to credits after each run; add "purchaseable" items for credits
-			- Unusual effects? On-death SFX (grunt birthday party?)
-		
-		* Apply update opacity for all elements from menu
-		* Organize color data
-			- All HUD elements should be the same blue color
-			- Ability circle needs a baked-blue asset
-		* Auntie dot
-			* Subtitles: Auntie dot voice lines with associated queues (requires vo assets/updated asset dump)
-			* background non-lit grid should probably be invisible, or flicker to invisible after flickering off
-			* should be layered over as the loading screen, and stretched to fit screen
-			* during loading screen, should be under text but above blackscreen;
-			* in-game, should be entirely below hud, layerwise
-		* Animate function for text that randomly hides individual characters (similar to auntie dot's fadeout function)
-			* Given list of integers representing non-space character positions, foreach hide animate(text:set_color_range(pos,pos,color:with_alpha(a))) after random(n) delay
-			* Mainly for use in Objectives panel
-		* Mod Options:
-			* Grenade/deployable area swap
-		* Suspicion panel?
-		* Crosshair stuff
-			* add crosshair data for everything lol
-			* melee crosshair
-			* manually selectable 
-			* customizable alpha (master)
-		* Assault timer? Nah Dom's got it covered in BAI
-		* Killfeed
-			* Integration with JoyScoreCounter
-			* Record medals with score
-			* Show weapon icon (PLAYERNAME [WEAPON_ICON] ENEMYNAME) ?
-		* More Medals:
-			* Seek and Destroy (for bosses?)
-			* EMP Blast for stunned enemies?
-			* Hero or assist for reviving teammates?
-			* Protector? hard to implement but not impossible
-			* Yoink?
-
-		&& DECISIONS &&
-			* Should graze kills give sniper medals? currently, they don't
-			* Should ECM Jammers only show their radar decoys when a player is within range of the ECM jammer? 
-				This would match Halo 3's Radar Jammer behaviour,
-				where decoys would appear in the radius 
-			
-	&& BEAUTIFY EXISTING: &&
-		* Increase height of teammate panels + Vitals panel, so that the text doesn't get in the way of the blinky icon 
-		* Standardize HUD style data for any given panel eg. ponr font size; this will facilitate adding scaling and movement later on
-		* Shield damage chunking
-		* PONR label goes where "BONUS ROUND" was in reach
-			* Flash as countdown enabled
-		* Callsign generator
-			* remove clantags
-			* remove doubled letters
-		* Carry indicator is kind of hard to see
-		* Grenade/Ability
-			* Ability circle color should be colored blue by default
-			* Counter is unreadable- needs shadow or better placement
-				* shadow is better, to show during flashbangs
-		* Reticle/Weapon stuff
-			* DMR should be scaled down ever so slightly
-			* Streamline like the whole code process, it's unreadable
-			* Adjust positioning of subpanels (new font?)
-			* Firemode indicator
-			* Underbarrel should change reticle
-			* Grenade Launcher crosshair
-				* Right arrow should do something
-				* Left arrow rotates with distance?
-				* Left arrow is not colored (frame, circle, and altimeter are already colored)
-		* Radar	
-			* Motion-based tracking
-			* Radar pulse when update?
-			* Different motion tracker icon or color for Team AI versus players
-			* Lower blip should be darker/lower opacity, instead of halo 3 style
-			* Unique vehicle blip asset texture so that they're not blurry?
-
-
-		
-	&& CREATE ASSETS: &&
-
-		-- Firemode indicator
-		-- Crosshair textures
-			- Other vehicles?
-				* Scorpion
-				* Gauss hog gunner?
-				* Falcon?
-				* Banshee?
-				* Ghost? [ref]
-				* Revenant? 
-				* Wraith? [ref]
-		-- Ammo type tick variant textures
-			- Weapon Overheat meter? (Reach)
-			- DMR
-			- AR
-			- Pistol
-			- Rocket
-			- SMG
-			- Car
-			- Saw
-			- Shotgun (rename)
-
---grenade/ability outline (baked blue color for vertex radial render template)
---score banner small
-- bloom funcs should all have a reference to their own crosshair tweakdata
-- bloom funcs should also have reference to their own weapon tweakdata
-- crosshair data blacklist should be replaced by a manual override list for weapon ids, or from tweak data
-
-CODE:
-
---settings
---score panel
---joyscore (modified)
-	* update to recent joyscore points list
-	* mutator multipliers
-
---ability/deployable/grenade
-	* grenade vs deployable layout
-		* grenade selection indicator
-		* secondary grenade panel
-
---reticle bloom
-	* standardize reticle subparts
-
---]]
-
 
 --for reference; set later
 NobleHUD._announcer_sound_source = nil
@@ -771,10 +483,6 @@ function NobleHUD:GetCallsign(peer_id) --synced/saved, manually selected callsig
 	return self.settings.callsign_string
 end
 
-function NobleHUD:IsSafeMode()
-	return self.settings.safe_mode
-end
-
 function NobleHUD:GetSteelsightHidesReticle()
 	return self.settings.steelsight_hides_reticle_enabled
 end
@@ -1029,6 +737,9 @@ function NobleHUD:SetKiller(unit,peer_id)
 	end
 end
 
+function NobleHUD:GetKiller(peer_id)
+	return self._cache.kills[peer_id or managers.network:session():local_peer():id() or 1]
+end
 
 --		MISC
 
@@ -2491,9 +2202,19 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit,variant,player_weapon_
 
 	local medal_multiplier = 1
 
+	local unit_name = managers.localization:text("noblehud_unitname_" .. tostring(unit_type))
+	if not (unit_name and unit_type) or string.find(unit_name,"ERROR") then 
+		if unit_team ~= "neutral1" and friendly_teams[unit_team] then 
+			unit_name = managers.localization:text("noblehud_unitname__generic_teammate")
+		else
+			unit_name = managers.localization:text("noblehud_unitname__generic_civilian")
+		end
+	end
+	
 	if is_friendly_fire then
 		self:ClearKillsCache()
 		self:PlayAnnouncerSound("betrayal")
+		self:AddKillfeedMessage(string.gsub(managers.localization:text("noblehud_medal_betrayal"),"$1",unit_name,{color_2 = Color.red}))
 		--no +1 kills for you, you murderer >:(
 	else
 		if self:IsSkullActive("birthday") and headshot and unit and alive(unit) and unit:base() then 
@@ -2523,6 +2244,21 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit,variant,player_weapon_
 		
 		if managers.statistics._global.killed.total and managers.statistics._global.session.killed.total.count == 0 then 
 			self:AddMedal("first")
+		end
+		
+		if unit then 
+			for i,killer_unit in pairs(self._cache.killer) do 
+				if unit == killer_unit then
+					if i == managers.network:session():local_peer():id() then 
+						self:AddMedal("revenge",nil,{macros = {unit_name}})
+					else
+						local peer = managers.network:session():peer(i)
+						local peer_name = peer and peer:name() or managers.localization:text("noblehud_unitname__generic_teammate")
+						self:AddMedal("avenger",nil,{macros = {peer_name}})
+					end
+					self:ClearKiller(i)
+				end
+			end
 		end
 		
 		if player_weapon_id == primary_id then
@@ -2726,8 +2462,11 @@ function NobleHUD:ClearKillsCache()
 	--]]
 end
 
-function NobleHUD:OnTeammateKill(player_unit)
-
+function NobleHUD:OnTeammateKill(attack_data)
+	local player_unit = attack_data and attack_data.player_unit
+	if not player_unit then
+		return
+	end
 	--if player_unit is in your car, give wheelman medal
 	local peer_id = alive(player_unit) and managers.criminals:character_peer_id_by_unit(player_unit)
 	local vehicle = peer_id and managers.player:get_vehicle_for_peer(peer_id)
@@ -2736,9 +2475,13 @@ function NobleHUD:OnTeammateKill(player_unit)
 		if vehicle and vehicle.vehicle_unit then 
 			if alive(vehicle.vehicle_unit) and alive(my_vehicle.vehicle_unit) then 
 				if vehicle.vehicle_unit == my_vehicle.vehicle_unit then
+					local peer = peer_id and managers.network:session():peer(peer_id)
+					local peer_name = (peer and peer:name()) or managers.localization:text("noblehud_unitname__generic_teammate")
 					if my_vehicle.seat == "driver" then 
-						NobleHUD:AddMedal("wheelman")
+						NobleHUD:AddMedal("wheelman",nil,{macros = {peer_name}})
 						NobleHUD:AddMedal("spree_wheelman",NobleHUD:KillsCache("vehicle_assist",1))
+					elseif vehicle.seat == "driver" then 
+						NobleHUD:AddKillfeedMessage(string.gsub(managers.localization:text("noblehud_medal_wheelman_assisted"),"$1",peer_name))
 					end
 				end
 			end
@@ -2871,7 +2614,7 @@ function NobleHUD:PlayShieldSound(event,enabled)
 end
 
 
---HIT INDICATOR
+--HIT INDICATOR (not finished... yet)
 function NobleHUD:AddHitIndicator(damage_origin, damage_type, fixed_angle)
 	damage_type = damage_type or HUDHitDirection.DAMAGE_TYPES.HEALTH
 	
@@ -3073,7 +2816,8 @@ function NobleHUD:_create_weapons(hud)
 			h = 4,
 			visible = false, --! temp disabled! /!\
 			color = self.color_data.hud_vitalsoutline_blue,
-			texture = "guis/textures/bullet_tick"
+			texture = "guis/textures/bullet_tick",
+			alpha = 0
 		})
 		local safety_indicator = panel:bitmap({ --lock?
 			name = "safety_indicator",
@@ -3295,13 +3039,14 @@ function NobleHUD:set_weapon_info()
 		end
 
 --[[		
-	04:13:59 PM Lua: CONSOLE: > logall(NobleHUD.weapon_data[2].underbarrel.base._ammo)
-04:13:59 PM Lua: CONSOLE: Index [_ammo_max_per_clip2] : [1]
-04:13:59 PM Lua: CONSOLE: Index [_ammo_max2] : [3]
-04:13:59 PM Lua: CONSOLE: Index [_ammo_remaining_in_clip] : [1]
-04:13:59 PM Lua: CONSOLE: Index [_ammo_pickup] : [table: 0x293d5e30]
-04:13:59 PM Lua: CONSOLE: Index [_name_id] : [contraband_m203]
-04:13:59 PM Lua: CONSOLE: Index [_ammo_total] : [2]	
+NobleHUD.weapon_data[2].underbarrel.base._ammo = {
+_ammo_max_per_clip2 : 1
+_ammo_max2 : 3
+_ammo_remaining_in_clip : 1
+_ammo_pickup : table: 0x293d5e30
+_name_id : contraband_m203
+_ammo_total : 2
+}
 		
 
 --]]		
@@ -3362,9 +3107,14 @@ function NobleHUD:_set_weapon_mag(slot,amount,max_amount)
 			local ammo_icon = weapon_panel:child("weapon_ammo_ticks"):child("ammo_icon_" .. i)
 			--! todo if below certain ammo percent threshold, animate color flash on each remaining icon
 			if alive(ammo_icon) then 
+				self:animate_stop(ammo_icon)
 				if i > amount then 
 					ammo_icon:set_alpha(empty_alpha)
+					ammo_icon:set_color(self.color_data.hud_weapon_color)
 				else 
+					if (max_amount > 0) and (amount * 3 <= max_amount) then 
+						self:animate(ammo_icon,"animate_blink_color_infinite",nil,0.66,self.color_data.hud_weapon_color,self.color_data.hud_vitalsfill_red,true)					
+					end
 					ammo_icon:set_alpha(full_alpha)
 				end
 				
@@ -8368,6 +8118,55 @@ function NobleHUD:animate_blink(o,t,dt,start_t,duration,blink_speed)
 	end
 end
 
+function NobleHUD:animate_blink_color_infinite(o,t,dt,start_t,...)
+	return self:animate_blink_color(o,t,dt,start_t,math.huge,...)
+end
+
+--todo animate blink offset 
+function NobleHUD:animate_ammo_tick_low(o,t,dt,start_t,frequency,delay,color_1,color_2)
+
+--[[
+	if alert_on then
+		--not limited to a maximum of 1
+		suspicion_icon:set_image("guis/textures/restoration/crimewar_skull_2")
+		local interval = 2
+		local time_scale = 1
+		local icon_size = 32
+		for i=1,NUM_SUSPICION_EFFECT_GHOSTS,1 do 
+			local ghost = panel:child("suspicion_ghost_" .. tostring(i))
+			if ghost then 
+				local t_adjusted = time_scale * (t + (i / (NUM_SUSPICION_EFFECT_GHOSTS * interval)))
+				local progress = 1 - (math.cos((90 * (t_adjusted % 1))))
+
+				--raw equation: let a=2,b=0.5; y = 1/a - (cosine(modulo(x*b,1)*pi)/a)
+
+				local new_w = icon_size * (progress + 1)
+				local new_h = icon_size * (progress + 1)
+				ghost:set_image("guis/textures/restoration/crimewar_skull_2")
+				ghost:set_w(new_w)
+				ghost:set_h(new_h)
+				ghost:set_color(ratio_color)
+				ghost:set_alpha(1 - progress)
+				ghost:set_center(panel:center())
+			end
+		end
+	end
+	--]]
+end
+
+
+function NobleHUD:animate_blink_color(o,t,dt,start_t,duration,blink_speed,color_1,color_2,synced)
+	if t - start_t > duration then
+		return true
+	end
+	
+	local _t = t - start_t
+	if synced then 
+		_t = t
+	end
+	o:set_color(NobleHUD.interp_colors(color_1,color_2,math.abs(0.5 + math.sin(_t * (blink_speed or 1) * 360))))
+end
+
 function NobleHUD:animate_type_text(o,t,dt,start_t,duration,text,type_char,post_duration,blink_speed)
 	post_duration = post_duration or 0
 
@@ -8843,23 +8642,24 @@ function NobleHUD:AddKillfeedMessage(text,params)
 	end
 	self._cache.newest_killfeed = label
 	
-	self:animate(label,"animate_killfeed_text_in",add_text_to_killfeed,params.duration or 0.3,params.font_size,params.color_1 or self.color_data.hud_text_blue,params.color_2 or self.color_data.hud_text_flash)
+	self:animate(label,"animate_killfeed_text_in",add_text_to_killfeed,params.duration or 0.3,params.font_size or 16,params.color_1 or self.color_data.hud_text_blue,params.color_2 or self.color_data.hud_text_flash)
 	return label
 end
 
-function NobleHUD:AddMedal(category,rank) --from name
+function NobleHUD:AddMedal(category,rank,params) --from name
 	local medal_data = self._medal_data[category]
 --	self:log("Doing NobleHUD:AddMedal(" .. tostring(category) .. "," .. tostring(rank) .. ")",{color = Color.yellow})
+
 	if rank and medal_data and medal_data[rank] then 
-		return NobleHUD:AddMedalFromData(medal_data[rank],category)
+		return NobleHUD:AddMedalFromData(medal_data[rank],category,params)
 	elseif medal_data and not rank then 
-		return NobleHUD:AddMedalFromData(medal_data,category)
+		return NobleHUD:AddMedalFromData(medal_data,category,params)
 	elseif not (medal_data or rank) then
 		self:log("ERROR: NobleHUD:AddMedal(" .. tostring(category) .. "," .. tostring(rank) .. ") (bad medal)",{color = Color.red})
 	end
 end
 
-function NobleHUD:AddMedalFromData(data,category)
+function NobleHUD:AddMedalFromData(data,category,params)
 		--direct reference to table passed here
 	local killfeed = self._killfeed_panel
 	if not (data and data.icon_xy) then 
@@ -8888,6 +8688,14 @@ function NobleHUD:AddMedalFromData(data,category)
 		return
 	end
 	
+	local name = data.name and managers.localization:text("noblehud_medal_" .. data.name)
+	
+	if params and params.macros then 
+		for i,s in ipairs(params.macros) do 
+			name = string.gsub(name,"$" .. i,s)
+		end
+	end
+	
 	self.num_medals = self.num_medals + 1
 	local texture,texture_rect = self:GetMedalIcon(unpack(data.icon_xy))
 	local icon_size = 32
@@ -8909,11 +8717,6 @@ function NobleHUD:AddMedalFromData(data,category)
 		alpha = 1
 	})
 	
-	local function add_bitmap_to_killfeed (bitmap)
-		self._cache.newest_medal = nil
-		table.insert(self.killfeed_icons,1,{start_t = Application:time(),bitmap = bitmap})
-	end	
-	
 	if self._cache.newest_medal and alive(self._cache.newest_medal) then 
 		NobleHUD:animate_remove_done_cb(self._cache.newest_medal,
 			function(o)
@@ -8926,12 +8729,14 @@ function NobleHUD:AddMedalFromData(data,category)
 	end
 	self._cache.newest_medal = icon
 	
+	local function add_bitmap_to_killfeed (bitmap)
+		self._cache.newest_medal = nil
+		table.insert(self.killfeed_icons,1,{start_t = Application:time(),bitmap = bitmap})
+	end	
 	self:animate(icon,"animate_killfeed_icon_twirl",function(o) o:set_rotation(0); NobleHUD:animate(o,"animate_killfeed_icon_pulse",add_bitmap_to_killfeed,0.3,icon_size,1.5) end,0.25,180,start_x,start_y)
-	
-	local name = data.name and managers.localization:text("noblehud_medal_" .. data.name)
-	
+
 	if data.show_text or self:ShowAllMedalMessages() then 
-		self:AddKillfeedMessage(name .. "!",{font_size = 16})
+		self:AddKillfeedMessage(name .. (data.suffix or "!"),{font_size = 16})
 	end
 	return icon
 end

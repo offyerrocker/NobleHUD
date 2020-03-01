@@ -41,106 +41,102 @@ Hooks:PostHook(HUDChat,"init","noblehud_init_hudchat",function(self,ws, hud)
 end)
 
 
+if not NobleHUD:IsSafeMode() then 
+	local orig_receive_message = HUDChat.receive_message
+	function HUDChat:receive_message(name,message,color,icon,...)
+		if NobleHUD:IsChatNotificationSoundEnabled() then
+			local notif_sfx = NobleHUD.chat_notification_sounds[NobleHUD:GetChatNotificationSound()]
+			if NobleHUD._cache.loaded then
+				XAudio.Source:new(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/ui/" .. notif_sfx))
+			end
+		end	
+		if NobleHUD:IsChatAutoshowEnabled() or (NobleHUD:GetChatTimestampMode() < 3) then	
+			local output_panel = self._panel:child("output_panel")
+			local x = 0
+			local icon_bitmap = nil
 
-local orig_receive_message = HUDChat.receive_message
-function HUDChat:receive_message(name,message,color,icon,...)
-	if NobleHUD:IsSafeMode() then 
-		return orig_receive_message(self,name,message,color,icon,...)
-	end
+			if icon then
+				local icon_texture, icon_texture_rect = tweak_data.hud_icons:get_icon_data(icon)
+				icon_bitmap = output_panel:bitmap({
+					y = 1,
+					texture = icon_texture,
+					texture_rect = icon_texture_rect,
+					color = color
+				})
+				x = icon_bitmap:right()
+			end
 
-	if NobleHUD:IsChatNotificationSoundEnabled() then
-		local notif_sfx = NobleHUD.chat_notification_sounds[NobleHUD:GetChatNotificationSound()]
-		if NobleHUD._cache.loaded then
-			XAudio.Source:new(XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/ui/" .. notif_sfx))
-		end
-	end	
-	if NobleHUD:IsChatAutoshowEnabled() or (NobleHUD:GetChatTimestampMode() < 3) then	
-		local output_panel = self._panel:child("output_panel")
-		local x = 0
-		local icon_bitmap = nil
-
-		if icon then
-			local icon_texture, icon_texture_rect = tweak_data.hud_icons:get_icon_data(icon)
-			icon_bitmap = output_panel:bitmap({
-				y = 1,
-				texture = icon_texture,
-				texture_rect = icon_texture_rect,
+			local text = name .. ": "
+			local name_len = utf8.len(text)
+			local timestamp_text = ""
+			local timestamp_mode = NobleHUD:GetChatTimestampMode()
+			if timestamp_mode == 1 then --ingame timer
+				timestamp_text = "[" .. os.date("%X",managers.game_play_central:get_heist_timer() + (3600 * 8)) .. "] "
+				text = timestamp_text .. text
+			elseif timestamp_mode == 2 then --realtime timer
+				timestamp_text = "[" .. os.date("%X") .. "] "
+				text = timestamp_text .. text
+			end
+			local timestamp_len = utf8.len(timestamp_text)
+			
+			text = text .. message
+			local line = output_panel:text({
+				halign = "left",
+				vertical = "top",
+				hvertical = "top",
+				wrap = true,
+				align = "left",
+				blend_mode = "normal",
+				word_wrap = true,
+				y = 0,
+				layer = 0,
+				text = text,
+				font = tweak_data.menu.pd2_small_font,
+				font_size = tweak_data.menu.pd2_small_font_size,
+				x = x,
 				color = color
 			})
-			x = icon_bitmap:right()
-		end
+			local total_len = utf8.len(line:text())
 
-		local text = name .. ": "
-		local name_len = utf8.len(text)
-		local timestamp_text = ""
-		local timestamp_mode = NobleHUD:GetChatTimestampMode()
-		if timestamp_mode == 1 then --ingame timer
-			timestamp_text = "[" .. os.date("%X",managers.game_play_central:get_heist_timer() + (3600 * 8)) .. "] "
-			text = timestamp_text .. text
-		elseif timestamp_mode == 2 then --realtime timer
-			timestamp_text = "[" .. os.date("%X") .. "] "
-			text = timestamp_text .. text
-		end
-		local timestamp_len = utf8.len(timestamp_text)
-		
-		text = text .. message
-		local line = output_panel:text({
-			halign = "left",
-			vertical = "top",
-			hvertical = "top",
-			wrap = true,
-			align = "left",
-			blend_mode = "normal",
-			word_wrap = true,
-			y = 0,
-			layer = 0,
-			text = text,
-			font = tweak_data.menu.pd2_small_font,
-			font_size = tweak_data.menu.pd2_small_font_size,
-			x = x,
-			color = color
-		})
-		local total_len = utf8.len(line:text())
-
-		if timestamp_mode < 3 then 
-			
-			line:set_range_color(0, timestamp_len, NobleHUD.color_data.hud_text_blue)
-			line:set_range_color(timestamp_len,name_len, color)
-			line:set_range_color(timestamp_len + name_len,total_len, NobleHUD.color_data.hud_text)
-		else
-			line:set_range_color(0, name_len, color)
-			line:set_range_color(name_len,total_len, NobleHUD.color_data.hud_text)
-		end
-
-
-		local _, _, w, h = line:text_rect()
-
-		line:set_h(h)
-		table.insert(self._lines, {
-			line,
-			icon_bitmap
-		})
-		line:set_kern(line:kern())
-		self:_layout_output_panel()
-		if NobleHUD:IsChatAutoshowEnabled() then
-			NobleHUD:SetChatVisible(true)
-			if NobleHUD:GetChatAutohideMode() < 3 then
-				NobleHUD:AddDelayedCallback(function()
-					NobleHUD:SetChatVisible(false)
-					end,nil,NobleHUD:GetChatAutohideTimer(),"autohide_chat"
-				)
+			if timestamp_mode < 3 then 
+				
+				line:set_range_color(0, timestamp_len, NobleHUD.color_data.hud_text_blue)
+				line:set_range_color(timestamp_len,name_len, color)
+				line:set_range_color(timestamp_len + name_len,total_len, NobleHUD.color_data.hud_text)
+			else
+				line:set_range_color(0, name_len, color)
+				line:set_range_color(name_len,total_len, NobleHUD.color_data.hud_text)
 			end
-		else
-			if NobleHUD:IsChatNotificationIconEnabled() and not (self._focus or NobleHUD._cache.chat_wanted) then
-				NobleHUD:DoChatNotification(true)
-			end	
+
+
+			local _, _, w, h = line:text_rect()
+
+			line:set_h(h)
+			table.insert(self._lines, {
+				line,
+				icon_bitmap
+			})
+			line:set_kern(line:kern())
+			self:_layout_output_panel()
+			if NobleHUD:IsChatAutoshowEnabled() then
+				NobleHUD:SetChatVisible(true)
+				if NobleHUD:GetChatAutohideMode() < 3 then
+					NobleHUD:AddDelayedCallback(function()
+						NobleHUD:SetChatVisible(false)
+						end,nil,NobleHUD:GetChatAutohideTimer(),"autohide_chat"
+					)
+				end
+			else
+				if NobleHUD:IsChatNotificationIconEnabled() and not (self._focus or NobleHUD._cache.chat_wanted) then
+					NobleHUD:DoChatNotification(true)
+				end	
+			end
+		else	
+			return orig_receive_message(self,name,message,color,icon,...)
 		end
-	else	
-		return orig_receive_message(self,name,message,color,icon,...)
+
 	end
-
 end
-
 Hooks:PreHook(HUDChat,"_loose_focus","noblehud_onlosefocus_hudchat",function(self)
 	if not self._focus then
 		return

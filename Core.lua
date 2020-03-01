@@ -1,4 +1,253 @@
---NobleHUD = NobleHUD or {}
+--[[
+
+
+***** TODO: *****
+	
+	* Reorganize popup animate code to allow damage popups to reuse damage animations
+	* Add damage popups via other hooks? From CopDamage?
+	* Cumulative damage 
+		* For athena, use existing popup but reset text, and position/animation progress
+	* Test new macro-ized code
+	
+	- Send medal data to other noblehud users? might be exploitable though, probably just check that player's kills locally 
+
+
+	Notes:
+		
+		* "Speaking" icon for teammates and self
+		* Sync data:
+			send assault phase
+		
+		* Teammate Vitals
+			* Teammate divider for vitals;
+			* change vitals text color
+			* Teammate vitals icon fill/blink effect (for non-conditional) - use vitals_icon_bg?
+			
+		* Test sync data success
+			* assault
+			* team_name
+			
+		* Users cannot select an alternative crosshair for rocket launchers since they are technically grenade launchers
+		
+	%%% Buffs:
+			
+		* Track buffs even if disabled (by user pref), but do not show panel if not extant?
+		
+		* Background for buffs so that they're visible against a white background
+		
+		* Reorganize buffs tweak table
+		* Add default setting for each buff
+		* Add threshold procs for Resist/crit/dodge, and option to always show
+		
+			Singleplayer
+			
+		* Armor/Health tracker
+		* Partners In Crime
+		* Partners In Crime Aced
+		* Stockholm Syndrome Aced Charge
+		* Fully Loaded
+		
+		Captain Winters buff should flash red white and blue cause MURICA
+		
+			Perk Decks
+			
+		* Anarchist Lust for Life (active regen)
+		
+			Multiplayer
+		* Second Wind (from teammate)
+		
+		* Downed (check playerbleedout.lua state)
+		
+		
+		* revive_damage_reduction is created in playermanager:set_property but only name and value are passed, not timer
+		
+			
+	&&& HIGH PRIORITY: &&&
+		* underbarrel base does not trigger HUD change (ammo tick, crosshair)
+		
+		- BUG: Teammates panel and tabscreen are not correct for drop-ins
+		- Bots have no icon
+	
+	
+		* HUDTeammate:set_custom_radial() (swansong and what have you for teammates)
+		
+		* Add menu button to set teamname
+		* Add menu button to set teamcolor (through beardlib)
+		
+		* HUD SHOULD BE CREATED OUTSIDE OF HUDMANAGER 
+
+		* BAI sync data compatibility?
+
+		%% BUGS:
+			
+			- Floating ammo panel has incorrect width after switching weapons
+			- Shield noises (low/depleted) may persist during loading
+			- Trip Mines have their text cut off (14 | 6 is way too long in eurostile_ext)
+				* resize font size based on length? 
+				* change label position? 
+				* change font?
+			- Assault phase localization when not host
+			- Vanilla HUD is visible in drop-in spectate mode
+			- Multiple concurrent Pocket ECM Jammer buffs may interfere with each other
+			- Down Counter Standalone will fight NobleHUD for dominance when it comes to setting downs in the tabscreen
+				* This is because I tried to add compatibility between the two via network syncing, but didn't save whether or not peers had DCS in NobleHUD
+
+		%% FEATURES: %%
+			* Tab screen
+				--move scoreboard based on score or peerid?
+			* Teammates panel
+				- center vertically to subpanel
+				- ammo?
+			* Mod options
+		
+	&& LOW PRIORITY FEATURES: &&
+
+		* Detect teammate dead through set condition mugshot_custody
+			* Set nickname color to red
+			* Set nickname text to "X"
+		* Damage numbers popups
+				
+		* Weapontype-specific bloom decay
+		* Blinky "No ammo" alert
+		* Voice command radial
+		
+		* [ASSET] Created flamethrower reticle looks like shit, current one is extremely unoptimized
+		* Show other things, such as equipment, on radar? check slotmask 
+		* Adjust overshield color to be more green (check MCC screenshots)
+		* Flash mission name at mission start? (See mission/submission name in MCC screenshots)
+				
+		* Joker panel
+		* Mod options
+			* Slider setting for popup_fadeout_time
+			* Keybinds for Safety etc
+			* Placement and Scaling
+				* weapons? 
+				* deployable scaling?
+				* score panel?
+		* HIGH SCORES
+			- Convert scores to credits after each run; add "purchaseable" items for credits
+			- Unusual effects? On-death SFX (grunt birthday party?)
+		
+		* Apply update opacity for all elements from menu
+		* Organize color data
+			- All HUD elements should be the same blue color
+			- Ability circle needs a baked-blue asset
+		* Auntie dot
+			* Subtitles: Auntie dot voice lines with associated queues (requires vo assets/updated asset dump)
+			* background non-lit grid should probably be invisible, or flicker to invisible after flickering off
+			* should be layered over as the loading screen, and stretched to fit screen
+			* during loading screen, should be under text but above blackscreen;
+			* in-game, should be entirely below hud, layerwise
+		* Animate function for text that randomly hides individual characters (similar to auntie dot's fadeout function)
+			* Given list of integers representing non-space character positions, foreach hide animate(text:set_color_range(pos,pos,color:with_alpha(a))) after random(n) delay
+			* Mainly for use in Objectives panel
+		* Mod Options:
+			* Grenade/deployable area swap
+		* Suspicion panel?
+		* Crosshair stuff
+			* add crosshair data for everything lol
+			* melee crosshair
+			* manually selectable 
+			* customizable alpha (master)
+		* Assault timer? Nah Dom's got it covered in BAI
+		* Killfeed
+			* Integration with JoyScoreCounter
+			* Record medals with score
+			* Show weapon icon (PLAYERNAME [WEAPON_ICON] ENEMYNAME) ?
+		* More Medals:
+			* Seek and Destroy (for bosses?)
+			* EMP Blast for stunned enemies?
+			* Hero or assist for reviving teammates?
+			* Protector? hard to implement but not impossible
+			* Yoink?
+
+		&& DECISIONS &&
+			* Should graze kills give sniper medals? currently, they don't
+			* Should ECM Jammers only show their radar decoys when a player is within range of the ECM jammer? 
+				This would match Halo 3's Radar Jammer behaviour,
+				where decoys would appear in the radius 
+			
+	&& BEAUTIFY EXISTING: &&
+		* Increase height of teammate panels + Vitals panel, so that the text doesn't get in the way of the blinky icon 
+		* Standardize HUD style data for any given panel eg. ponr font size; this will facilitate adding scaling and movement later on
+		* Shield damage chunking
+		* PONR label goes where "BONUS ROUND" was in reach
+			* Flash as countdown enabled
+		* Callsign generator
+			* remove clantags
+			* remove doubled letters
+		* Carry indicator is kind of hard to see
+		* Grenade/Ability
+			* Ability circle color should be colored blue by default
+			* Counter is unreadable- needs shadow or better placement
+				* shadow is better, to show during flashbangs
+		* Reticle/Weapon stuff
+			* DMR should be scaled down ever so slightly
+			* Streamline like the whole code process, it's unreadable
+			* Adjust positioning of subpanels (new font?)
+			* Firemode indicator
+			* Underbarrel should change reticle
+			* Grenade Launcher crosshair
+				* Right arrow should do something
+				* Left arrow rotates with distance?
+				* Left arrow is not colored (frame, circle, and altimeter are already colored)
+		* Radar	
+			* Motion-based tracking
+			* Radar pulse when update?
+			* Different motion tracker icon or color for Team AI versus players
+			* Lower blip should be darker/lower opacity, instead of halo 3 style
+			* Unique vehicle blip asset texture so that they're not blurry?
+
+
+		
+	&& CREATE ASSETS: &&
+
+		-- Firemode indicator
+		-- Crosshair textures
+			- Other vehicles?
+				* Scorpion
+				* Gauss hog gunner?
+				* Falcon?
+				* Banshee?
+				* Ghost? [ref]
+				* Revenant? 
+				* Wraith? [ref]
+		-- Ammo type tick variant textures
+			- Weapon Overheat meter? (Reach)
+			- DMR
+			- AR
+			- Pistol
+			- Rocket
+			- SMG
+			- Car
+			- Saw
+			- Shotgun (rename)
+
+--grenade/ability outline (baked blue color for vertex radial render template)
+--score banner small
+- bloom funcs should all have a reference to their own crosshair tweakdata
+- bloom funcs should also have reference to their own weapon tweakdata
+- crosshair data blacklist should be replaced by a manual override list for weapon ids, or from tweak data
+
+CODE:
+
+--settings
+--score panel
+--joyscore (modified)
+	* update to recent joyscore points list
+	* mutator multipliers
+
+--ability/deployable/grenade
+	* grenade vs deployable layout
+		* grenade selection indicator
+		* secondary grenade panel
+
+--reticle bloom
+	* standardize reticle subparts
+
+--]]
+
+
 
 NobleHUD._mod_path = ModPath
 NobleHUD._options_path = ModPath .. "menu/"
@@ -1160,6 +1409,7 @@ NobleHUD.score_unit_points = {
 	medic = 6, --medic
 	taser = 7, --taser
 	spooc = 10, --cloaker 
+	shadow_spooc = 20, --cloaker 
 	tank = 12, --dozer
 	tank_hw = 12, --headless dozer
 	tank_medic = 12,
@@ -1424,7 +1674,8 @@ NobleHUD._medal_data = {
 		name = "wheelman",
 		show_text = false,
 		sfx = false,
-		icon_xy = {1,9}
+		icon_xy = {1,9},
+		suffix = ""
 	},
 	last_man_standing = { --not implemented
 		name = "last_man",
@@ -1436,7 +1687,8 @@ NobleHUD._medal_data = {
 		name = "betrayal",
 		sfx = "betrayal", --betrayal, suicide, and betrayed are only in the medals table so that its sound file will be loaded at the same time as all the others
 		icon_xy = {-1,-1},
-		show_text = false
+		show_text = false,
+		suffix = ""
 	},
 	suicide = {
 		name = "suicide",
@@ -3576,7 +3828,9 @@ function NobleHUD.choose(tbl)
 		for i,v in pairs(tbl) do 
 			table.insert(a,i)
 		end
-		return tbl[a[math.random(#a)]]
+		if #a > 0 then 
+			return tbl[a[math.random(#a)]]
+		end
 	end
 end
 
@@ -3723,6 +3977,9 @@ function NobleHUD.get_specialization_icon_data_with_fallback(spec, no_fallback, 
 	}
 end
 
+function NobleHUD:IsSafeMode()
+	return self.settings.safe_mode
+end
 
 function NobleHUD:LoadSettings()
 	local file = io.open(self._settings_path, "r")
@@ -4044,3 +4301,5 @@ NobleHUD._helper_sequences = {
 		}
 	}
 }
+
+NobleHUD:LoadSettings()
