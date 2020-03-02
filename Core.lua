@@ -1,8 +1,7 @@
 --[[
-fak nearby shortname
-
 
 ***** TODO: *****
+	* Damage popups do not currently trigger on enemy SWAT turrets
 	
 	* Reorganize popup animate code to allow damage popups to reuse damage animations
 	* Add damage popups via other hooks? From CopDamage?
