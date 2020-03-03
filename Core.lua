@@ -719,7 +719,7 @@ NobleHUD._buff_data = {
 		priority = 5,
 		duration = 3,
 		value_type = "timer", --n health on ammo pickup, once per 3s from Gambler 1/9 Medical Supplies
-		icon = 64,
+		icon = 10,
 		icon_tier = 1,
 		tier_floors = {1,7,9},
 		label = "noblehud_buff_gambler_medical_supplies_label",
@@ -741,7 +741,6 @@ NobleHUD._buff_data = {
 		label_compact = "$TIMER",
 		text_color = NobleHUD.color_data.hud_buff_negative,
 		value_type = "timer",
-		source = "perk",
 		flash = false
 	},
 	["grinder"] = {

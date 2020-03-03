@@ -3725,6 +3725,7 @@ function NobleHUD:_create_custom_crosshairs(slot,base,override_firemode)
 			end
 			self.weapon_data[slot][_firemode].num_parts = i
 		end
+		return modepanel
 	end
 	
 	local firemode_current = override_firemode or base:fire_mode()
@@ -3740,15 +3741,18 @@ function NobleHUD:_create_custom_crosshairs(slot,base,override_firemode)
 	local override_tweak = override_firemode and base._tweak_data
 	local override_id = override_firemode and base.name_id
 	
+	local crosshair
 	if base:can_toggle_firemode() and not base._locked_firemode then
-		create_crosshair(base,"single",override_tweak,override_id)
-		create_crosshair(base,"auto",override_tweak,override_id)
+		crosshair = create_crosshair(base,"single",override_tweak,override_id)
+		crosshair = create_crosshair(base,"auto",override_tweak,override_id)
 	else
-		create_crosshair(base,firemode_current,override_tweak,override_id)
+		crosshair = create_crosshair(base,firemode_current,override_tweak,override_id)
 	end	
-	
 	if alive(slotpanel:child(firemode_current)) then 
 		slotpanel:child(firemode_current):set_visible(true)
+	end
+	if override_id and crosshair then 
+		crosshair:hide()
 	end
 end
 
@@ -9077,7 +9081,7 @@ function NobleHUD:CreateBuff(id,params)
 		local icon_x,icon_y = unpack(tweak_data.skilltree.skills[icon].icon_xy)
 		texture_rect = {icon_x * 80,icon_y * 80,80,80}
 	elseif source == "perk" then 
-		texture,texture_rect = self.get_specialization_icon_data_with_fallback(tonumber(icon),nil,icon_tier,tier_floors)
+		texture,texture_rect = NobleHUD.get_specialization_icon_data_with_fallback(tonumber(icon) or 1,nil,icon_tier,tier_floors)
 	elseif source == "icon" then 
 		texture,texture_rect = tweak_data.hud_icons:get_icon_data(icon)
 	elseif source == "manual" then
