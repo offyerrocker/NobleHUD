@@ -11,6 +11,8 @@
 	
 	- Send medal data to other noblehud users? might be exploitable though, probably just check that player's kills locally 
 
+	* medal collection
+	* First strike killed by any
 
 	Notes:
 		
@@ -302,6 +304,8 @@ NobleHUD._RADAR_SIZE = 200
 NobleHUD._RADAR_BG_SIZE = 196
 NobleHUD._RADAR_TEXT_SIZE = 16
 
+NobleHUD._buff_refresh_t = 0
+NobleHUD._BUFF_REFRESH_INTERVAL = 0.25
 NobleHUD._BUFF_ITEM_W = 175
 NobleHUD._BUFF_ITEM_W_COMPACT = 72
 NobleHUD._BUFF_ITEM_H = 32

@@ -985,6 +985,13 @@ end
 
 function NobleHUD:UpdateHUD(t,dt)
 
+--clock/dt tracking below used for performance benchmark
+--	local perf_click = os.clock() - (self._cache.clock or 0)
+--	self._cache.clock = os.clock()
+--	Console:SetTrackerValue("trackera","Clock: " .. tostring(perf_click))
+--	Console:SetTrackerValue("trackerb","Delta time: " .. tostring(dt))
+
+
 	if game_state_machine then 
 		local game_state = game_state_machine:current_state_name()		
 		if self._cache.game_state ~= game_state then 
@@ -1101,37 +1108,6 @@ function NobleHUD:UpdateHUD(t,dt)
 				self:PlayShieldSound("shield_low",false)
 				self:PlayShieldSound("shield_empty",false)
 			end
-		--[[
-		and self._shield_sound_source and not self._shield_sound_source:is_closed() then
-			local shield_source = self._shield_sound_source
-			if self:IsShieldEmptySoundEnabled() and (player_armor == 0) then
-				if shield_source._buffer ~= self._cache.sounds.shield_empty then 
-					shield_source:stop()
-					shield_source:set_buffer(self._cache.sounds.shield_empty)
-					shield_source:set_looping(true)
-					shield_source:set_volume(self:GetShieldEmptyVolume())
-				end
-				if shield_source:get_state() ~= 1 then 
-					shield_source:play()
-				end
-			elseif self:IsShieldLowSoundEnabled() and ((player_armor / player_armor_max) <= NobleHUD:GetLowShieldThreshold()) then
-				if shield_source._buffer ~= self._cache.sounds.shield_low then 
-					shield_source:stop()
-					shield_source:set_buffer(self._cache.sounds.shield_low)
-					shield_source:set_looping(true)
-					shield_source:set_volume(self:GetShieldLowVolume())
-				end
-				if shield_source:get_state() ~= 1 then 
-					shield_source:play()
-				end
-			else
-				if shield_source:get_state() == 1 then 
-					if (shield_source._buffer == self._cache.sounds.shield_low) or (shield_source._buffer == self._cache.sounds.shield_empty) then 
-						shield_source:stop()
-					end
-				end
-			end
-			--]]
 		end
 		
 		if self:GetScoreDisplayMode() == 2 then 
@@ -1540,76 +1516,69 @@ function NobleHUD:UpdateHUD(t,dt)
 		
 -- ************** BUFFS ************** 
 		if self:IsBuffTrackerEnabled() then	
-			if FirstAidKitBase.GetFirstAidKit(player:position()) and (player_damage._uppers_elapsed + player_damage._UPPERS_COOLDOWN < t) then 
-				self:AddBuff("uppers_ready")
-			else
-				self:RemoveBuff("uppers_ready")
-			end
-			if self:IsBuffEnabled("sicario") then 
-				local is_in_smoke = false
-				local smoke_timer
-				for _, smoke_screen in ipairs(managers.player._smoke_screen_effects or {}) do
-					if smoke_screen:is_in_smoke(player) then
-						is_in_smoke = true
-						smoke_timer = smoke_screen._timer
-						break
-					end				
-				end
-				if is_in_smoke then
-					self:AddBuff("sicario",{duration = smoke_timer})
+			local queued_remove = {}
+			--RemoveBuff() iterates through the entire buffs list to find the buff to remove.
+			--Using RemoveBuff() is generally fine for individual events,
+			--	but as it turns out, really heckin' bad to call multiple times every frame.
+			--I wrote it that way, to make a long bug description short, because I organized the buffs list
+			--	by index rather than by buff id. This, in turn, was designed in order to facilitate a buff "priority," where
+			--  buffs would be visually according (roughly) to their length, importance, and proc nature.
+			--So, maybe let's not do that next time. 
+			
+			if t > self._buff_refresh_t + self._BUFF_REFRESH_INTERVAL then 
+				self._buff_refresh_t = t
+				if self:IsBuffEnabled("uppers_ready") then 
+					if FirstAidKitBase.GetFirstAidKit(player:position()) and (player_damage._uppers_elapsed + player_damage._UPPERS_COOLDOWN < t) then 
+						self:AddBuff("uppers_ready")
+					else
+						queued_remove.uppers_ready = true				
+					end
 				else
-					self:RemoveBuff("sicario")
+					queued_remove.uppers_ready = true
+				end
+				if self:IsBuffEnabled("sicario") then 
+					local is_in_smoke = false
+					local smoke_timer
+					for _, smoke_screen in ipairs(managers.player._smoke_screen_effects or {}) do
+						if smoke_screen:is_in_smoke(player) then
+							is_in_smoke = true
+							smoke_timer = smoke_screen._timer
+							break
+						end				
+					end
+					if is_in_smoke then
+						self:AddBuff("sicario",{duration = smoke_timer})
+					else
+						queued_remove.sicario = true
+					end
+				end
+				if self:IsBuffEnabled("dodge_chance_total") then 
+					local dodge_chance_raw = managers.player:skill_dodge_chance(player:movement():running(),player:movement():crouching(),player:movement():zipline_unit(),false,managers.blackmarket:_get_concealment_from_local_player()) + managers.player:body_armor_value("dodge")
+					if dodge_chance_raw >= self:GetDodgeChanceBuffThreshold() then 
+						self:AddBuff("dodge_chance_total",{value = dodge_chance_raw})
+					else
+						queued_remove.dodge_chance_total = true
+					end
+				end
+				if self:IsBuffEnabled("crit_chance_total") then 
+					local crit_chance_raw = managers.player:critical_hit_chance()
+					if crit_chance_raw >= self:GetCritChanceBuffThreshold() then 
+						self:AddBuff("crit_chance_total",{value = crit_chance_raw})
+					else
+						queued_remove.crit_chance_total = true
+					end	
+				end
+				
+				if self:IsBuffEnabled("dmg_resist_total") then 
+					local dmg_resist_raw = 1 - managers.player:damage_reduction_skill_multiplier("bullet")
+					if dmg_resist_raw >= self:GetDmgResistBuffThreshold() then 
+						self:AddBuff("dmg_resist_total",{value = dmg_resist_raw})
+					else
+						queued_remove.dmg_resist_total = true
+					end
 				end
 			end
 			
-			if self:IsBuffEnabled("dodge_chance_total") then 
-				local dodge_chance_raw = managers.player:skill_dodge_chance(player:movement():running(),player:movement():crouching(),player:movement():zipline_unit(),false,managers.blackmarket:_get_concealment_from_local_player()) + managers.player:body_armor_value("dodge")
-				if dodge_chance_raw >= self:GetDodgeChanceBuffThreshold() then 
-					self:AddBuff("dodge_chance_total",{value = dodge_chance_raw})
-				else
-					self:RemoveBuff("dodge_chance_total")
-				end
-			end
-			
-			if self:IsBuffEnabled("crit_chance_total") then 
-				local crit_chance_raw = managers.player:critical_hit_chance()
-				if crit_chance_raw >= self:GetCritChanceBuffThreshold() then 
-					self:AddBuff("crit_chance_total",{value = crit_chance_raw})
-				else
-					self:RemoveBuff("crit_chance_total")
-				end	
-			end
-			
-			if self:IsBuffEnabled("dmg_resist_total") then 
-				local dmg_resist_raw = 1 - managers.player:damage_reduction_skill_multiplier("bullet")
-				if dmg_resist_raw >= self:GetDmgResistBuffThreshold() then 
-					self:AddBuff("dmg_resist_total",{value = dmg_resist_raw})
-				else
-					self:RemoveBuff("dmg_resist_total")
-				end
-			end
-			
---[[			
-			if self:IsBuffEnabled("wild_kill_counter") then 
-				local wild_kill_counter = managers.player:get_wild_kill_counter()
-				if tweak_data.upgrades.wild_max_triggers_per_time > #wild_kill_counter then
-					self:AddBuff("wild_kill_counter",{value=#wild_kill_counter})
-				end
-			end
-			--]]
-
---[[
-			if self:IsBuffEnabled("anarchist_lust_for_life") then 
-				local damage_to_armor = player_damage._damage_to_armor or {}
-				Console:SetTrackerValue("trackera",tostring(damage_to_armor.target_tick))
-				Console:SetTrackerValue("trackerb",tostring(damage_to_armor.elapsed))
-				if damage_to_armor and damage_to_armor.elapsed then 
---					self:AddBuff("anarchist_lust_for_life",{duration = damage_to_armor.elapsed})
-				else
-					self:RemoveBuff("anarchist_lust_for_life")
-				end
-			end
---]]
 			local buffs_panel_master = self._buffs_panel
 
 			local buff_w,buff_h = self:GetBuffItemSize()
@@ -1632,9 +1601,12 @@ function NobleHUD:UpdateHUD(t,dt)
 				if not buff_tweak_data then 
 					self:log("Removing: " .. buff_id .. ". Bad buff tweak data")
 					remove_buff()
-				elseif not alive(buff_panel) then 
-					self:log("Removing: " .. buff_id .. ". Bad buff panel")
+				elseif queued_remove[buff_id] and not _G.dumby then 
+					self:log("Removing buff " .. tostring(buff_id))
 					remove_buff()
+				elseif not (buff_panel and alive(buff_panel)) then 
+					self:log("Removing: " .. buff_id .. ". Bad buff panel")
+					remove_buff()				
 				else
 					--buff is valid... SO FAR. [ominous violin music]
 					local buff_type = buff_tweak_data.value_type
@@ -1663,8 +1635,6 @@ function NobleHUD:UpdateHUD(t,dt)
 							buff_text = "$TIMER"
 						end--]]
 					end
-					
-					
 					if buff_type == "timer" then 
 						if not buff_data.end_t then 
 							self:log("Buff data has no end_t! Removing...",{color=Color.red})
@@ -1836,7 +1806,6 @@ function NobleHUD:UpdateHUD(t,dt)
 						self:log("UpdateHUD(): Unknown buff value type " .. tostring(buff_type) .. " for id " .. tostring(buff_id),{color=Color.red})
 					end
 				end
-				
 				if not removed_buff then 
 					num_buffs = num_buffs + 1
 					local buff_column = (num_buffs - 1) % MAX_PER_ROW
@@ -1848,25 +1817,6 @@ function NobleHUD:UpdateHUD(t,dt)
 						in_this_line = self._cache.num_buffs % MAX_PER_ROW
 					end
 
---align left/right bs
---[[
-					local buff_align = self:GetBuffPanelAlign()
-					local buff_vertical = self:GetBuffPanelVertical()
-					if buff_align == "left" then 
-						buff_origin_x = 0
-					elseif buff_align == "center" then 
-						buff_origin_x = buffs_panel_master:w() / 2
-					elseif buff_align == "right" then
-						buff_origin_x = buffs_panel_master:w()
-					end
-					if buff_vertical == "top" then 
-						buff_origin_y = 0
-					elseif buff_vertical == "center" then 
-						buff_origin_y = buffs_panel_master:h() / 2
-					elseif buff_vertical == "bottom" then
-						buff_origin_y = buffs_panel_master:h()
-					end
---]]
 					local buff_x = buff_w * buff_column
 					local buff_y = buff_h * buff_row
 					if self:GetBuffPanelVertical() == "bottom" then 
@@ -3079,7 +3029,7 @@ function NobleHUD:_set_weapon_mag(slot,amount,max_amount)
 	end
 	weapon_panel:child("mag_label"):set_text(amount)
 	if not alive(weapon_panel:child("weapon_ammo_ticks")) then 
-		self:log("ERROR: _set_weapon_mag(" .. NobleHUD.table_concat({slot,amount,max_amount},",") .. "): No weapon panel present? Investigate load order issues")
+--		self:log("ERROR: _set_weapon_mag(" .. NobleHUD.table_concat({slot,amount,max_amount},",") .. "): No weapon panel present? Investigate load order issues")
 		return
 	end
 	local ammo_bar = weapon_panel:child("weapon_ammo_ticks"):child("ammo_bar")
@@ -3569,7 +3519,7 @@ end
 --todo user prefs
 function NobleHUD:_get_crosshair_type_from_weapon_base(base,fire_mode,override_data,override_id)
 	if not base then 
-		self:log("ERROR: _get_crosshair_type_from_weapon_base(" .. NobleHUD.table_concat({base,slot},",") .. "): bad base/slot")
+--		self:log("ERROR: _get_crosshair_type_from_weapon_base(" .. NobleHUD.table_concat({base,slot},",") .. "): bad base/slot")
 		return
 	end	
 	local function crosshair_from_category(cat,mode) --default settings for "auto" setting, or for nonexistent crosshair data
@@ -3666,11 +3616,11 @@ end
 
 function NobleHUD:_create_custom_crosshairs(slot,base,override_firemode)
 	if not slot then 
-		self:log("ERROR: _create_custom_crosshairs(" .. NobleHUD.table_concat({slot,base}) .. "): bad slot")
+--		self:log("ERROR: _create_custom_crosshairs(" .. NobleHUD.table_concat({slot,base}) .. "): bad slot")
 		return
 	end
 	if not base then
-		self:log("ERROR: _create_custom_crosshairs(" .. NobleHUD.table_concat({slot,base}) .. "): bad weapon base")
+--		self:log("ERROR: _create_custom_crosshairs(" .. NobleHUD.table_concat({slot,base}) .. "): bad weapon base")
 		return
 	end
 
@@ -3927,15 +3877,15 @@ end
 
 function NobleHUD:_get_crosshair_by_info(slot,mode)
 	if not (slot and mode) then 
-		self:log("ERROR: _get_crosshair_by_info(" .. NobleHUD.table_concat({slot,mode},",") .. "): bad slot/mode")
+--		self:log("ERROR: _get_crosshair_by_info(" .. NobleHUD.table_concat({slot,mode},",") .. "): bad slot/mode")
 		return
 	end
 	local slotpanel = self._crosshair_panel:child("crosshair_slot" .. tostring(slot))
 	if not slotpanel then 
-		self:log("ERROR: _get_crosshair_by_info(" .. NobleHUD.table_concat({slot,mode},",") .. "): no slotpanel")
+--		self:log("ERROR: _get_crosshair_by_info(" .. NobleHUD.table_concat({slot,mode},",") .. "): no slotpanel")
 		return
 	elseif not slotpanel:child(mode) then 
-		self:log("ERROR: _get_crosshair_by_info(" .. NobleHUD.table_concat({slot,mode},",") .. "): no modepanel")
+--		self:log("ERROR: _get_crosshair_by_info(" .. NobleHUD.table_concat({slot,mode},",") .. "): no modepanel")
 		return
 	end
 	return slotpanel and slotpanel:child(mode)
@@ -8947,6 +8897,7 @@ function NobleHUD:AddBuff(id,params)
 	if not self:IsBuffTrackerEnabled() then 
 		return
 	end
+--	self:log("AddBuff(" .. tostring(id) .. NobleHUD.table_concat(params,",","="),{color=self.color_data.unique})
 	params = params or {}
 
 	
@@ -9004,7 +8955,7 @@ function NobleHUD:AddBuff(id,params)
 	
 	local panel = self:CreateBuff(id,params)
 	if panel then 
-		self:log("Adding Buff " .. tostring(id) .. ": " .. NobleHUD.table_concat(params,",","="))
+--		self:log("Adding Buff " .. tostring(id) .. ": " .. NobleHUD.table_concat(params,",","="))
 		params.panel = panel
 		params.id = id
 		local index
@@ -9044,7 +8995,7 @@ function NobleHUD:AddBuff(id,params)
 end
 
 function NobleHUD:CreateBuff(id,params)
-	local buffs_panel = self._buffs_panel
+	local buffs_panel = self._buffs_panel	
 	if alive(buffs_panel:child(id)) then 
 --		self:log("CreateBuff(" .. tostring(id) .. "," .. NobleHUD.table_concat(params,",","=") .. "): Buff element already exists!",{color=Color.red})
 --		buffs_panel:remove(buffs_panel:child(id))
@@ -9128,7 +9079,6 @@ function NobleHUD:CreateBuff(id,params)
 		blend_mode = blend_mode,
 		color = icon_color
 	})
-	--NobleHUD:AddBuff("messiah_charge")
 	local buff_timer_text = ""
 	if params.duration then 
 		buff_timer_text = self.format_seconds(params.duration)
@@ -10238,7 +10188,7 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	MenuCallbackHandler.callback_noblehud_set_buffs_misc_dodge_chance_total_enabled = function(self,item)
 		local state = item:value() == "on"
 		NobleHUD.buff_settings.dodge_chance_total = state
-		NobleHUD:ToggleBuff(state,"dodge_chance_total")
+		NobleHUD:ToggleBuff(state,"dodge_chance_total",{value = 0})
 		NobleHUD:SaveBuffSettings()
 	end	
 	
@@ -10250,7 +10200,7 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	MenuCallbackHandler.callback_noblehud_set_buffs_misc_crit_chance_total_enabled = function(self,item)
 		local state = item:value() == "on"
 		NobleHUD.buff_settings.crit_chance_total = state
-		NobleHUD:ToggleBuff(state,"crit_chance_total")
+		NobleHUD:ToggleBuff(state,"crit_chance_total",{value = 0})
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_misc_crit_chance_total_threshold = function(self,item)
@@ -10261,7 +10211,7 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	MenuCallbackHandler.callback_noblehud_set_buffs_misc_dmg_resist_total_enabled = function(self,item)
 		local state = item:value() == "on"
 		NobleHUD.buff_settings.dmg_resist_total = state
-		NobleHUD:ToggleBuff(state,"dmg_resist_total")
+		NobleHUD:ToggleBuff(state,"dmg_resist_total",{value = 0})
 		NobleHUD:SaveBuffSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_buffs_misc_dmg_resist_total_threshold = function(self,item)
