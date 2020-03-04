@@ -1,5 +1,13 @@
 --[[
 
+TEST TEAMMATE VEHICLE ASSISTS
+
+
+
+
+
+
+
 ***** TODO: *****
 	* Damage popups do not currently trigger on enemy SWAT turrets
 	
@@ -3888,18 +3896,21 @@ function NobleHUD.interp_colors(one,two,percent) --interpolates colors based on 
 	local r1 = one.red
 	local g1 = one.green
 	local b1 = one.blue
+	local a1 = one.alpha
 	
 --color 2
 	local r2 = two.red
 	local g2 = two.green
 	local b2 = two.blue
+	local a2 = two.alpha
 
 --delta
 	local r3 = r2 - r1
 	local g3 = g2 - g1
 	local b3 = b2 - b1
+	local a3 = a2 - a1
 	
-	return Color(r1 + (r3 * percent),g1 + (g3 * percent), b1 + (b3 * percent))	
+	return Color(r1 + (r3 * percent),g1 + (g3 * percent), b1 + (b3 * percent)):with_alpha(a3 * percent)
 end
 
 function NobleHUD:GetMedalIcon(x,y)

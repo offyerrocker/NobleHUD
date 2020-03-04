@@ -2192,7 +2192,42 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit,variant,player_weapon_
 			XAudio.UnitSource:new(unit,XAudio.Buffer:new(NobleHUD._mod_path .. "assets/snd/fx/grunt_birthday.ogg"))
 		end
 		
-		if managers.statistics._global.killed.total and managers.statistics._global.session.killed.total.count == 0 then 
+		local my_vehicle = managers.player:get_vehicle() 
+		if my_vehicle and my_vehicle.vehicle_unit then 
+			--[[
+--!			local driver_char = my_vehicle.in_seat("driver")
+			if driver_char and driver_char ~= player then 
+				local driver_id = managers.criminals:character_peer_id_by_unit(driver_char) 
+				local driver_peer = driver_id and managers.network:session():peer(driver_id)
+				local driver_name = (driver_peer and driver_peer:name()) or managers.localization:text("noblehud_unitname__generic_teammate")
+--				NobleHUD:AddKillfeedMessage(string.gsub(managers.localization:text("noblehud_medal_wheelman_assisted"),"$1",driver_name))
+			end
+			--]]
+		end
+
+	local player_unit = attack_data and attack_data.player_unit
+	if not player_unit then
+		return
+	end
+	--if player_unit is in your car, give wheelman medal
+	local peer_id = alive(player_unit) and managers.criminals:character_peer_id_by_unit(player_unit)
+	local vehicle = peer_id and managers.player:get_vehicle_for_peer(peer_id)
+	local my_vehicle = managers.player:get_vehicle() or {}
+	if my_vehicle and my_vehicle.vehicle_unit then --
+		if vehicle and vehicle.vehicle_unit then 
+			if alive(vehicle.vehicle_unit) and alive(my_vehicle.vehicle_unit) then 
+				if vehicle.vehicle_unit == my_vehicle.vehicle_unit then
+					local peer = peer_id and managers.network:session():peer(peer_id)
+					local peer_name = (peer and peer:name()) or managers.localization:text("noblehud_unitname__generic_teammate")
+					if my_vehicle.seat == "driver" then 
+						NobleHUD:AddMedal("wheelman",nil,{macros = {peer_name}})
+						NobleHUD:AddMedal("spree_wheelman",NobleHUD:KillsCache("vehicle_assist",1))
+					end
+				end
+		
+		
+--! test below!		
+		if managers.statistics._start_session_from_beginning and managers.statistics._global.killed.total and managers.statistics._global.session.killed.total.count == 0 then 
 			self:AddMedal("first")
 		end
 		
@@ -2430,8 +2465,6 @@ function NobleHUD:OnTeammateKill(attack_data)
 					if my_vehicle.seat == "driver" then 
 						NobleHUD:AddMedal("wheelman",nil,{macros = {peer_name}})
 						NobleHUD:AddMedal("spree_wheelman",NobleHUD:KillsCache("vehicle_assist",1))
-					elseif vehicle.seat == "driver" then 
-						NobleHUD:AddKillfeedMessage(string.gsub(managers.localization:text("noblehud_medal_wheelman_assisted"),"$1",peer_name))
 					end
 				end
 			end
