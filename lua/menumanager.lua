@@ -9755,12 +9755,6 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	MenuCallbackHandler.callback_noblehud_set_chat_autohide_mode = function(self,item)
 		local value = tonumber(item:value())
 		NobleHUD.settings.chat_autohide_mode = value
-		--[[
-		if value == 1 and (managers.hud and managers.hud._hud_chat and managers.hud._hud_chat._panel then 
-			NobleHUD:AddDelayedCallback(function()		
-			end,NobleHUD:GetChatAutohideTimer(),"autohide_chat")
-		end
-		--]]
 		NobleHUD:SaveSettings()
 	end	
 	MenuCallbackHandler.callback_noblehud_set_chat_autohide_timer = function(self,item)
@@ -9770,7 +9764,7 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	MenuCallbackHandler.callback_noblehud_set_chat_panel_x = function(self,item)
 		local value = tonumber(item:value())
 		NobleHUD.settings.chat_panel_x = value
-		if managers.hud._hud_chat and managers.hud._hud_chat._panel then 
+		if managers.hud and managers.hud._hud_chat and managers.hud._hud_chat._panel then 
 			managers.hud._hud_chat._panel:set_x(value)
 		end
 		NobleHUD:SaveSettings()
@@ -9778,7 +9772,7 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	MenuCallbackHandler.callback_noblehud_set_chat_panel_y = function(self,item)
 		local value = tonumber(item:value())
 		NobleHUD.settings.chat_panel_y = value
-		if managers.hud._hud_chat and managers.hud._hud_chat._panel then 
+		if managers.hud and managers.hud._hud_chat and managers.hud._hud_chat._panel then 
 			managers.hud._hud_chat._panel:set_y(value)
 		end
 		NobleHUD:SaveSettings()
