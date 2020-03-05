@@ -3078,14 +3078,15 @@ function NobleHUD:_set_weapon_mag(slot,amount,max_amount)
 			if alive(ammo_icon) then 
 				self:animate_stop(ammo_icon)
 				if i > amount then 
-					ammo_icon:set_alpha(empty_alpha)
-					ammo_icon:set_color(self.color_data.hud_weapon_color)
-				else 
 					if (max_amount > 0) and (amount * 3 <= max_amount) then 
-						self:animate(ammo_icon,"animate_blink_color_infinite",nil,0.66,self.color_data.hud_vitalsfill_red,self.color_data.hud_weapon_color,true)					
+						ammo_icon:set_alpha(full_alpha)
+						self:animate(ammo_icon,"animate_blink_color_infinite",nil,0.66,self.color_data.hud_vitalsfill_red,self.color_data.hud_weapon_color:with_alpha(empty_alpha),true)
 					else
+						ammo_icon:set_alpha(empty_alpha)
 						ammo_icon:set_color(self.color_data.hud_weapon_color)						
 					end
+				else 
+					ammo_icon:set_color(self.color_data.hud_weapon_color)
 					ammo_icon:set_alpha(full_alpha)
 				end
 				
