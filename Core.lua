@@ -1,9 +1,7 @@
 --[[
 
-TEST TEAMMATE VEHICLE ASSISTS
-
-
-
+Test grenade medal proc
+Test first strike medal proc from teammates
 
 
 
@@ -1535,7 +1533,7 @@ NobleHUD.score_multipliers = {
 }
 
 NobleHUD._medal_data = {
-	first = { --not implemented
+	first = {
 		name = "first",
 		multiplier = 2.0,
 		sfx = "first_strike",
@@ -3450,6 +3448,7 @@ NobleHUD._reticle_types_by_index = {
 	[26] = "plasma_cannon"
 }
 
+
 --    UTILS
 local also_blt_log = false
 function NobleHUD:log(...)
@@ -3910,7 +3909,7 @@ function NobleHUD.interp_colors(one,two,percent) --interpolates colors based on 
 	local b3 = b2 - b1
 	local a3 = a2 - a1
 	
-	return Color(r1 + (r3 * percent),g1 + (g3 * percent), b1 + (b3 * percent)):with_alpha(a3 * percent)
+	return Color(r1 + (r3 * percent),g1 + (g3 * percent), b1 + (b3 * percent)):with_alpha(a1 + (a3 * percent))
 end
 
 function NobleHUD:GetMedalIcon(x,y)
