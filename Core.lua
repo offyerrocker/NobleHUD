@@ -2250,13 +2250,13 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 		}
 	},
 	shotgun = { --big circle
+		--[[  by popular demand, shotgun bloom is disabled
 		bloom_func = function(index,bitmap,data)
-		--[[ by popular demand, shotgun bloom is disabled
 			local bloom = data.bloom
 			bitmap:set_size(32 + (32 * bloom),32 + (32 * bloom))
 			bitmap:set_center(NobleHUD._crosshair_panel:w()/2,NobleHUD._crosshair_panel:h()/2)
-		--]]
 		end,
+		--]]
 		parts = {
 			{
 				is_center = true,
@@ -2704,43 +2704,21 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 			local angle = crosshair_data.angle or crosshair_data.rotation or 45
 			local c_x = NobleHUD._crosshair_panel:w()/2
 			local c_y = NobleHUD._crosshair_panel:h()/2
-			if index <= 4 then 
-				local bloom = data.bloom * 2
-				--bitmap:set_center(NobleHUD._crosshair_panel:w()/2,NobleHUD._crosshair_panel:h()/2)
-				local distance = (crosshair_data.distance or 10) * (1 + bloom)
-				bitmap:set_size((crosshair_data.w or 6) * (1 + bloom),(crosshair_data.h or 3) * (1 + bloom))
-				bitmap:set_center(c_x + (math.sin(angle) * distance),c_y - (math.cos(angle) * distance))
+			if index == 1 then 
+				local bloom = data.bloom * 4
+				bitmap:set_center(NobleHUD._crosshair_panel:w()/2,NobleHUD._crosshair_panel:h()/2)
+--				local distance = (crosshair_data.distance or 10) * (1 + bloom)
+				bitmap:set_size((crosshair_data.w or 6) * (1 + bloom),(crosshair_data.h or 6) * (1 + bloom))
+--				bitmap:set_center(c_x + (math.sin(angle) * distance),c_y - (math.cos(angle) * distance))
 			else
 			end
 		end,
 		parts = {
 			{ --center
-				texture = "guis/textures/nrif_crosshair_2",
-				w = 2,
-				h = 1,
-				distance = 4,
-				rotation = 45
-			},
-			{ --center
-				texture = "guis/textures/nrif_crosshair_2",
-				w = 2,
-				h = 1,
-				distance = 4,
-				rotation = 135
-			},
-			{ --center
-				texture = "guis/textures/nrif_crosshair_2",
-				w = 2,
-				h = 1,
-				distance = 4,
-				rotation = 225
-			},
-			{ --center
-				texture = "guis/textures/nrif_crosshair_2",
-				w = 2,
-				h = 1,
-				distance = 4,
-				rotation = 315
+				is_center = true,
+				texture = "guis/textures/crosshair_circle_64",
+				w = 6,
+				h = 6
 			},
 			{
 				texture = "guis/textures/nrif_crosshair_2",
