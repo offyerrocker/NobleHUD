@@ -1,5 +1,5 @@
 <mod name="Noble HUD" author="Offyerrocker" global_key="NobleHUD" color="Color(0.6,0.9,1)" core_class="Core.lua">
-	<AssetUpdates id="26100" version="0.84b" provider="modworkshop" install_directory = "mods/" version_is_number="false"/>
+	<AssetUpdates id="26100" version="0.85b" provider="modworkshop" install_directory = "mods/" version_is_number="false"/>
 	<AddFiles directory="assets">
 		<font path="fonts/font_eurostile" load="true" unload="false" />
 		<texture path="fonts/font_eurostile" />
