@@ -2762,7 +2762,7 @@ function NobleHUD:_create_weapons(hud)
 --			x = weapon_icon:right() - 12,
 			color = self.color_data.white,
 			alpha = 0.66,
-			font = self.fonts.eurostile_ext,
+			font = self.fonts.eurostile_normal,
 			font_size = 16,
 			layer = 6
 		})
@@ -2774,7 +2774,7 @@ function NobleHUD:_create_weapons(hud)
 			color = self.color_data.white,
 --			x = -24,
 --			alpha = 0.5,
-			font = self.fonts.eurostile_ext,
+			font = self.fonts.eurostile_normal,
 			font_size = 24,
 			layer = 6
 		})
@@ -4003,7 +4003,7 @@ function NobleHUD:_create_grenades(hud)
 			align = "right",
 			color = Color.white,
 --			visible = false,
-			font = self.fonts.eurostile_ext,
+			font = self.fonts.eurostile_normal,
 			font_size = 24
 		})
 		local grenade_cooldown = panel:bitmap({ --used for cooldown
@@ -4250,7 +4250,7 @@ function NobleHUD:_create_ability(hud) --armor ability slot?
 			vertical = "bottom",
 			layer = 5,
 			color = Color.white,
-			font = self.fonts.eurostile_ext,
+			font = self.fonts.eurostile_normal,
 			font_size = 24
 		})
 		return ability_outline,ability_fill,ability_icon,ability_label
@@ -5220,7 +5220,7 @@ function NobleHUD:_create_score(hud)
 		color = Color.white,
 		x = score_banner_large:x() + margin_s,
 		y = score_banner_large:y() + margin_s,
-		font = self.fonts.eurostile_ext,
+		font = self.fonts.eurostile_normal,
 		font_size = font_size,
 		layer = 5
 	})
@@ -5250,7 +5250,7 @@ function NobleHUD:_create_score(hud)
 		vertical = "bottom",
 		y = margin_s,
 		color = self.color_data.hud_vitalsoutline_blue,
-		font = self.fonts.eurostile_ext,
+		font = self.fonts.eurostile_normal,
 		font_size = font_size,
 		layer = 4
 	})
@@ -5309,7 +5309,7 @@ function NobleHUD:_create_score(hud)
 		vertical = "bottom",
 		y = margin_s,
 		color = self.color_data.hud_vitalsoutline_blue,
-		font = self.fonts.eurostile_ext,
+		font = self.fonts.eurostile_normal,
 		font_size = font_size,
 		layer = 4
 	})
@@ -5351,7 +5351,7 @@ function NobleHUD:_create_score(hud)
 		vertical = "bottom",
 		y = margin_s,
 		color = self.color_data.hud_vitalsoutline_blue,
-		font = self.fonts.eurostile_ext,
+		font = self.fonts.eurostile_normal,
 		font_size = font_size,
 		layer = 4
 	})
@@ -5373,7 +5373,7 @@ function NobleHUD:_create_score(hud)
 		x = margin_m + hostages_panel:right(),
 		y = text_row_y_2,
 		color = self.color_data.hud_vitalsoutline_blue,
-		font = self.fonts.eurostile_ext, --"fonts/font_eurostile_ext",
+		font = self.fonts.eurostile_normal,
 		font_size = font_size,
 		layer = 4
 	})
@@ -5385,7 +5385,7 @@ function NobleHUD:_create_score(hud)
 		x = margin_m + hostages_panel:right(),
 		y = subpanel_y,
 		color = self.color_data.hud_vitalsoutline_blue,
-		font = self.fonts.eurostile_ext,
+		font = self.fonts.eurostile_normal,
 		font_size = font_size,
 		layer = 4
 	})
@@ -5398,7 +5398,7 @@ function NobleHUD:_create_score(hud)
 		x = -margin_m,
 		y = text_row_y_2, --  -(font_size + margin_s),
 		color = self.color_data.hud_vitalsoutline_blue,
-		font = self.fonts.eurostile_ext,
+		font = self.fonts.eurostile_normal,
 		font_size = font_size,
 		alpha = 1
 	})
@@ -5410,7 +5410,7 @@ function NobleHUD:_create_score(hud)
 		x = margin_m + hostages_panel:right(),
 		y = subpanel_y + font_size - margin_s,
 		color = self.color_data.hud_vitalsoutline_blue,
-		font = self.fonts.eurostile_ext,
+		font = self.fonts.eurostile_normal,
 		font_size = font_size,
 		visible = managers.hud._hud_assault_corner:should_display_waves()
 	})
@@ -5624,8 +5624,10 @@ function NobleHUD:SetScoreLabel(text)
 	self._score_panel:child("score_label"):set_text(text)
 end
 
+Hooks:Register("NobleHUD_OnAddScore") --does nothing, just for others who want to make add-ons involving score
 function NobleHUD:AddScore(score)
 	self._cache.score_session = self._cache.score_session + (tonumber(score) or 0)
+	Hooks:Call("NobleHUD_OnAddScore",self._cache.score_session,score)
 end
 
 function NobleHUD:CreateScorePopup(name,score,unit)
@@ -6609,7 +6611,7 @@ function NobleHUD:_create_tabscreen(hud)
 	scoreboard:set_x(100 + ((hud:w() - scoreboard_w) / 2))
 	scoreboard:set_y(all_box_h * 1.5) --margin from top of screen
 --	scoreboard:set_center(hud:w()/2,hud:h()/2)
-	
+
 	local title_box = scoreboard:panel({
 		name = "title_box",
 		x = 0,
@@ -6634,6 +6636,8 @@ function NobleHUD:_create_tabscreen(hud)
 		font_size = font_size,
 		layer = 2
 	})
+	_G.buttocks = title_label
+	
 	local _,_,_w,_ = title_label:text_rect()
 	
 	local job_chain = managers.job:current_job_chain_data()
@@ -7355,7 +7359,7 @@ function NobleHUD:_create_radar(hud)
 		text = "25m",
 		color = self.color_data.hud_vitalsoutline_blue,
 		layer = 2,
-		font = self.fonts.eurostile_ext,
+		font = self.fonts.eurostile_normal,
 		font_size = self._RADAR_TEXT_SIZE,
 		align = "left",
 		valign = "bottom",
@@ -7619,7 +7623,7 @@ function NobleHUD:_create_cartographer(hud)
 		text = "", --"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
 		color = self.color_data.hud_vitalsoutline_blue,
 		layer = 2,
-		font = self.fonts.eurostile_ext or self.fonts.eurostile_normal,
+		font = self.fonts.eurostile_normal or self.fonts.eurostile_normal,
 		font_size = 16,
 		align = "left",
 		vertical = "bottom",
@@ -8021,7 +8025,7 @@ function NobleHUD:_create_carry(hud)
 		name = "bag_value",
 		text = "10 Cr",
 		y = bag_label:line_height(),
-		font = "font_eurostile_ext",
+		font = "font_eurostile_normal",
 		font_size = 16,
 		layer = 1,
 		color = Color.white
@@ -8887,7 +8891,7 @@ function NobleHUD:_create_waiting(hud)
 	
 	NobleHUD._waiting_panel = waiting_panel
 end
-
+ 
 
 --		BUFFS
 
@@ -8925,10 +8929,10 @@ function NobleHUD:AddBuff(id,params)
 		self:log("AddBuff(" .. tostring(id) .. "): Bad buff!",{color=Color.red})
 		return
 	elseif buff_tweak_data.disabled then 
-		self:log("AddBuff(" .. tostring(id) .. "): Buff is disabled!",{color=Color.red})
+--		self:log("AddBuff(" .. tostring(id) .. "): Buff is disabled!",{color=Color.red})
 		return
 	elseif not self:IsBuffEnabled(id) then 
-		self:log("AddBuff(" .. tostring(id) .. "): Buff is disabled due to user pref!",{color=Color.red})
+--		self:log("AddBuff(" .. tostring(id) .. "): Buff is disabled due to user pref!",{color=Color.red})
 		return
 	end
 	if buff_tweak_data.value_type == "timer" then
@@ -9051,6 +9055,7 @@ function NobleHUD:CreateBuff(id,params)
 		local icon_x,icon_y = unpack(tweak_data.skilltree.skills[icon].icon_xy)
 		texture_rect = {icon_x * 80,icon_y * 80,80,80}
 	elseif source == "perk" then 
+		Log("Adding buff " .. tostring(id) .. ", icon num " .. tostring(icon),{color=Color.red})
 		texture,texture_rect = NobleHUD.get_specialization_icon_data_with_fallback(tonumber(icon) or 1,nil,icon_tier,tier_floors)
 	elseif source == "icon" then 
 		texture,texture_rect = tweak_data.hud_icons:get_icon_data(icon)

@@ -876,7 +876,7 @@ NobleHUD._buff_data = {
 	["delayed_damage"] = {
 		source = "perk",
 		priority = 3,
-		icon = 20,
+		icon = 19,
 		tier_floors = {1,9},
 		icon_tier = 1,
 		label = "noblehud_buff_delayed_damage_label",
@@ -884,6 +884,16 @@ NobleHUD._buff_data = {
 		value_type = "value",
 		flash = true
 		--health counter
+	},
+	["tag_team"] = {
+		source = "perk",
+		priority = 3,
+		icon = 20,
+		icon_tier = 1,
+		label = "noblehud_buff_tag_team_label",
+		label_compact = "$TIMER",
+		value_type = "timer", --is being tagged; tag team duration
+		priority = 3
 	},
 	["pocket_ecm_jammer"] = {
 		source = "perk",
@@ -916,16 +926,6 @@ NobleHUD._buff_data = {
 		label_compact = "$TIMER",
 		value_type = "timer",
 		flash = false
-	},
-	["tag_team"] = {
-		source = "perk",
-		priority = 3,
-		icon = 22,
-		icon_tier = 1,
-		label = "noblehud_buff_tag_team_label",
-		label_compact = "$TIMER",
-		value_type = "timer", --is being tagged; tag team duration
-		priority = 3
 	},
 	["flashbang"] = {
 		source = "icon", --where to get icon (not directly related to where ingame buff came from)
@@ -1359,7 +1359,7 @@ NobleHUD._toxic_messages = {
 
 NobleHUD.fonts = { --not currently used
 	eurostile_ext = "fonts/font_eurostile_ext",
-	eurostile_normal = "fonts/font_eurostile_normal"
+	eurostile_normal = "fonts/font_eurostile"
 }
 
 NobleHUD._assault_phases = {
@@ -3950,10 +3950,12 @@ function NobleHUD.correct_weapon_selection(num,default)
 end
 
 function NobleHUD.get_specialization_icon_data_with_fallback(spec, no_fallback, tier, tier_floors)
---i had to write this because get_specialization_icon_data() always picks the top tier. booooo
+--i had to write this because get_specialization_icon_data() always picks the top tier,
+--which is not always an appropriately representative icon of its effect. booooo
 	spec = spec or managers.skilltree:get_specialization_value("current_specialization")
 
 	local data = tweak_data.skilltree.specializations[spec]
+	
 	local max_tier = managers.skilltree:get_specialization_value(spec, "tiers", "max_tier")
 	
 	if tier_floors and type(tier_floors) == "table" then
