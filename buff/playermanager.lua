@@ -153,7 +153,7 @@ Hooks:PreHook(PlayerManager,"_on_enter_shock_and_awe_event","noblehud_buff_lock_
 				end
 			end
 			
-			NobleHUD:AddBuff("shock_and_awe_reload_multiplier",{value =string.format("%.1f",reload_multiplier)})
+			NobleHUD:AddBuff("shock_and_awe_reload_multiplier",{value = string.format("%.1f",reload_multiplier)})
 
 		end
 	end

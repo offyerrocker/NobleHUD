@@ -228,6 +228,7 @@ Hooks:PostHook(HUDTeammate,"set_armor","noblehud_set_armor",function(self,data)
 		if vitals_panel then 
 			if (total == 0) then
 				vitals_panel:child("shield_fill"):set_w(0)
+				vitals_panel:child("delayed_damage_shield_fill"):set_w(0)
 			else
 				
 	--			vitals_panel:child("shield_fill"):set_texture_rect(0,0,VITALS_W * ratio,VITALS_H) --classic, one-way depletion
@@ -268,8 +269,6 @@ Hooks:PostHook(HUDTeammate,"set_armor","noblehud_set_armor",function(self,data)
 			else
 				label:set_font_size(19)
 			end		
-		end
-		if total > 0 then
 		end
 			--todo set vitals icon or vitals icon bg color
 	end
@@ -742,7 +741,6 @@ Hooks:PostHook(HUDTeammate,"set_grenade_cooldown","noblehud_set_grenade_cooldown
 end)
 
 --caution! under construction! 
-if true then return end 
 
 --Hooks:PostHook(HUDTeammate,"set_ai","noblehud_set_teammate_ai",function(self,ai)
 --end)
@@ -750,7 +748,6 @@ if true then return end
 --[[
 Hooks:PostHook(HUDTeammate,"set_custom_radial","noblehud_set_custom_radial",function(self,data)
 		NobleHUD:log("set_custom_radial() [")
-		logall(data)
 		NobleHUD:log("]")
 end)
 --]]

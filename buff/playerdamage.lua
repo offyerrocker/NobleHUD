@@ -61,7 +61,7 @@ Hooks:PostHook(PlayerDamage,"set_health","noblehud_buff_berserker",function(self
 	if managers.player:has_category_upgrade("player", "movement_speed_damage_health_ratio_multiplier") then
 		local ratio = managers.player:get_damage_health_ratio(self:health_ratio(), "movement_speed")
 		if ratio > 0 then 
-			NobleHUD:AddBuff("yakuza",{value=ratio})
+			NobleHUD:AddBuff("yakuza",{value=string.format("%.2f",ratio)}) --in most other places, formatting is handled in UpdateHUD() but not here since it's very simple
 		else
 			NobleHUD:RemoveBuff("yakuza")
 		end

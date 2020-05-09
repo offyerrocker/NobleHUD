@@ -1,5 +1,7 @@
 --[[
 
+fire doesn't count as a kill. so every kill is "first strike."
+
 Test grenade medal proc
 Test first strike medal proc from teammates
 
@@ -332,6 +334,8 @@ NobleHUD._TEAMMATE_ITEM_W = 512
 NobleHUD._TEAMMATE_ITEM_H = 48
 NobleHUD._MAX_REVIVES = 3 --default init value; updated on load
 
+NobleHUD._font_eurostile_kern = 2
+
 NobleHUD.network_messages = {
 	down_counter = "DownCounterStandalone",
 	sync_assault = "SyncAssaultPhase",
@@ -450,6 +454,7 @@ NobleHUD.settings = {
 	weapon_ammo_tick_full_alpha = 0.8,
 	weapon_ammo_tick_empty_alpha = 0.15,
 	weapon_ammo_real_counter = false,
+	steelsight_hides_floating_ammo_enabled = true,
 	steelsight_hides_reticle_enabled = true,
 	master_hud_alpha = 0.9,
 	chat_autohide_timer = 3,
@@ -1454,6 +1459,7 @@ NobleHUD.score_unit_points = {
 	bolivian_indoors_mex = 1,
 	drug_lord_boss = 100, --sosa
 	drug_lord_boss_stealth = 100, --also sosa
+	security_mex = 1,
 	
 	deathvox_guard = 1,
 	deathvox_gman = 1,
@@ -1896,6 +1902,7 @@ NobleHUD._medal_data = {
 			name = "spree_sword_1",
 			sfx = "spree_sword_1",
 			hold_sfx = true,
+			show_text = true,
 			multiplier = 1.25,
 			icon_xy = {3,4}
 		},
@@ -1903,6 +1910,7 @@ NobleHUD._medal_data = {
 			name = "spree_sword_2",
 			sfx = "spree_sword_2",
 			hold_sfx = true,
+			show_text = true,
 			multiplier = 1.5,
 			icon_xy = {3,5}
 		},
@@ -1910,6 +1918,7 @@ NobleHUD._medal_data = {
 			name = "spree_sword_3",
 			sfx = "spree_sword_3",
 			hold_sfx = true,
+			show_text = true,
 			multiplier = 1.75,
 			icon_xy = {3,6}
 		}
@@ -2261,8 +2270,8 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 			{
 				is_center = true,
 				texture = "guis/textures/crosshair_circle_64",
-				w = 32,
-				h = 32
+				w = 64,
+				h = 64
 			}
 		}
 	},
@@ -2333,175 +2342,175 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 0,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 2 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 3 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 4 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 5 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 6 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 7 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 8 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 9 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 10 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 11 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 12 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 13 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 14 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 15 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 16 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 17 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 18 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 19 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 20 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 21 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 22 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 23 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			},
 			{
 				texture = "guis/textures/ar_crosshair_2",
 				rotation = 24 * 360/25,
-				distance = 10,
+				distance = 20,
 				w = 2,
 				h = 8
 			}
@@ -2832,8 +2841,8 @@ NobleHUD._crosshair_textures = { --organized by reach crosshairs
 		parts = {
 			{
 				texture = "guis/textures/sword_crosshair",
-				w = 32,
-				h = 32
+				w = 48,
+				h = 48
 			}
 		}
 	},
@@ -3310,7 +3319,7 @@ NobleHUD._bullet_textures = {
 		texture_rect = {
 			0,0,8,16
 		},
-		icon_w = 4,
+		icon_w = 2,
 		icon_h = 8
 	},
 	assault_rifle = {

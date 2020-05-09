@@ -1,7 +1,10 @@
 Hooks:PostHook(PlayerStandard,"_start_action_steelsight","noblehud_start_steelsight",function(self)
 	if NobleHUD:GetSteelsightHidesReticle() and self:in_steelsight() then
 		local slot = self._unit:inventory():equipped_selection()
-		NobleHUD:_set_crosshair_in_slot_visible(slot,false)	
+		NobleHUD:_set_crosshair_in_slot_visible(slot,false)
+	end
+	if NobleHUD:GetSteelsightHidesFloatingAmmo() then 
+		NobleHUD:SetFloatingAmmoVisible(false,true)
 	end
 end)
 
@@ -9,6 +12,9 @@ Hooks:PostHook(PlayerStandard,"_end_action_steelsight","noblehud_end_steelsight"
 	if not self:in_steelsight() then
 		local slot = self._unit:inventory():equipped_selection()
 		NobleHUD:_set_crosshair_in_slot_visible(slot,true)
+	end
+	if NobleHUD:GetSteelsightHidesFloatingAmmo() then 
+		NobleHUD:SetFloatingAmmoVisible(true,true)
 	end
 end)
 

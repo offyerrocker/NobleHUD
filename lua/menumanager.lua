@@ -21,6 +21,7 @@ local kills_cache_empty = {
 		spree_assist = 1,
 		spree_sword = 1
 	},
+	first = false,
 	vehicle = 0,
 	vehicle_assist = 0,
 	close_call = false,
@@ -127,6 +128,19 @@ end
 
 function NobleHUD:animate_stop(object)
 	NobleHUD._animate_targets[tostring(object)] = nil
+end
+
+function NobleHUD:animate_fade_endpoints(o,t,dt,start_t,duration,start_alpha,end_alpha)
+	start_alpha = start_alpha or 1
+	end_alpha = end_alpha or 0
+	duration = duration or 1
+	local d_alpha = end_alpha - start_alpha
+	local ratio = (t - start_t) / duration
+	o:set_alpha(start_alpha + ((ratio) * d_alpha))
+	if ratio >= 1 then 
+		o:set_alpha(end_alpha)
+		return true
+	end
 end
 
 function NobleHUD:animate_fadeout_linear(o,t,dt,start_t,duration,start_alpha,exit_x,exit_y)
@@ -489,6 +503,10 @@ function NobleHUD:GetSteelsightHidesReticle()
 	return self.settings.steelsight_hides_reticle_enabled
 end
 
+function NobleHUD:GetSteelsightHidesFloatingAmmo()
+	return self.settings.steelsight_hides_floating_ammo_enabled
+end
+
 function NobleHUD:GetTeamName()
 	return self.settings.team_name
 end
@@ -848,14 +866,54 @@ Hooks:Add("BeardLibSetupInitFinalize","NobleHUD_AddUpdator",function()
 	BeardLib:AddUpdater("NobleHUD_update",callback(NobleHUD,NobleHUD,"UpdateHUD"))
 end)
 
+
+NobleHUD._WORLD_HUD_ACTIVE = false
+NobleHUD._FLOATING_HUD_SIZE = 512
+NobleHUD._FLOATING_AMMO_FONT_SIZE = 64
+NobleHUD._FLOATING_AMMO_WIDTH = 512
+NobleHUD._FLOATING_AMMO_HEIGHT = 512
+NobleHUD._world_offset_angle_x = 90
+NobleHUD._world_offset_angle_y = 90
+
+NobleHUD._world_width = 1280
+NobleHUD._world_height = 720
+
+NobleHUD._world_distance = 400
+
+NobleHUD._FLOATING_V_OFFSET = 20
+
+NobleHUD._world_1 = 800
+NobleHUD._world_2 = 800
+--Vector3(350, -4875, -798.877)
+
+--	vec1: (x distance, y distance, z distance)
+--	vec2: right edge x, right edge y, right edge z
+--	vec3: bottom edge x, bottom edge y, bottom edge z
+NobleHUD._vector_1 = Vector3(6568, -2240, -35)
+NobleHUD._vector_2 = Vector3(0, -NobleHUD._world_width, 0)
+NobleHUD._vector_3 = Vector3(0, 0, -NobleHUD._world_height)
+
 function NobleHUD:CreateHUD(orig)
 	if not orig:alive(PlayerBase.PLAYER_INFO_HUD_PD2) then 
 		return
 	end	
-	self._ws = managers.gui_data:create_fullscreen_workspace()
-	local ws = self._ws
+	self._gui = World:newgui()
+	self._floating_ws = self._gui:create_world_workspace(self._FLOATING_HUD_SIZE,self._FLOATING_HUD_SIZE,self._vector_1,self._vector_2,self._vector_3)
+	if self._WORLD_HUD_ACTIVE then 
 	
-	local hud = ws:panel() --master panel
+		self._ws = self._gui:create_world_workspace(self._world_width,self._world_height,self._vector_1,self._vector_2,self._vector_3)
+		self._ws:panel():rect({
+			name = "debug_world_hud",
+			color = Color.red,
+			visible = false,
+			alpha = 0.1
+		})
+	else
+		self._ws = managers.gui_data:create_fullscreen_workspace()
+	end
+	
+	local hud = self._ws:panel()
+	
 	hud:set_visible(false)
 	--armor and shields share the same master panel
 	self:_create_vitals(hud)
@@ -878,7 +936,7 @@ function NobleHUD:CreateHUD(orig)
 	self:_create_killfeed(hud)
 	self:_create_stamina(hud)
 	self:_create_tabscreen(hud)
-	self:_create_floating_ammo(hud)
+	self:_create_floating_ammo(self._floating_ws:panel())
 	self:_create_waiting(hud)
 	
 	local chat_x,chat_y = self:GetChatPanelXY()
@@ -1039,6 +1097,42 @@ function NobleHUD:UpdateHUD(t,dt)
 	if player then 
 		local player_damage = player:character_damage()
 		local inventory = player:inventory()
+		local player_pos = player:position()
+		local state = player:movement():current_state()
+		local player_state_name = player:movement():current_state_name()
+
+		if self._WORLD_HUD_ACTIVE then  --world hud position
+	--		self._ws:set_world(self._world_1,self._world_2,player:position() + self._vector_1,self._vector_2,self._vector_3)
+			
+			local player_look = player:movement():m_head_rot()
+			
+			local world_distance = self._world_distance
+			local worldhud_w = self._world_width
+			local worldhud_h = self._world_height
+			local lookyaw = (player_look:yaw())
+			local lookpitch = player_look:pitch()
+			local distance_vec = player_look:y() * world_distance -- Vector3() -- 
+			local start_vec = self._vector_1 or player:position() 
+			local offset_vector = start_vec + distance_vec + Vector3(-math.sin(lookyaw + self._world_offset_angle_x) * worldhud_w,math.cos(lookyaw + self._world_offset_angle_y) * worldhud_w,worldhud_h - (lookpitch / 90)) -- * (lookpitch / 90)
+			local world_right_vector = Vector3(worldhud_w * math.sin(lookyaw + self._world_offset_angle_x) / 2,-worldhud_w * math.cos(lookyaw + self._world_offset_angle_y) / 2,0)
+			local world_bottom_vector = Vector3(world_distance * math.sin(lookpitch + self._world_offset_angle_x),world_distance * math.cos(lookpitch + self._world_offset_angle_y),self._vector_3.z)
+			
+			--[[
+			Draw:brush(Color.red:with_alpha(0.01),3):sphere(offset_vector,10)
+			Draw:brush(Color.green:with_alpha(0.3)):sphere(start_vec - world_right_vector,100)
+			Draw:brush(Color(0,1,1):with_alpha(0.3)):sphere(start_vec,50)
+			Draw:brush(Color.blue:with_alpha(0.3)):sphere(start_vec - world_bottom_vector,100)
+			Console:SetTrackerValue("trackera",tostring(offset_vector))
+			Console:SetTrackerValue("trackerb",tostring(world_right_vector))
+			Console:SetTrackerValue("trackerc",tostring(world_bottom_vector))
+			Console:SetTrackerValue("trackerd",tostring(player_look))
+			Console:SetTrackerValue("trackere",tostring(math.sin(lookyaw)))
+			--]]
+			
+			self._ws:set_world(worldhud_w,worldhud_h,offset_vector,world_right_vector,world_bottom_vector)
+			
+		end
+
 		
 		
 		if Network:is_server() then
@@ -1161,11 +1255,6 @@ function NobleHUD:UpdateHUD(t,dt)
 				end
 			end
 		end
-		
-		
-		local player_pos = player:position()
-		local state = player:movement():current_state()
-		local player_state_name = player:movement():current_state_name()
 
 			
 	--cartographer stuff
@@ -1639,7 +1728,7 @@ function NobleHUD:UpdateHUD(t,dt)
 					end
 					if buff_type == "timer" then 
 						if not buff_data.end_t then 
-							self:log("Buff data has no end_t! Removing...",{color=Color.red})
+--							self:log("Buff data has no end_t! Removing...",{color=Color.red})
 							remove_buff()
 						else
 							if buff_tweak_data.timer_source == "heist" then
@@ -1651,7 +1740,7 @@ function NobleHUD:UpdateHUD(t,dt)
 								_t = managers.player:player_timer():time()
 							end
 							if (buff_data.end_t < _t) and not buff_tweak_data.persistent_timer then 
-								self:log("Buff " .. buff_id .. " expired! Removing...",{color=Color.red})
+--								self:log("Buff " .. buff_id .. " expired! Removing...",{color=Color.red})
 								remove_buff()
 							else
 								local time_left = math.max(0,buff_data.end_t - _t)
@@ -1921,8 +2010,6 @@ function NobleHUD:UpdateHUD(t,dt)
 		
 		--experimental mag count hud
 		if self:IsFloatingAmmoPanelEnabled() then
-			local floating_ammo_panel = self._floating_ammo_panel
-			
 			local floating_ammo_blacklisted_states = {
 				mask_off = true,
 				clean = true,
@@ -1933,16 +2020,58 @@ function NobleHUD:UpdateHUD(t,dt)
 				incapacitated = true,
 				driving = true
 			}
-			if floating_ammo_blacklisted_states[player_state_name] then
-				floating_ammo_panel:set_position(-1000,-1000)
-			else
+--			if floating_ammo_blacklisted_states[player_state_name] then
+--				floating_ammo_panel:hide()
+--			else
 				local wpn_unit = inventory:equipped_unit()
-				local wpn_unit_pos = wpn_unit and wpn_unit:position()
-				local wpn_unit_screen_pos = wpn_unit_pos and self._ws:world_to_screen(viewport_cam,wpn_unit_pos + ( player:camera():rotation():y() * 100)) --
-				if wpn_unit_screen_pos then 
-					floating_ammo_panel:set_position(wpn_unit_screen_pos.x,wpn_unit_screen_pos.y)
+				
+				local sight_align = wpn_unit and wpn_unit:get_object(Idstring("a_sight"))
+				local start_vec
+				if sight_align then 
+					start_vec = sight_align:position()
+				else
+					start_vec = wpn_unit and wpn_unit:position() or Vector3()
 				end
-			end
+				local weapon_rotation = wpn_unit and wpn_unit:rotation() or Rotation(0,0,0)
+				
+				
+				local lookyaw = weapon_rotation:yaw()
+				local lookpitch = weapon_rotation:pitch()
+--				local fire_direction = weapon_rotation:y()
+				local right = weapon_rotation:x()
+				local up = weapon_rotation:z()
+				local panel_size = self._FLOATING_HUD_SIZE
+				local size = self._FLOATING_AMMO_FONT_SIZE
+
+
+				local offset_vector = start_vec + (up * (size / 2)) + (right * -size / 2)
+				local right_vector = (right * size)
+				local bottom_vector = -up * (size / 2)
+				
+				--[[
+				Draw:brush(Color.red:with_alpha(0.3)):sphere(offset_vector,10)
+				Draw:brush(Color.green:with_alpha(0.3)):sphere(offset_vector + right_vector,10)
+				Draw:brush(Color.blue:with_alpha(0.3)):sphere(offset_vector + bottom_vector,10)
+				Draw:brush(Color(0,1,1):with_alpha(0.05)):sphere(start_vec,10)
+				--]]
+				
+				self._floating_ws:set_world(self._FLOATING_AMMO_WIDTH,self._FLOATING_AMMO_HEIGHT,offset_vector,right_vector,bottom_vector)
+--			end
+--[[
+	if alive(self._interaction_hand) and (alive(self._interaction_object) or self._interaction_use_head) and self:interaction_panel():visible() then
+		local interaction_object_pos = self._interaction_use_head and managers.player:player_unit():movement():m_head_pos() or self._interaction_object:interaction() and self._interaction_object:interaction():interact_position() or self._interaction_object:position()
+		local interaction_pos = tmp_vec1
+
+		mvector3.set(interaction_pos, interaction_object_pos)
+		mvector3.subtract(interaction_pos, self._interaction_hand:position())
+		mvector3.multiply(interaction_pos, self._interaction_use_head and 0.5 or 0.3)
+		mvector3.add(interaction_pos, self._interaction_hand:position())
+
+		local size = self._interaction_use_head and 10 or 20
+
+		self._interaction_ws:set_world(80, 80, interaction_pos - Vector3(size / 2, 0, size / 2), Vector3(size, 0, 0), Vector3(0, 0, size))
+	end			
+--]]			
 		end
 		
 	-- ************** SCORE ************** 
@@ -2076,7 +2205,7 @@ function NobleHUD:OnGameStateChanged(before_state,state)
 		self:PlayShieldSound("stop")
 	elseif state == "ingame_access_camera" then 
 		hud:hide()
-	elseif GameStateFilters.any_ingame[state] then 
+	elseif GameStateFilters.any_ingame[state] then -- and (not GameStateFilters.any_ingame[before_state] or not self._cache.loaded) then 
 		hud:show()
 	else
 		self:PlayShieldSound("stop")
@@ -2104,10 +2233,10 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit,variant,player_weapon_
 			return
 		end
 		local player_weapon = attack_data.weapon_unit
-		weapon_base = alive(player_weapon) and player_weapon:base()
+		weapon_base = player_weapon and alive(player_weapon) and player_weapon:base()
 	end
 	attack_data = attack_data or {}
-	headshot = headshot or attack_data.head_shot
+	headshot = headshot or attack_data.headshot
 	
 	
 	local player_movement = player:movement()
@@ -2127,7 +2256,7 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit,variant,player_weapon_
 	local variant = variant or attack_data.variant
 	local base = unit and unit:base()
 	local movement = unit and unit:movement()
-	local unit_type = base._tweak_table
+	local unit_type = base and base._tweak_table
 	local is_cop = CopDamage.is_cop(unit_type)
 	local unit_anim = unit and unit.anim_data and unit:anim_data()
 	local ext_anim = unit and unit:movement() and unit:movement()._ext_anim or {}
@@ -2211,10 +2340,9 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit,variant,player_weapon_
 			end
 		end
 	
-		
---! test below!		
-		if managers.statistics._start_session_from_beginning and managers.statistics._global.killed.total and managers.statistics._global.session.killed.total.count == 0 then 
+		if managers.statistics._start_session_from_beginning and managers.statistics._global.killed.total and managers.statistics._global.session.killed.total.count == 0 and not self:KillsCache("first") then 
 			self:AddMedal("first")
+			self:KillsCache("first",true,true)
 		end
 		
 		if unit then 
@@ -2231,11 +2359,15 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit,variant,player_weapon_
 				end
 			end
 		end
-		
 		if player_weapon_id == primary_id then
-			self:_set_killcount(1,managers.statistics:session_killed_by_weapon(primary_id))
+		--statistics manager takes a moment to update, apparently, resulting in displayed killcounts always being 1 kill behind actual count.
+			self:AddDelayedCallback(function()
+				self:_set_killcount(1,managers.statistics:session_killed_by_weapon(primary_id))
+			end,nil,0.05)
 		elseif player_weapon_id == secondary_id then 
-			self:_set_killcount(2,managers.statistics:session_killed_by_weapon(secondary_id))
+			self:AddDelayedCallback(function()
+				self:_set_killcount(2,managers.statistics:session_killed_by_weapon(secondary_id))
+			end,nil,0.05)
 		end
 		
 		if player:character_damage():_max_armor() > 0 and player:character_damage():health_ratio() <= 0.5 and player:character_damage():get_real_armor() <= 0 then 
@@ -2373,8 +2505,11 @@ function NobleHUD:KillsCache(category,amount,set)
 	if amount ~= nil then 
 		if set then 
 			self._cache.kills[category] = amount
-		elseif type(self._cache.kills[category]) == "number" then 
-			self._cache.kills[category] = self._cache.kills[category] + (tonumber(amount or 0) or 0)
+		else
+			amount = amount and tonumber(amount)
+			if amount and type(self._cache.kills[category]) == "number" then 
+				self._cache.kills[category] = self._cache.kills[category] + amount
+			end
 		end
 	elseif set ~= nil then
 		self:log("Error: No killcount category found for " .. tostring(category),{color = Color.red})
@@ -2435,7 +2570,7 @@ end
 
 function NobleHUD:OnTeammateKill(attack_data)
 	local player_unit = attack_data and attack_data.attacker_unit or attack_data.player_unit
-	if not (player_unit and self:IsMedalsEnabled())then
+	if not (player_unit and self:IsMedalsEnabled()) then
 		return
 	end
 	local peer_id = alive(player_unit) and managers.criminals:character_peer_id_by_unit(player_unit)
@@ -2763,6 +2898,7 @@ function NobleHUD:_create_weapons(hud)
 			color = self.color_data.white,
 			alpha = 0.66,
 			font = self.fonts.eurostile_normal,
+			kern = self._font_eurostile_kern,
 			font_size = 16,
 			layer = 6
 		})
@@ -2774,6 +2910,7 @@ function NobleHUD:_create_weapons(hud)
 			color = self.color_data.white,
 --			x = -24,
 --			alpha = 0.5,
+			kern = self._font_eurostile_kern,
 			font = self.fonts.eurostile_normal,
 			font_size = 24,
 			layer = 6
@@ -3237,51 +3374,70 @@ end
 --		FLOATING MAG INDICATOR
 
 function NobleHUD:_create_floating_ammo(hud)
-	local floating_ammo_panel = hud:panel({
-		name = "floating_ammo_panel",
-		h = 50,
-		w = 100,
-		alpha = self:GetHUDAlpha(),
-		visible = false --set enabled on load
-	})
 	local margin = 4
-	local bg = floating_ammo_panel:rect({
-		name = "bg",
+	local bg_primary = hud:rect({
+		name = "bg_primary",
 		color = Color.black,
 		alpha = 0.3,
 		layer = 1
 	})
-	local primary = floating_ammo_panel:text({
+	local bg_secondary = hud:rect({
+		name = "bg_secondary",
+		color = Color.black,
+		alpha = 0.3,
+		layer = 1,
+		visible = false
+	})
+	
+	local primary = hud:text({
 		name = "primary",
 		text = "69/420",
---		vertical = "center",
---		align = "center",
-		x = margin/2,
-		y = margin/2,
-		font = tweak_data.hud_players.ammo_font,
-		font_size = 16,
+		vertical = "bottom",
+		align = "center",
+--		x = margin/2,
+--		y = margin/2,
+		color = self.color_data.hud_vitalsoutline_blue,
+		kern = self._font_eurostile_kern,
+		font = self.fonts.eurostile_normal,
+		font_size = 24,
 		layer = 3,
 		visible = true
 	})
-	local secondary = floating_ammo_panel:text({
+	local secondary = hud:text({
 		name = "secondary",
 		text = "420/69",
-		x = margin/2,
-		y = margin/2,
-		font = tweak_data.hud_players.ammo_font,
-		font_size = 16,
+		vertical = "bottom",
+		align = "center",
+--		x = margin/2,
+--		y = margin/2,
+		color = self.color_data.hud_vitalsoutline_blue,
+		kern = self._font_eurostile_kern,
+		font = self.fonts.eurostile_normal,
+		font_size = 24,
 		layer = 3,
 		visible = false
 	})
-	self._floating_ammo_panel = floating_ammo_panel
+	self._floating_ammo_panel = hud
 end
 
 function NobleHUD:SetFloatingAmmo(slot,current,total)
 	local margin = 4
-	local magazine = self._floating_ammo_panel:child("primary")
+	
+	local bg
+	local bg_primary = self._floating_ammo_panel:child("bg_primary")
+	local bg_secondary = self._floating_ammo_panel:child("bg_secondary")
+	
+	local magazine
 	if slot == 2 then 
+		bg = bg_secondary
+		bg_primary:show()
 		magazine = self._floating_ammo_panel:child("secondary")
+	else
+		magazine =  self._floating_ammo_panel:child("primary")
+		bg = bg_primary
+		bg_secondary:hide()
 	end
+	bg:show()
 	if not (current and total and self:IsFloatingAmmoPanelEnabled()) then 
 		return
 	end
@@ -3294,11 +3450,26 @@ function NobleHUD:SetFloatingAmmo(slot,current,total)
 		magazine:set_color(Color.white)
 	end
 	local x,y,w,h = magazine:text_rect()
-	self._floating_ammo_panel:set_w(w + margin)
-	self._floating_ammo_panel:set_h(h + margin)
 	
+	bg:set_size(w + margin,h + margin)
+	bg:set_position(x - (margin / 2),y - (margin / 2))
+	
+--	self._floating_ammo_panel:set_w(w + margin)
+--	self._floating_ammo_panel:set_h(h + margin)
 end
 
+function NobleHUD:SetFloatingAmmoVisible(state,fade)
+	if fade then 
+		self._floating_ammo_panel:show()
+		if state then 
+			self:animate(self._floating_ammo_panel,"animate_fade_endpoints",nil,0.25,self._floating_ammo_panel:alpha(),1)
+		else
+			self:animate(self._floating_ammo_panel,"animate_fade_endpoints",nil,0.25,self._floating_ammo_panel:alpha(),0)
+		end	
+	else
+		self._floating_ammo_panel:set_visible(state)
+	end
+end
 
 	-- FIREMODE
 
@@ -4003,6 +4174,7 @@ function NobleHUD:_create_grenades(hud)
 			align = "right",
 			color = Color.white,
 --			visible = false,
+			kern = self._font_eurostile_kern,
 			font = self.fonts.eurostile_normal,
 			font_size = 24
 		})
@@ -4250,6 +4422,7 @@ function NobleHUD:_create_ability(hud) --armor ability slot?
 			vertical = "bottom",
 			layer = 5,
 			color = Color.white,
+			kern = self._font_eurostile_kern,
 			font = self.fonts.eurostile_normal,
 			font_size = 24
 		})
@@ -4362,7 +4535,7 @@ function NobleHUD:_set_deployable_amount(index)
 				end
 				if eq.amount[2] then 
 					amount_2 = Application:digest_value(eq.amount[2],false)
-					str = str .. " | " .. amount_2
+					str = str .. "|" .. amount_2
 				end
 				label:set_text(str)
 				if math.max(amount_1,amount_2) > 0 then 
@@ -4398,7 +4571,7 @@ function NobleHUD:_set_deployable_equipment(index,skip_anim)
 					str = Application:digest_value(eq.amount[1],false)
 				end
 				if eq.amount[2] then 
-					str = str .. " | " .. Application:digest_value(eq.amount[2],false)
+					str = str .. "|" .. Application:digest_value(eq.amount[2],false)
 				end
 --				local str = tostring((amount_1 and (amount_1 .. " | ") or "") .. tostring(amount_2 or ""))
 				if not skip_anim then 
@@ -4513,7 +4686,9 @@ end
 
 function NobleHUD:LayoutStamina()
 	local stamina_panel = self._stamina_panel
-	stamina_panel:set_position(self:GetStaminaPanelX(),self:GetStaminaPanelY())
+	if stamina_panel and alive(stamina_panel) then 
+		stamina_panel:set_position(self:GetStaminaPanelX(),self:GetStaminaPanelY())
+	end
 end
 
 
@@ -5220,6 +5395,7 @@ function NobleHUD:_create_score(hud)
 		color = Color.white,
 		x = score_banner_large:x() + margin_s,
 		y = score_banner_large:y() + margin_s,
+		kern = self._font_eurostile_kern,
 		font = self.fonts.eurostile_normal,
 		font_size = font_size,
 		layer = 5
@@ -5250,6 +5426,7 @@ function NobleHUD:_create_score(hud)
 		vertical = "bottom",
 		y = margin_s,
 		color = self.color_data.hud_vitalsoutline_blue,
+		kern = self._font_eurostile_kern,
 		font = self.fonts.eurostile_normal,
 		font_size = font_size,
 		layer = 4
@@ -5309,6 +5486,7 @@ function NobleHUD:_create_score(hud)
 		vertical = "bottom",
 		y = margin_s,
 		color = self.color_data.hud_vitalsoutline_blue,
+		kern = self._font_eurostile_kern,
 		font = self.fonts.eurostile_normal,
 		font_size = font_size,
 		layer = 4
@@ -5351,6 +5529,7 @@ function NobleHUD:_create_score(hud)
 		vertical = "bottom",
 		y = margin_s,
 		color = self.color_data.hud_vitalsoutline_blue,
+		kern = self._font_eurostile_kern,
 		font = self.fonts.eurostile_normal,
 		font_size = font_size,
 		layer = 4
@@ -5373,6 +5552,7 @@ function NobleHUD:_create_score(hud)
 		x = margin_m + hostages_panel:right(),
 		y = text_row_y_2,
 		color = self.color_data.hud_vitalsoutline_blue,
+		kern = self._font_eurostile_kern,
 		font = self.fonts.eurostile_normal,
 		font_size = font_size,
 		layer = 4
@@ -5385,6 +5565,7 @@ function NobleHUD:_create_score(hud)
 		x = margin_m + hostages_panel:right(),
 		y = subpanel_y,
 		color = self.color_data.hud_vitalsoutline_blue,
+		kern = self._font_eurostile_kern,
 		font = self.fonts.eurostile_normal,
 		font_size = font_size,
 		layer = 4
@@ -5398,6 +5579,7 @@ function NobleHUD:_create_score(hud)
 		x = -margin_m,
 		y = text_row_y_2, --  -(font_size + margin_s),
 		color = self.color_data.hud_vitalsoutline_blue,
+		kern = self._font_eurostile_kern,
 		font = self.fonts.eurostile_normal,
 		font_size = font_size,
 		alpha = 1
@@ -5410,6 +5592,7 @@ function NobleHUD:_create_score(hud)
 		x = margin_m + hostages_panel:right(),
 		y = subpanel_y + font_size - margin_s,
 		color = self.color_data.hud_vitalsoutline_blue,
+		kern = self._font_eurostile_kern,
 		font = self.fonts.eurostile_normal,
 		font_size = font_size,
 		visible = managers.hud._hud_assault_corner:should_display_waves()
@@ -7359,6 +7542,7 @@ function NobleHUD:_create_radar(hud)
 		text = "25m",
 		color = self.color_data.hud_vitalsoutline_blue,
 		layer = 2,
+		kern = self._font_eurostile_kern,
 		font = self.fonts.eurostile_normal,
 		font_size = self._RADAR_TEXT_SIZE,
 		align = "left",
@@ -7386,18 +7570,18 @@ function NobleHUD:create_radar_blip(u,variant)
 		
 	if ((variant == "person") or (variant == "sentry")) then
 		if (not (alive(u) and u:movement() and u:movement():team())) or ((not u:character_damage()) or u:character_damage():dead()) then 
-			self:log("Error: No unit for create_radar_blip(" .. tostring(u) .. "," .. tostring(variant) .. ")!",{color = Color.red})
+--			self:log("Error: No unit for create_radar_blip(" .. tostring(u) .. "," .. tostring(variant) .. ")!",{color = Color.red})
 			return
 		end
 	elseif variant == "vehicle" then 
 		if not (alive(u) and u:vehicle_driving()) then 
-			self:log("Error: No vehicle unit for create_radar_blip(" .. tostring(u) .. "," .. tostring(variant) .. ")!",{color = Color.red})
+--			self:log("Error: No vehicle unit for create_radar_blip(" .. tostring(u) .. "," .. tostring(variant) .. ")!",{color = Color.red})
 			return
 		end
 	end
 	if variant == "ecm_decoy" then 
 		if not (alive(u) and u:base() and u:base():get_name_id() == "ecm_jammer" and u:base():battery_life() > 0) then 
-			self:log("Error: No ECM unit for create_radar_blip(" .. tostring(u) .. "," .. tostring(variant) .. ")!",{color = Color.red})
+--			self:log("Error: No ECM unit for create_radar_blip(" .. tostring(u) .. "," .. tostring(variant) .. ")!",{color = Color.red})
 			return
 		end
 	elseif self._radar_blips[u:key()] then --blip data already exists, so return it
@@ -7623,7 +7807,8 @@ function NobleHUD:_create_cartographer(hud)
 		text = "", --"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
 		color = self.color_data.hud_vitalsoutline_blue,
 		layer = 2,
-		font = self.fonts.eurostile_normal or self.fonts.eurostile_normal,
+		kern = self._font_eurostile_kern,
+		font = self.fonts.eurostile_normal,
 		font_size = 16,
 		align = "left",
 		vertical = "bottom",
@@ -7888,25 +8073,49 @@ function NobleHUD:_create_vitals(hud)
 end
 
 function NobleHUD:LayoutVitals()
-	if false then return end
 
-	local scale = self:GetVitalsScale()
 	local vitals_panel = self._vitals_panel
+	if not (vitals_panel and alive(vitals_panel)) then
+		return
+	end
+	
+	local scale = self:GetVitalsScale()
 	local VITALS_W = scale * self._VITALS_W
 	local VITALS_H = scale * self._VITALS_H
 	
+	local arm_ratio = 0
+	local stoic_ratio = 0
+	local absorb_ratio = 0
+	
+	if managers.player:local_player() then 
+		local player_damage = managers.player:local_player():character_damage()
+		arm_ratio = player_damage:armor_ratio()
+		stoic_ratio = math.min(player_damage:remaining_delayed_damage() / arm_ratio,1) --also not an accurate value
+		absorb_ratio = math.min(managers.player:damage_absorption(),1) --not an accurate value
+	end
+	
 	vitals_panel:set_size(VITALS_W,VITALS_H)
 	vitals_panel:set_x((vitals_panel:parent():w() - VITALS_W) / 2)
+	
 	vitals_panel:child("shield_outline"):set_size(VITALS_W,VITALS_H)
-	vitals_panel:child("shield_fill"):set_h(VITALS_H)
---	vitals_panel:child("shield_fill"):set_size(VITALS_W,VITALS_H)
-	vitals_panel:child("delayed_damage_shield_fill"):set_h(VITALS_H)
---	vitals_panel:child("delayed_damage_shield_fill"):set_size(VITALS_W,VITALS_H)
-	vitals_panel:child("absorption_fill"):set_h(VITALS_H)
---	vitals_panel:child("absorption_fill"):set_size(VITALS_W,VITALS_H)
 	vitals_panel:child("shield_glow"):set_size(VITALS_W,VITALS_H)
 	vitals_panel:child("shield_warning"):set_font_size(self._VITALS_FONT_SIZE * scale)
 	vitals_panel:child("shield_warning"):set_y(self._VITALS_WARNING_Y * scale)
+	
+	vitals_panel:child("shield_fill"):set_texture_rect((1 - arm_ratio) * self._VITALS_W * 0.5,0,(arm_ratio * self._VITALS_W),self._VITALS_H)
+	vitals_panel:child("shield_fill"):set_x((1 - arm_ratio) * VITALS_W * 0.5)
+	vitals_panel:child("shield_fill"):set_size(VITALS_W * arm_ratio,VITALS_H)
+	
+	vitals_panel:child("delayed_damage_shield_fill"):set_texture_rect((1 - stoic_ratio) * self._VITALS_W * 0.5,0,(stoic_ratio * self._VITALS_W),self._VITALS_H)
+	vitals_panel:child("delayed_damage_shield_fill"):set_x((1 - stoic_ratio) * VITALS_W * 0.5)
+	vitals_panel:child("delayed_damage_shield_fill"):set_size(VITALS_W * stoic_ratio,VITALS_H)
+	
+	vitals_panel:child("absorption_fill"):set_texture_rect((1 - absorb_ratio) * self._VITALS_W * 0.5,0,(absorb_ratio * self._VITALS_W),self._VITALS_H)
+	vitals_panel:child("absorption_fill"):set_x((1 - absorb_ratio) * VITALS_W * 0.5)
+	vitals_panel:child("absorption_fill"):set_size(VITALS_W * absorb_ratio,VITALS_H)
+
+--	vitals_panel:child("delayed_damage_shield_fill"):set_h(VITALS_H)
+--	vitals_panel:child("absorption_fill"):set_h(VITALS_H)
 	
 	local TICK_SCALE = self._VITALS_TICK_SCALE
 	local TICK_W = self._VITALS_TICK_W * TICK_SCALE * scale
@@ -8025,7 +8234,8 @@ function NobleHUD:_create_carry(hud)
 		name = "bag_value",
 		text = "10 Cr",
 		y = bag_label:line_height(),
-		font = "font_eurostile_normal",
+		kern = self._font_eurostile_kern,
+		font = self.fonts.eurostile_normal,
 		font_size = 16,
 		layer = 1,
 		color = Color.white
@@ -9055,7 +9265,6 @@ function NobleHUD:CreateBuff(id,params)
 		local icon_x,icon_y = unpack(tweak_data.skilltree.skills[icon].icon_xy)
 		texture_rect = {icon_x * 80,icon_y * 80,80,80}
 	elseif source == "perk" then 
-		Log("Adding buff " .. tostring(id) .. ", icon num " .. tostring(icon),{color=Color.red})
 		texture,texture_rect = NobleHUD.get_specialization_icon_data_with_fallback(tonumber(icon) or 1,nil,icon_tier,tier_floors)
 	elseif source == "icon" then 
 		texture,texture_rect = tweak_data.hud_icons:get_icon_data(icon)
@@ -9921,7 +10130,7 @@ Hooks:Add("MenuManagerInitialize", "noblehud_initmenu", function(menu_manager)
 	MenuCallbackHandler.callback_noblehud_set_stamina_enabled = function(self,item)
 		local value = item:value() == "on"
 		NobleHUD.settings.stamina_enabled = value
-		if alive(NobleHUD._stamina_panel) then 
+		if NobleHUD._stamina_panel and alive(NobleHUD._stamina_panel) then 
 			NobleHUD._stamina_panel:set_visible(value)
 		end
 		NobleHUD:SaveSettings()

@@ -82,6 +82,8 @@ if not NobleHUD:IsSafeMode() then
 
 end
 
+--[[
 Hooks:PostHook(PlayerManager,"on_killshot","noblehud_on_player_killshot",function(self,killed_unit,variant,headshot,weapon_id)
 	NobleHUD:OnEnemyKilled(nil,headshot,killed_unit,variant,weapon_id)
 end)
+--]]
