@@ -843,7 +843,7 @@ function NobleHUD:ShowMenu_SetCallsign()
 		QuickKeyboardInput:new(loc("noblehud_menu_enter_callsign_title"), "* " .. requirement_character .. "\n* " .. requirement_length .. "\n" .. loc("noblehud_menu_prompt_callsign"), self:GetCallsign() or "S117", evaluate_callsign, self._MAX_CALLSIGN_LEN, true)
 	else
 		local function open_in_overlay()
-			Steam:overlay_activate("url","https://modworkshop.net/mod/22564")
+			Steam:overlay_activate("url","http://pd2mods.z77.fr/quick_keyboard_input.html")
 		end
 		QuickMenu:new(loc("noblehud_menu_missing_dependency_title"),loc("noblehud_menu_missing_qki_desc") .. string.gsub(loc("noblehud_menu_current_callsign"),"$CALLSIGN",self:GetCallsign()),{
 			{
@@ -2234,6 +2234,8 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit,variant,player_weapon_
 		end
 		local player_weapon = attack_data.weapon_unit
 		weapon_base = player_weapon and alive(player_weapon) and player_weapon:base()
+	else
+		return
 	end
 	attack_data = attack_data or {}
 	headshot = headshot or attack_data.headshot
@@ -2272,7 +2274,7 @@ function NobleHUD:OnEnemyKilled(attack_data,headshot,unit,variant,player_weapon_
 		hacked_turret = false -- meh, i don't care too much about friendly fire on hacked turrets lol
 	}
 	local unit_team = (brain and brain._logic_data and brain._logic_data.team and brain._logic_data.team.id) or ""
-	if friendly_teams[unit_team] or (unit and (CopDamage.is_civilian(unit:base()._tweak_table) or managers.enemy:is_civilian(unit))) then 
+	if friendly_teams[unit_team] or (unit and (CopDamage.is_civilian(unit_type) or managers.enemy:is_civilian(unit))) then 
 --		self:log("Killed enemy with team " .. tostring(brain._logic_data.team.id),{color=Color.green})
 		is_friendly_fire = true
 	end

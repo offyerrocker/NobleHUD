@@ -247,7 +247,7 @@
 	"noblehud_menu_callsign_about_title" : "About Callsigns",
 	"noblehud_menu_callsign_about_desc" : "Callsigns are short, alphanumeric identifiers for players. Often, usernames are too long and can clutter the screen; the introduction of callsigns both eases this problem, and creates another small but fun aspect of customization for users.\nCallsigns are created automatically for those who do not have NobleHUD (based on their username) but of course these users will not see their own callsigns in this case.\nNobleHUD users have a callsign randomly generated for them upon first launch, styled as LETTER-NUMBER-NUMBER-NUMBER. However, you can change this callsign in options, if you so choose (you must have TdlQ's mod 'Quick Keyboard Input' installed.)\nCallsigns are synced between NobleHUD users, so that your chosen callsign will always display to others who have this mod.\n\nRequirements:\n",
 	"noblehud_menu_missing_dependency_title" : "Missing Dependency!",
-	"noblehud_menu_missing_qki_desc" : "You must have 'Quick Keyboard Input' installed!\nThis mod will allow you to type in the name that you want. Please download and install this mod from https://modworkshop.net/mod/22564 and try again.\n",
+	"noblehud_menu_missing_qki_desc" : "You must have 'Quick Keyboard Input' installed!\nThis mod will allow you to type in the name that you want. Please download and install this mod from http://pd2mods.z77.fr/quick_keyboard_input.html and try again.\n",
 	"noblehud_menu_callsign_error_please_retry" : "Please try a different callsign.",
 	"noblehud_menu_current_callsign" : "Your current callsign is: $CALLSIGN",
 	

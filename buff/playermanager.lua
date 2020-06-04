@@ -6,7 +6,7 @@ end)
 
 Hooks:PostHook(PlayerManager,"set_property","noblehud_set_property",function(self,name,value)
 	NobleHUD:AddBuff(name,{value=value})
-	NobleHUD:log("PlayerManager:set_property(" .. tostring(name) .. "," .. tostring(value) .. ")",{color=Color.yellow})
+	--NobleHUD:log("PlayerManager:set_property(" .. tostring(name) .. "," .. tostring(value) .. ")",{color=Color.yellow})
 end)
 
 --[[
@@ -27,7 +27,7 @@ Hooks:PostHook(PlayerManager,"activate_temporary_upgrade","noblehud_activate_tem
 end)
 
 Hooks:PostHook(PlayerManager,"activate_temporary_property","noblehud_activate_temporary_property",function(self,name, time, value)
-	NobleHUD:log("PlayerManager:activate_temporary_property(" .. NobleHUD.table_concat({name=name,time=time,value=value},",","=") .. ")",{color=Color.yellow})
+	--NobleHUD:log("PlayerManager:activate_temporary_property(" .. NobleHUD.table_concat({name=name,time=time,value=value},",","=") .. ")",{color=Color.yellow})
 --	local t = self._temporary_upgrades[category] and self._temporary_upgrades[category][upgrade] and self._temporary_upgrades[category][upgrade].expire_time
 --	NobleHUD:AddBuff(upgrade,{end_t = t}) --i'd have to re-calculate stuff or overwrite the function to use duration instead of end_t. i'd rather risk having desynced end times
 	NobleHUD:AddBuff(name,{duration=time,value=value})
@@ -46,7 +46,7 @@ Hooks:PostHook(PlayerManager,"aquire_cooldown_upgrade","noblehud_aquire_cooldown
 --upgrade is a table. whoops.
 	local name = upgrade.upgrade
 	local upgrade_value = self:upgrade_value(upgrade.category,name)
-	NobleHUD:log("PlayerManager:aquire_cooldown_upgrade(" .. NobleHUD.table_concat(upgrade,",","=") .. ")")
+	--NobleHUD:log("PlayerManager:aquire_cooldown_upgrade(" .. NobleHUD.table_concat(upgrade,",","=") .. ")")
 --	NobleHUD:AddBuff(name,{duration = time}) --i'd have to re-calculate stuff or overwrite the function to use duration instead of end_t. i'd rather risk having desynced end times
 end)
 
@@ -200,7 +200,7 @@ Hooks:PostHook(PlayerManager,"chk_wild_kill_counter","noblehud_buff_biker",funct
 	local triggers_left = tweak_data.upgrades.wild_max_triggers_per_time - triggers_count
 	if triggers_left > 0 then 
 		for i,trigger_time in pairs(wild_kill_triggers) do 
-			NobleHUD:log("Triggered wild kill counter: " .. tostring(i) .. ": " .. tostring(trigger_time),{color=Color.green})
+			--NobleHUD:log("Triggered wild kill counter: " .. tostring(i) .. ": " .. tostring(trigger_time),{color=Color.green})
 --			max_trigger_time = 
 		end
 		NobleHUD:AddBuff("wild_kill_counter",{value=triggers_left,start_t = Application:time(),end_t=wild_kill_triggers[#wild_kill_triggers]})
