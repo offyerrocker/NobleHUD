@@ -3412,6 +3412,7 @@ function NobleHUD:_create_floating_ammo(hud)
 		name = "secondary",
 		text = "420/69",
 		vertical = "bottom",
+
 		align = "center",
 --		x = margin/2,
 --		y = margin/2,
@@ -3438,7 +3439,7 @@ function NobleHUD:SetFloatingAmmo(slot,current,total)
 		bg_primary:show()
 		magazine = self._floating_ammo_panel:child("secondary")
 	else
-		magazine =  self._floating_ammo_panel:child("primary")
+		magazine = self._floating_ammo_panel:child("primary")
 		bg = bg_primary
 		bg_secondary:hide()
 	end
@@ -3447,6 +3448,7 @@ function NobleHUD:SetFloatingAmmo(slot,current,total)
 		return
 	end
 	magazine:set_text(tostring(current) .. "/" .. tostring(total))
+	if not magazine then return end
 	if current == 0 then 
 		magazine:set_color(self.color_data.hud_vitalsfill_red)
 	elseif current < total / 3 then

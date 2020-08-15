@@ -3841,17 +3841,22 @@ function NobleHUD:GetToxicMessage()
 	return self._toxic_messages[math.random(#self._toxic_messages)] or ""
 end
 
-function NobleHUD.choose(tbl)
-	if type(tbl) == "table" and #tbl > 0 then 
-		return tbl[math.random(#tbl)]
+function NobleHUD.choose(tbl,...)
+	if type(tbl) == "table" then 
+		if #tbl > 0 then 
+			return tbl[math.random(#tbl)]
+		else
+			local a = {}
+			for i,v in pairs(tbl) do 
+				table.insert(a,i)
+			end
+			if #a > 0 then 
+				return tbl[a[math.random(#a)]]
+			end
+		end
 	else
-		local a = {}
-		for i,v in pairs(tbl) do 
-			table.insert(a,i)
-		end
-		if #a > 0 then 
-			return tbl[a[math.random(#a)]]
-		end
+		local a = {tbl,...}
+		return a[math.random(#a)]
 	end
 end
 
