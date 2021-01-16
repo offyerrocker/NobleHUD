@@ -3443,12 +3443,12 @@ function NobleHUD:SetFloatingAmmo(slot,current,total)
 		bg = bg_primary
 		bg_secondary:hide()
 	end
+	if not alive(magazine) then return end
 	bg:show()
 	if not (current and total and self:IsFloatingAmmoPanelEnabled()) then 
 		return
 	end
 	magazine:set_text(tostring(current) .. "/" .. tostring(total))
-	if not magazine then return end
 	if current == 0 then 
 		magazine:set_color(self.color_data.hud_vitalsfill_red)
 	elseif current < total / 3 then
