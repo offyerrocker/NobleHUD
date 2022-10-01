@@ -4110,7 +4110,9 @@ function NobleHUD:get_slot_and_firemode()
 	end
 	
 	if firemode == "volley" then
-		firemode = "burst" --temp fix for volley firemode from U228
+		firemode = "auto" --temp fix for volley firemode crash from U228
+	elseif firemode == "burst" then
+		firemode = "single"
 	end
 	
 	return slot,firemode
