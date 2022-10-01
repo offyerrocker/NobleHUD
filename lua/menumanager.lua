@@ -1032,9 +1032,9 @@ function NobleHUD:OnLoaded()
 	
 --layout hud stuff
 	self:_sort_teammates()
-	if managers.hud:script("guis/mask_off_hud") then 
-		if alive(managers.hud:script("guis/mask_off_hud").panel) and alive(managers.hud:script("guis/mask_off_hud").panel:child("mask_on_text")) then
-			managers.hud:script("guis/mask_off_hud").panel:child("mask_on_text"):set_text("")
+	if alive(managers.hud:script("guis/mask_off_hud")) then 
+		if managers.hud:script("guis/mask_off_hud").mask_on_text then
+			managers.hud:script("guis/mask_off_hud").mask_on_text:set_alpha(0)
 		end
 	end
 end
@@ -4107,6 +4107,10 @@ function NobleHUD:get_slot_and_firemode()
 	local firemode = base:fire_mode()
 	if base:gadget_overrides_weapon_functions() then 
 		firemode = "underbarrel"
+	end
+	
+	if firemode == "volley" then
+		firemode = "burst" --temp fix for volley firemode from U228
 	end
 	
 	return slot,firemode
