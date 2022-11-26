@@ -1032,10 +1032,8 @@ function NobleHUD:OnLoaded()
 	
 --layout hud stuff
 	self:_sort_teammates()
-	if alive(managers.hud:script("guis/mask_off_hud")) then 
-		if managers.hud:script("guis/mask_off_hud").mask_on_text then
-			managers.hud:script("guis/mask_off_hud").mask_on_text:set_alpha(0)
-		end
+	if managers.hud:script("guis/mask_off_hud") and alive(managers.hud:script("guis/mask_off_hud").mask_on_text) then
+		managers.hud:script("guis/mask_off_hud").mask_on_text:set_alpha(0)
 	end
 end
 
@@ -7580,29 +7578,53 @@ end
 
 function NobleHUD:create_radar_blip(u,variant)
 	variant = variant or "person"
-		
+	if not alive(u) then
+		return
+	end
+	
+	local team,position
+	local u_key = u:key()
+	local expire_t,arc,velocity --ecm_decoy only
+	
 	if ((variant == "person") or (variant == "sentry")) then
-		if (not (alive(u) and u:movement() and u:movement():team())) or ((not u:character_damage()) or u:character_damage():dead()) then 
---			self:log("Error: No unit for create_radar_blip(" .. tostring(u) .. "," .. tostring(variant) .. ")!",{color = Color.red})
+		local dmg_ext = u:character_damage()
+		if dmg_ext then
+			if dmg_ext:dead() then 
+				return
+			end
+		else
+			return
+		end
+		
+		local mov_ext = u:movement()
+		if mov_ext then
+				team = mov_ext:team()
+			elseif mov_ext._team then 
+				team = mov_ext._team
+			else
+				--assume that the unit is an enemy
+				team = "law1"
+--				return
+			end
+		else
 			return
 		end
 	elseif variant == "vehicle" then 
-		if not (alive(u) and u:vehicle_driving()) then 
+		if not u:vehicle_driving() then 
 --			self:log("Error: No vehicle unit for create_radar_blip(" .. tostring(u) .. "," .. tostring(variant) .. ")!",{color = Color.red})
 			return
 		end
-	end
-	if variant == "ecm_decoy" then 
-		if not (alive(u) and u:base() and u:base():get_name_id() == "ecm_jammer" and u:base():battery_life() > 0) then 
+	elseif variant == "ecm_decoy" then 
+		local u_base = u:base()
+		if u_base and u_base.get_name_id and u_base.battery_life and u_base:get_name_id() == "ecm_jammer" and (u_base:battery_life() > 0) then
+			--continue
+		else
 --			self:log("Error: No ECM unit for create_radar_blip(" .. tostring(u) .. "," .. tostring(variant) .. ")!",{color = Color.red})
 			return
 		end
-	elseif self._radar_blips[u:key()] then --blip data already exists, so return it
-		return self._radar_blips[u:key()]
+	elseif self._radar_blips[u_key] then --blip data already exists, so return it
+		return self._radar_blips[u_key]
 	end
-	local u_key = u:key()
-	local team,position
-	local expire_t,arc,velocity --ecm_decoy only
 	if variant == "vehicle" then 
 		local driving_state = u:vehicle_driving()
 		if driving_state then 
@@ -7655,7 +7677,7 @@ function NobleHUD:create_radar_blip(u,variant)
 	end
 
 	local blip_bitmap = self._radar_panel:bitmap({
-		name = "blip_" .. tostring(u:key()),
+		name = "blip_" .. tostring(u_key),
 		texture = "guis/textures/radar_blip",
 		layer = 4,
 		color = self:get_blip_color_by_team(team),
