@@ -7598,6 +7598,7 @@ function NobleHUD:create_radar_blip(u,variant)
 		
 		local mov_ext = u:movement()
 		if mov_ext then
+			if type(mov_ext.team) ~= "function" then
 				team = mov_ext:team()
 			elseif mov_ext._team then 
 				team = mov_ext._team
