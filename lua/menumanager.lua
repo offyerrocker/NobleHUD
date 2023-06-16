@@ -6999,14 +6999,6 @@ function NobleHUD:_create_tabscreen(hud)
 			color = peer_color
 		})
 		
-		--[[
-		local peer = peer_id and managers.network:session():peer(peer_id)
-		local pfp
-		if peer then 
-			Steam:friend_avatar(2, peer:user_id(), function (img) pfp = img end)
-		end
-		
-		--]]
 		
 		local icon_texture,icon_rect = tweak_data.hud_icons:get_icon_data("pd2_question")
 		local icon_bitmap = icon_box:bitmap({
@@ -7017,13 +7009,7 @@ function NobleHUD:_create_tabscreen(hud)
 			w = icon_w,
 			h = icon_w
 		})
-
 		
---		local profile = Steam:user(peer:id64())
---local url = "http://steamcommunity.com/profiles/"..tostring(peer:id64()).."/pfp.png"
---Steam:userid()
---local pfp = dohttpreq(url)
-
 		local name_box = player_box:panel({
 			name = "name_box",
 			layer = 2,
@@ -7389,7 +7375,7 @@ function NobleHUD:_set_scoreboard_character(id,peer_id,character_id,player_name)
 			local player_icon = icon_box:child("icon_bitmap")
 			
 			local peer = managers.network:session():peer(peer_id)
-			if peer then 
+			if peer and Steam then 
 				Steam:friend_avatar(2, peer:user_id(),
 					function (img)
 						if img then 

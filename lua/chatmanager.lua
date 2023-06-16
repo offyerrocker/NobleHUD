@@ -7,10 +7,7 @@ if not NobleHUD:IsSafeMode() then
 			if msg == "ggez" then 
 				message = NobleHUD:GetToxicMessage()
 			elseif msg == "hoxtalicious!!!" then
-				local cool_dev_who_makes_good_mods = Steam:user("76561198025511599"):name()
-				if cool_dev_who_makes_good_mods == "" then 
-					cool_dev_who_makes_good_mods = "Offyerrocker"
-				end
+				local cool_dev_who_makes_good_mods = "Offyerrocker"
 				self:_receive_message(channel_id,cool_dev_who_makes_good_mods,"We don't do that here.",NobleHUD.color_data.unique) --don't localize it. translating memes? we don't do that here.
 				return
 			elseif string.find(check_secret,"birthday") or string.find(check_secret,"bday") then 
