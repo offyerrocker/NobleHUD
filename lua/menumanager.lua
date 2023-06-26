@@ -7572,6 +7572,7 @@ function NobleHUD:create_radar_blip(u,variant)
 	local u_key = u:key()
 	local expire_t,arc,velocity --ecm_decoy only
 	
+
 	if ((variant == "person") or (variant == "sentry")) then
 		local dmg_ext = u:character_damage()
 		if dmg_ext then
@@ -7609,10 +7610,7 @@ function NobleHUD:create_radar_blip(u,variant)
 --			self:log("Error: No ECM unit for create_radar_blip(" .. tostring(u) .. "," .. tostring(variant) .. ")!",{color = Color.red})
 			return
 		end
-	elseif self._radar_blips[u_key] then --blip data already exists, so return it
-		return self._radar_blips[u_key]
-	end
-	if variant == "vehicle" then 
+	elseif variant == "vehicle" then 
 		local driving_state = u:vehicle_driving()
 		if driving_state then 
 			if driving_state:num_players_inside() > 0 then 
@@ -7620,11 +7618,11 @@ function NobleHUD:create_radar_blip(u,variant)
 			elseif driving_state:_number_in_the_vehicle() > 0 then 
 				local driver_unit = driving_state._seats.driver and driving_state._seats.driver.occupant
 				if driver_unit and alive(driver_unit) and driving_state._seats.driver.occupant:brain() then 
-					self:log("Holy heck, an NPC is driving a vehicle?!",{color = Color.red}) 
+					--self:log("Holy heck, an NPC is driving a vehicle?!",{color = Color.red}) 
 					if driver_unit:movement() and driver_unit:movement():team() then 
 						local driver_team = driver_unit:movement():team().id 
 						if driver_team then 
-							self:log("It's on team " .. tostring(driver_team),{color=Color.red})
+							--self:log("It's on team " .. tostring(driver_team),{color=Color.red})
 							team = driver_team
 						end
 					end
@@ -7641,8 +7639,6 @@ function NobleHUD:create_radar_blip(u,variant)
 	--things like cop cars or swat vans; not currently detected
 	elseif variant == "sentry" then
 		team = u:movement():team().id
-		if team == "criminal1" then 
-		end
 	elseif variant == "ecm_decoy" then 
 		local decoy_max_x,decoy_max_y,decoy_max_z = self:GetMaxRadarDecoyRange()
 		
@@ -7658,10 +7654,15 @@ function NobleHUD:create_radar_blip(u,variant)
 		position = Vector3(math.random(decoy_max_x * 2) - decoy_max_x,math.random(decoy_max_y * 2) - decoy_max_y,math.random(2 * decoy_max_z) - decoy_max_z)
 		velocity = Vector3(math.random(50,500),math.random(50,500),math.random(0,500))
 		team = "law1"
+	elseif self._radar_blips[u_key] then --blip data already exists, so return it
+		return self._radar_blips[u_key]
 	else
 --		blip_texture = "guis/textures/radar_blip"
-		team = u:movement():team().id
+
+		team = "empty_vehicle"
+		--neutral/unknown color
 	end
+	
 
 	local blip_bitmap = self._radar_panel:bitmap({
 		name = "blip_" .. tostring(u_key),
