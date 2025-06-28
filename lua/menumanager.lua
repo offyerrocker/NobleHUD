@@ -67,14 +67,18 @@ NobleHUD._cache = { --buffer type deal, holds IMPORTANT THINGS tm
 NobleHUD._delayed_callbacks = {}
 NobleHUD.weapon_data = {
 	bloom = 0,
-	{
+	{ -- this array also generates the firemode panels so don't add to the weapon_data array or it'll break 
 		single = {},
 		auto = {},
+		burst = {},
+		volley = {},
 		underbarrel = {}
 	},
 	{
 		single = {},
 		auto = {},
+		burst = {},
+		volley = {},
 		underbarrel = {}
 	}
 }
@@ -3547,43 +3551,22 @@ function NobleHUD:_create_crosshair(hud)
 		visible = false,
 		alpha = 0.1
 	})
-	local crosshair_slot1 = crosshair_panel:panel({
-		name = "crosshair_slot1"
-	})
-	local slot1_single = crosshair_slot1:panel({
-		name = "single",
-		visible = false
-
-	})
-	local slot1_auto = crosshair_slot1:panel({
-		name = "auto",
-		visible = false
-
-	})
-	local slot1_underbarrel = crosshair_slot1:panel({
-		name = "underbarrel",
-		visible = false
-
-	})
 	
-	local crosshair_slot2 = crosshair_panel:panel({
-		name = "crosshair_slot2"
-	})
-	local slot2_single = crosshair_slot2:panel({
-		name = "single",
-		visible = false
-
-	})
-	local slot2_auto = crosshair_slot2:panel({
-		name = "auto",
-		visible = false
-
-	})
-	local slot2_underbarrel = crosshair_slot2:panel({
-		name = "underbarrel",
-		visible = false
-
-	})
+	--local crosshair_panels = {}
+	
+	for i,firemodes in ipairs(NobleHUD.weapon_data) do 
+		local panel = crosshair_panel:panel({
+			name = "crosshair_slot" .. i
+		})
+		--crosshair_panels[i] = panel
+		
+		for firemode,_ in pairs(firemodes) do 
+			panel:panel({
+				name = firemode,
+				visible = false
+			})
+		end
+	end
 	
 	local crosshair_slot3 = crosshair_panel:panel({ --melee
 		name = "crosshair_slot3",
