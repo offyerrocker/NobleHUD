@@ -1,5 +1,5 @@
 if not NobleHUD:IsSafeMode() then 
-	function PlayerDamage:_update_armor_hud(t, dt) --overridden
+	Hooks:OverrideFunction(PlayerDamage,"_update_armor_hud",function(self, t, dt) --overridden
 		local real_armor = self:get_real_armor()
 		local is_full = true
 		local current_armor = math.lerp(self._current_armor_fill, real_armor, 10 * dt)
@@ -25,12 +25,11 @@ if not NobleHUD:IsSafeMode() then
 				current = current_armor,
 				total = self:_max_armor()
 			})
-		else
 		end
 		if self._hurt_value then
 			self._hurt_value = math.min(1, self._hurt_value + dt)
 		end
-	end
+	end)
 
 
 	local orig_dmg_m = PlayerDamage.damage_melee
@@ -109,7 +108,8 @@ end
 
 Hooks:PostHook(PlayerDamage,"_on_damage_event","noblehud_on_player_damage_event",function(self)
 	local max_armor = self:_max_armor()
-	if (self:get_real_armor() < max_armor) and (max_armor > 0) then 
+	local real_armor = self:get_real_armor()
+	if real_armor and max_armor and (real_armor < max_armor) and (max_armor > 0) then 
 		NobleHUD:PlayShieldSound("shield_charge",false)
 		--interrupt shield charging sound if hit
 	end
@@ -117,7 +117,8 @@ end)
 
 Hooks:PreHook(PlayerDamage,"_regenerate_armor","noblehud_player_regen_armor",function(self,no_sound)
 	local max_armor = self:_max_armor()
-	if (self:get_real_armor() < max_armor) and (max_armor > 0) then 
+	local real_armor = self:get_real_armor()
+	if real_armor and max_armor and (real_armor < max_armor) and (max_armor > 0) then 
 		if not no_sound then 
 			if NobleHUD:IsShieldChargeSoundEnabled() then
 				NobleHUD:PlayShieldSound("shield_charge")
